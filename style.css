@@ -1,0 +1,142 @@
+html {
+	color: #cccccc;
+	font-family: sans-serif;
+	background-color: #333;
+	background: -webkit-linear-gradient(bottom, #303030, #343434, #383838, #3c3c3c, #404040, #444444, #484848, #4c4c4c, #505050);
+	min-height: 100%;
+}
+
+.bar {
+	overflow: hidden;
+	background-color: #111;
+	background: -webkit-linear-gradient(bottom, #111, #333);
+	position: fixed;
+	margin: 0px;
+	top: 0px;
+	left: 0px;
+	height: 52px;
+	z-index: 10;
+}
+.pickerbar {
+	display: block;
+	position: fixed;
+	overflow: hidden;
+	overflow-y: scroll;
+	height: auto;
+	width: auto;
+	top: 60px;
+	bottom: 0;
+	right: 0;
+	margin: 8px 8px 8px 8px;
+	z-index: 10;
+	-webkit-transition: right 0.15s;
+}
+.pickerbar:hover {
+}
+
+div#window {
+	margin-top: 64px;
+	position: relative;
+	left: -100%;
+	margin-left: auto;
+	margin-right: auto;
+	-webkit-transition: left 0.15s ease;
+}
+
+.picker {
+	display: inline-block;
+	text-align: center;
+	overflow: hidden;
+	right: 0;
+	border-radius: 2px;
+	line-height: 0;
+	padding: 0;
+}
+
+.barchild {
+	cursor: default;
+	display: inline-block;
+	color: #aaa;
+	position: relative;
+	padding-left: 1.5%;
+	padding-right: 1.5%;
+	top: 0px;
+	font-weight: bold;
+	height: 52px;
+	line-height: 52px;
+	font-size: 16px;
+	border-radius: 2px;
+	-webkit-transition: background-color 0.1s;
+}
+.barchild:hover {
+	color: #ccb;
+	background-color: #333;
+}
+.barchild:active {
+	color: #998;
+}
+.barchild#time {
+	font-size: 28px;
+	float: right;
+	color: #ccc;
+}
+
+.balloon {
+	background-color: #eee;
+	color: #333;
+	padding: 10px;
+	min-width: 128px;
+	border-radius: 10px;
+}
+.balloon small {
+	font-size: 0.75em;
+}
+
+.coords {
+	position: relative;
+	float: left;
+	top: 52px;
+}
+
+.dialog {
+	position: fixed;
+	text-align: center;
+	background-color: #333;
+	background: -webkit-linear-gradient(bottom, #101010, #181818, #202020, #282828, #303030);
+	margin-left: auto;
+	margin-right: auto;
+	padding: 32px;
+	top: 20%;
+	left: 35%;
+	right: 35%;
+	width: 30%;
+	max-width: 364px;
+	min-width: 100px;
+	height: auto;
+	border-radius: 2%;
+	z-index: 20;
+}
+input#name {
+	text-align: center;
+	font-weight: bold;
+	font-family: sans-serif;
+	width: 100%;
+	max-width: 300px;
+	font-size: 28px;
+	border-radius: 5px;
+}
+
+form#ptile {
+	display: inline;
+	width: 50px;
+}
+input#ptilei {
+	position: relative;
+	top: -4px;
+	font-size: 20px;
+	font-weight: bold;
+	width: 42px;
+	padding: 4px;
+	border: 0px;
+	border-radius: 6px;
+}
