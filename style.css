@@ -14,52 +14,24 @@ html {
 	margin: 0px;
 	top: 0px;
 	left: 0px;
-	height: 52px;
+	width: 52px;
+	height: 100%;
 	z-index: 10;
-}
-.pickerbar {
-	display: block;
-	position: fixed;
-	overflow: hidden;
-	overflow-y: scroll;
-	height: auto;
-	width: auto;
-	top: 60px;
-	bottom: 0;
-	right: 0;
-	margin: 8px 8px 8px 8px;
-	z-index: 10;
-	-webkit-transition: right 0.15s;
-}
-.pickerbar:hover {
-}
-
-div#window {
-	margin-top: 64px;
-	position: relative;
-	left: -100%;
-	margin-left: auto;
-	margin-right: auto;
-	-webkit-transition: left 0.15s ease;
-}
-
-.picker {
-	display: inline-block;
-	text-align: center;
-	overflow: hidden;
-	right: 0;
-	border-radius: 2px;
-	line-height: 0;
-	padding: 0;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
 }
 
 .barchild {
+	width: 52px;
 	cursor: default;
 	display: inline-block;
 	color: #aaa;
 	position: relative;
-	padding-left: 1.5%;
-	padding-right: 1.5%;
+	text-align: center;
 	top: 0px;
 	font-weight: bold;
 	height: 52px;
@@ -75,10 +47,55 @@ div#window {
 .barchild:active {
 	color: #998;
 }
+
+.barchild#reload {
+	font-size: 24px;
+	float: right;
+}
 .barchild#time {
 	font-size: 28px;
 	float: right;
-	color: #ccc;
+}
+
+.pickerbar {
+	display: block;
+	background-color: #111;
+	position: fixed;
+	overflow: hidden;
+	overflow-y: scroll;
+	height: auto;
+	width: auto;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	margin: 8px 8px 8px 8px;
+	z-index: 10;
+	-webkit-transition: right 0.15s;
+}
+.pickerbar:hover {
+}
+
+.view_container {
+	margin-top: 64px;
+	position: relative;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.map_viewer {
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+}
+
+.picker {
+	display: inline-block;
+	text-align: center;
+	overflow: hidden;
+	right: 0;
+	border-radius: 2px;
+	line-height: 0;
+	padding: 0;
 }
 
 .balloon {

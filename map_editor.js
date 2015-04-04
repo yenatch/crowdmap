@@ -28,23 +28,36 @@ Object.careful_update = Object.careful_update || function (object, properties) {
 	return object
 }
 
+var replaceChild = function (container, child) {
+	var maybe = container.children[child.id]
+	if (maybe !== undefined) {
+		if (maybe !== child) {
+			container.removeChild(maybe)
+			container.appendChild(child)
+		}
+	} else {
+		container.appendChild(child)
+	}
+}
+
 
 var root = '../pokecrystal/'
 
 var config = {
 
 	time: 'day',
+	default_map: 'OlivineCity',
 
-	blockdata_dir:     root + 'maps/',
-	tiles_dir:         root + 'gfx/tilesets/',
-	palette_dir:       root + 'tilesets/',
-	metatiles_dir:     root + 'tilesets/',
-	collision_dir:     root + 'tilesets/',
-	palmap_dir:        root + 'tilesets/',
-	asm_dir:           root + 'maps/',
-	ow_dir:            root + 'gfx/overworld/',
-	map_header_path:   root + 'maps/map_headers.asm',
-	map_header_2_path: root + 'maps/second_map_headers.asm',
+	blockdata_dir:      root + 'maps/',
+	tiles_dir:          root + 'gfx/tilesets/',
+	palette_dir:        root + 'tilesets/',
+	metatiles_dir:      root + 'tilesets/',
+	collision_dir:      root + 'tilesets/',
+	palmap_dir:         root + 'tilesets/',
+	asm_dir:            root + 'maps/',
+	ow_dir:             root + 'gfx/overworld/',
+	map_header_path:    root + 'maps/map_headers.asm',
+	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
 
 
@@ -83,10 +96,10 @@ function init() {
 	picker = Object.create(MapPicker)
 	painter = Object.create(Painter)
 
-	setup('GoldenrodCity')
+	setup(config.default_map)
 	.then(function () {
 
-		document.body.appendChild(view.canvas)
+		view.attach(document.body)
 		view.run()
 
 		picker.init(view)
@@ -134,19 +147,22 @@ function saveMap () {
 	print( 'save' )
 }
 
+function reloadMap (event) {
+	view.loadMap(view.current_map.name)
+}
 
 function toggleBrightness (event) {
 
 	var time = {
-		day: 'nite',
+		day:  'nite',
 		nite: 'morn',
 		morn: 'day',
 	}[config.time]
 
 	event.target.style.color = {
-		day: '#ccc',
+		day:  '#aaa',
 		nite: '#666',
-		morn: '#999',
+		morn: '#888',
 	}[time]
 
 	setBrightness(time)
@@ -185,7 +201,7 @@ var Bar = {
 	init: function () {
 		this.elem = this.createElement('div', {
 			id: 'bar',
-			classname: 'bar',
+			className: 'bar',
 		})
 
 		this.buttons = {}
@@ -216,10 +232,15 @@ var Bar = {
 		},
 
 		save: {
-			innerHTML: 'Save',
+			//innerHTML: '&#x1f4be;',
 			onclick: saveMap,
 		},
 		*/
+
+		reload: {
+			innerHTML: '↻',
+			onclick: reloadMap,
+		},
 
 		time: {
 			innerHTML: '☼',
@@ -428,15 +449,7 @@ var MapPicker = {
 
 	attach: function (container) {
 		container = container || document.body
-		var maybe = container.children[this.container.id]
-		if (maybe !== undefined) {
-			if (maybe !== this.canvas) {
-				container.removeChild(maybe)
-				container.appendChild(this.container)
-			}
-		} else {
-			container.appendChild(this.container)
-		}
+		replaceChild(container, this.container)
 	},
 
 	attachPickerClickEvents: function () {
@@ -597,7 +610,20 @@ var MapViewer = {
 		this.drawcanvas = document.createElement('canvas')
 		this.drawcontext = this.drawcanvas.getContext('2d')
 
+
+		this.container = createElement('div', {
+			id: 'view_container',
+			className: 'view_container',
+		})
+		this.container.appendChild(this.canvas)
+
+
 		this.redraw = true
+	},
+
+	attach: function (container) {
+		container = container || document.body
+		replaceChild(container, this.container)
 	},
 
 	attachMapClickEvents: function () {
@@ -800,7 +826,9 @@ var MapViewer = {
 		this.context.globalCompositeOperation = 'lighten'
 		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
 		this.context.fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
+		this.context.fillStyle = 'rgba(255, 170, 170, 20)'
 		this.context.fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
+		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
 
 		var connections = this.current_map.map_header_2.connections
 		for (var direction in connections) {
