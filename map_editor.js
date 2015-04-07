@@ -1,6 +1,10 @@
 var Promise = Promise || ES6Promise.Promise
 
 
+var isRightClick = function (event) {
+	return event.which == 3 || event.button == 2
+}
+
 var range = function (length) {
 	var list = []
 	for (var i = 0; i < length; i++) {
@@ -592,9 +596,12 @@ var Painter = {
 	run: function () {
 		this.viewer.canvas.addEventListener('mousemove', this.update.bind(this))
 		this.viewer.canvas.addEventListener('mousedown', this.update.bind(this))
+		this.viewer.canvas.addEventListener('contextmenu', function (event) {
+			event.preventDefault()
+		})
 	},
 
-	update: function () {
+	update: function (event) {
 		if (this.viewer.mousedown) {
 			var x = this.viewer.selection.x
 			var y = this.viewer.selection.y
@@ -602,7 +609,11 @@ var Painter = {
 			y = (y - (y % 32)) / 32
 			x -= this.viewer.origin.x
 			y -= this.viewer.origin.y
-			this.viewer.current_map.setBlock(x, y, this.viewer.paint_block)
+			if (isRightClick(event)) {
+				this.viewer.paint_block = this.viewer.getBlock(this.viewer.current_map, x, y)
+			} else {
+				this.viewer.current_map.setBlock(x, y, this.viewer.paint_block)
+			}
 		}
 	},
 
