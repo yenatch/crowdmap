@@ -478,6 +478,12 @@ var MapPicker = {
 		this.canvas.addEventListener('mousedown', function (event) {
 			event.preventDefault()
 		})
+		this.canvas.addEventListener('mousemove', function (event) {
+			self.getSelection(event)
+		})
+		this.canvas.addEventListener('mouseout', function (event) {
+			self.selection = undefined
+		})
 		this.canvas.addEventListener('click', function (event) {
 			self.getSelection(event)
 			var x = self.selection.x
