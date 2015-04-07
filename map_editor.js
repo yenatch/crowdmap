@@ -553,7 +553,7 @@ var MapPicker = {
 			x: x,
 			y: y,
 			block: block,
-			tileset: this.viewer.current_map.tileset,
+			tileset: this.tileset,
 			context: this.drawcontext,
 			tile_w: this.tile_w,
 			tile_h: this.tile_h,
