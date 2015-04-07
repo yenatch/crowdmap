@@ -107,6 +107,7 @@ function init() {
 		picker.run()
 
 		painter.init(view)
+		painter.run()
 
 	})
 }
@@ -560,9 +561,11 @@ var Painter = {
 
 	init: function (viewer) {
 		this.viewer = viewer
+	},
 
-		var self = this
-		setInterval(this.update.bind(this), 16)
+	run: function () {
+		this.viewer.canvas.addEventListener('mousemove', this.update.bind(this))
+		this.viewer.canvas.addEventListener('mousedown', this.update.bind(this))
 	},
 
 	update: function () {
