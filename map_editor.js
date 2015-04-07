@@ -912,7 +912,8 @@ var drawMetatile = function (props) {
 	*/
 	var block_w = props.tile_w * props.meta_w
 	var block_h = props.tile_h * props.meta_h
-	var metatile = props.tileset.metatiles[props.block]
+	var block = props.block < props.tileset.metatiles.length ? props.block : 0
+	var metatile = props.tileset.metatiles[block]
 	var row_index = 0
 	var tile_y = 0
 	for (var y = 0; y < props.meta_h; y++) {
