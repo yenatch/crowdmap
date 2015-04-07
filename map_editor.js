@@ -134,6 +134,26 @@ function loadConstants (path) {
 }
 
 
+function getMapNames () {
+	return request(config.map_header_path)
+	.then(readMapNames)
+}
+
+function readMapNames (text) {
+	var lines = text.split('\n')
+	var start = '\tmap_header '
+	lines = lines.filter(function (line) {
+		return line.substr(0, start.length) === start
+	})
+	var names = lines.map(function (line) {
+		return line.substr(start.length).split(',')[0]
+	})
+	names.sort()
+
+	return names
+}
+
+
 print = console.log.bind(console)
 
 function newMap () {
