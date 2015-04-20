@@ -698,6 +698,7 @@ var MapViewer = {
 			for (var direction in connections) {
 				var connection = connections[direction]
 				var info = connection.info
+				if (info)
 				if (x >= info.x1 && x < info.x2)
 				if (y >= info.y1 && y < info.y2) {
 					connect = connection
@@ -802,7 +803,7 @@ var MapViewer = {
 		for (var c in connections) {
 			var connection = connections[c]
 			var info = connection.info
-			if (info === undefined) continue
+			if (!info) continue
 
 			var strip_x = info.strip_x
 			var strip_y = info.strip_y
@@ -874,6 +875,7 @@ var MapViewer = {
 		for (var direction in connections) {
 			var connection = connections[direction]
 			var info = connection.info
+			if (!info) continue
 
 			var x1 = info.x1 * block_w
 			var x2 = info.x2 * block_w
