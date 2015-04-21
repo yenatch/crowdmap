@@ -113,6 +113,8 @@ function init() {
 		painter.init(view)
 		painter.run()
 
+		view.history.init(view)
+		view.commit()
 	})
 }
 
@@ -174,6 +176,9 @@ function saveMap () {
 
 function reloadMap (event) {
 	view.loadMap(view.current_map.name)
+	.then(function () {
+		view.commit()
+	})
 }
 
 function toggleBrightness (event) {
@@ -209,6 +214,15 @@ function setBrightness (time) {
 		picker.redraw = true
 	})
 }
+
+function undo (event) {
+	view.undo()
+}
+
+function redo (event) {
+	view.redo()
+}
+
 
 function createElement(type, properties) {
 	type = type || 'div'
@@ -270,6 +284,16 @@ var Bar = {
 		time: {
 			innerHTML: '☼',
 			onclick: toggleBrightness,
+		},
+
+		undo: {
+			innerHTML: 'undo',
+			onclick: undo,
+		},
+
+		redo: {
+			innerHTML: 'redo',
+			onclick: redo,
 		},
 
 	},
@@ -596,6 +620,7 @@ var Painter = {
 	run: function () {
 		this.viewer.canvas.addEventListener('mousemove', this.update.bind(this))
 		this.viewer.canvas.addEventListener('mousedown', this.update.bind(this))
+		this.viewer.canvas.addEventListener('mouseup', function () { this.viewer.commit() }.bind(this))
 		this.viewer.canvas.addEventListener('contextmenu', function (event) {
 			event.preventDefault()
 		})
@@ -610,11 +635,74 @@ var Painter = {
 			x -= this.viewer.origin.x
 			y -= this.viewer.origin.y
 			if (isRightClick(event)) {
-				this.viewer.paint_block = this.viewer.getBlock(this.viewer.current_map, x, y)
+				this.pick(this.viewer.getBlock(this.viewer.current_map, x, y))
 			} else {
-				this.viewer.current_map.setBlock(x, y, this.viewer.paint_block)
+				this.paint(x, y)
 			}
 		}
+	},
+
+	pick: function (block) {
+		this.viewer.paint_block = block
+	},
+
+	paint: function (x, y, block) {
+		if (typeof block === 'undefined') block = this.viewer.paint_block
+		this.viewer.current_map.setBlock(x, y, block)
+	},
+
+}
+
+var History = {
+	all: {},
+
+	init: function (viewer) {
+		this.viewer = viewer
+	},
+
+	add: function (name) {
+		if (typeof this.all[name] === 'undefined') {
+			this.all[name] = []
+			this.all[name].index = -1
+		}
+	},
+
+	get current () {
+		var name = this.viewer.current_map.name
+		var current = this.all[name]
+		return current
+	},
+
+	set current (value) {
+		var name = this.viewer.current_map.name
+		this.all[name] = value
+	},
+
+	redo: function () {
+		var min = Math.min
+		this.current.index = min(this.current.index + 1, this.current.length - 1)
+	},
+
+	undo: function () {
+		var max = Math.max
+		this.current.index = max(this.current.index - 1, 0)
+	},
+
+	push: function (value) {
+
+		// Don't be redundant
+		var state = this.current[this.current.index]
+		if (state) {
+			if (value.every(function (v, i) { return v == state[i] })) return
+		}
+
+		if (this.current.length > this.current.index + 1) {
+			var index = this.current.index
+			this.current = this.current.slice(0, index + 1)
+			this.current.index = index
+		}
+		this.current.push(value)
+		this.current.index += 1
 	},
 
 }
@@ -622,6 +710,21 @@ var Painter = {
 var MapViewer = {
 
 	world: World,
+
+	history: History,
+	commit: function () {
+		this.history.add(this.current_map.name)
+		this.history.push(this.current_map.blockdata.slice())
+		console.log(this.history.all)
+	},
+	undo: function () {
+		this.history.undo()
+		this.current_map.blockdata = this.history.current[this.history.current.index].slice()
+	},
+	redo: function () {
+		this.history.redo()
+		this.current_map.blockdata = this.history.current[this.history.current.index].slice()
+	},
 
 	init: function () {
 		var self = this

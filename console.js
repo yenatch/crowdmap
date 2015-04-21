@@ -7,6 +7,7 @@ function fill(block, map) {
 	for (var i = 0; i < map_length; i++) {
 		map.blockdata.push(block)
 	}
+	view.commit()
 }
 
 function tileset(id, map) {
@@ -58,6 +59,8 @@ function resize(width, height, filler, map) {
 	} else if (last_h > height) {
 		map.blockdata = map.blockdata.slice(0, width * height)
 	}
+
+	view.commit()
 
 }
 
