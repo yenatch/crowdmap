@@ -13,19 +13,13 @@ var range = function (length) {
 	return list
 }
 
-Object.update = Object.update || function (object, properties) {
-	for (var i in properties) {
-		object[i] = properties[i]
+Object.update = Object.update || function (object, properties, options) {
+	options = options || {
+		careful: false, // Useful for updating trapped properties only when they're actually different.
 	}
-	return object
-}
-
-/* Useful for updating trapped properties only when they're actually different. */
-Object.careful_update = Object.careful_update || function (object, properties) {
 	for (var i in properties) {
 		var prop = properties[i]
-		if (object[i] !== prop) {
-			//console.log('touching', object, i, prop)
+		if (!options.careful || object[i] !== prop) {
 			object[i] = prop
 		}
 	}
@@ -546,8 +540,8 @@ var MapPicker = {
 			height: this.height * this.meta_h * this.tile_h,
 		}
 
-		Object.careful_update(this.canvas, dimensions)
-		Object.careful_update(this.drawcanvas, dimensions)
+		Object.update(this.canvas, dimensions, { careful: true })
+		Object.update(this.drawcanvas, dimensions, { careful: true })
 
 		if (this.tileset !== this.viewer.current_map.tileset) {
 			this.tileset = this.viewer.current_map.tileset
@@ -876,8 +870,8 @@ var MapViewer = {
 			height: (6 + map.height) * this.meta_h * this.tile_h,
 		}
 
-		Object.careful_update(this.canvas, dimensions)
-		Object.careful_update(this.drawcanvas, dimensions)
+		Object.update(this.canvas, dimensions, { careful: true })
+		Object.update(this.drawcanvas, dimensions, { careful: true })
 
 		this.drawMap(map)
 		this.drawMapBorder(map)
