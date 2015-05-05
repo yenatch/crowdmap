@@ -156,15 +156,69 @@ function readMapNames (text) {
 
 print = console.log.bind(console)
 
-function newMap () {
+function newMap (event) {
 	print( 'new' )
 }
 
-function openMap () {
-	print( 'open' )
+function openMap (event) {
+	var open_id = 'tooltip_open'
+	var existing = document.getElementById(open_id)
+	if (existing) {
+		document.body.removeChild(existing)
+	} else {
+		var tooltip_div = createElement('div', {id: open_id, className: 'tooltip'})
+		tooltip_div.style.visibility = 'hidden'
+
+		var style = window.getComputedStyle(event.target)
+		var left = [
+			style.borderWidth,
+			style.marginLeft, style.marginRight,
+			style.paddingLeft, style.paddingRight,
+			style.width
+		].reduce(function (sum, x) {
+			sum = sum || 0 // firefox
+			return parseInt(sum)+ parseInt(x)
+		})
+		tooltip_div.style.left = left + 'px'
+
+		document.body.appendChild(tooltip_div)
+
+		var list_div = createElement('div', {className: 'map_list'})
+		tooltip_div.appendChild(list_div)
+
+		getMapNames()
+		.then(function (names) {
+			tooltip_div.style.visibility = ''
+
+			var selected
+			var select = function (div) {
+				selected = div
+				div.className += ' selected'
+			}
+			var deselect = function (div) {
+				selected = undefined
+				div.className = div.className.replace(/\bselected\b/g, '')
+			}
+
+			// populate the list with names
+			names.map(function (name) {
+				var name_div = createElement('div', {className: 'map_name'})
+				name_div.innerHTML = name
+				name_div.onclick = function (event_) {
+					if (selected) deselect(selected)
+					select(name_div)
+					view.loadMap(name)
+				}
+				if (name === view.current_map.name) {
+					select(name_div)
+				}
+				list_div.appendChild(name_div)
+			})
+		})
+	}
 }
 
-function saveMap () {
+function saveMap (event) {
 	print( 'save' )
 }
 
@@ -183,16 +237,24 @@ function toggleBrightness (event) {
 		morn: 'day',
 	}[config.time]
 
-	event.target.style.color = {
-		day:  '#aaa',
-		nite: '#666',
-		morn: '#888',
-	}[time]
-
-	setBrightness(time)
+	setBrightness(time, event.target)
 }
 
-function setBrightness (time) {
+function setBrightness (time, element) {
+
+	if (element) {
+		element.style.color = {
+			day:  '#aaa',
+			nite: '#666',
+			morn: '#888',
+		}[time]
+
+		element.innerHTML = {
+			day:  '☀',
+			nite: '🌙',
+			morn: '☀',
+		}[time]
+	}
 
 	config.time = time
 
@@ -258,35 +320,35 @@ var Toolbar = {
 			innerHTML: 'New',
 			onclick: newMap,
 		},
+		*/
 
 		open: {
-			innerHTML: 'Open',
+			innerHTML: '☰',
 			onclick: openMap,
 		},
 
 		save: {
-			//innerHTML: '&#x1f4be;',
+			innerHTML: '💾', //&#x1f4be;
 			onclick: saveMap,
 		},
-		*/
 
 		reload: {
-			innerHTML: '↻',
+			innerHTML: '⟳',
 			onclick: reloadMap,
 		},
 
 		time: {
-			innerHTML: '☼',
+			innerHTML: '☀',
 			onclick: toggleBrightness,
 		},
 
 		undo: {
-			innerHTML: 'undo',
+			innerHTML: '↺',
 			onclick: undo,
 		},
 
 		redo: {
-			innerHTML: 'redo',
+			innerHTML: '↻',
 			onclick: redo,
 		},
 
