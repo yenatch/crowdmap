@@ -6,7 +6,7 @@ html {
 	min-height: 100%;
 }
 
-.bar {
+.toolbar {
 	overflow: hidden;
 	background-color: #111;
 	background: -webkit-linear-gradient(bottom, #111, #333);
@@ -25,34 +25,34 @@ html {
 	-ms-user-select: none;
 }
 
-.barchild {
-	width: 52px;
+.tool {
+	margin: 4px;
+	width: 44px;
+	height: 44px;
+	line-height: 44px;
 	cursor: default;
 	display: inline-block;
 	color: #aaa;
 	position: relative;
 	text-align: center;
 	top: 0px;
-	font-weight: bold;
-	height: 52px;
-	line-height: 52px;
-	font-size: 16px;
+	font-size: 24px;
 	border-radius: 2px;
 	-webkit-transition: background-color 0.1s;
 }
-.barchild:hover {
+.tool:hover {
 	color: #ccb;
-	background-color: #333;
+	background-color: #222;
 }
-.barchild:active {
+.tool:active {
 	color: #998;
 }
 
-.barchild#reload {
+.tool#reload {
 	font-size: 24px;
 	float: right;
 }
-.barchild#time {
+.tool#time {
 	font-size: 28px;
 	float: right;
 }
@@ -88,13 +88,8 @@ html {
 }
 
 .picker {
-	display: inline-block;
-	text-align: center;
-	overflow: hidden;
-	right: 0;
+	display: block;
 	border-radius: 2px;
-	line-height: 0;
-	padding: 0;
 }
 
 .balloon {

@@ -85,7 +85,7 @@ function main() {
 
 function init() {
 
-	ippon_manzoku = Object.create(Bar)
+	ippon_manzoku = Object.create(Toolbar)
 	ippon_manzoku.init()
 
 	view = Object.create(MapViewer)
@@ -229,19 +229,19 @@ function createElement(type, properties) {
 }
 
 
-var Bar = {
+var Toolbar = {
 
 	init: function () {
 		this.elem = this.createElement('div', {
-			id: 'bar',
-			className: 'bar',
+			id: 'toolbar',
+			className: 'toolbar',
 		})
 
 		this.buttons = {}
 		for (var k in this.button_protos) {
 			var button = this.createElement('div', this.button_protos[k])
 			button.id = k
-			button.className = 'barchild'
+			button.className = 'tool'
 			this.buttons[k] = button
 			this.elem.appendChild(button)
 		}
