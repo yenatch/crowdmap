@@ -1269,7 +1269,7 @@ var Map = {
 
 	loadBlockdata: function () {
 		var self = this
-		request(this.blockdata_path, true)
+		request(this.blockdata_path, { binary: true })
 		.then(function (blockdata) {
 			self.blockdata = blockdata
 		})
@@ -1333,8 +1333,8 @@ var Tileset = {
 		this.id = id
 
 		return Promise.all([
-			request(this.metatile_path, true),
-			request(this.palmap_path, true),
+			request(this.metatile_path, { binary: true }),
+			request(this.palmap_path, { binary: true }),
 			request(this.palette_path),
 			new Promise( function (resolve, reject) {
 				self.image = new Image()
@@ -1411,22 +1411,29 @@ function canvas(properties) {
 }
 
 
-function request(url, binary) {
+function request(url, options) {
 	return new Promise( function (resolve, reject) {
-		ajax(url, resolve, binary)
+		ajax(url, resolve, options)
 	})
 }
 
-function ajax(url, cb, binary) {
+function ajax(url, cb, options) {
+	options = options || {}
+	options = Object.update({
+		binary: false,
+		method: 'GET',
+		data: '',
+	}, options)
+
 	var xhr = new XMLHttpRequest()
-	xhr.open('GET', url, !!cb)
-	if (binary) {
+	xhr.open(options.method, url, !!cb)
+	if (options.binary) {
 		xhr.overrideMimeType('text/plain; charset=x-user-defined');
 	}
 	if (cb) {
 		xhr.onload = function () {
 			var response = xhr.responseText
-			if (binary) {
+			if (options.binary) {
 				data = []
 				for (var i = 0; i < response.length; i++) {
 					data.push(response.charCodeAt(i) & 0xff)
@@ -1437,7 +1444,11 @@ function ajax(url, cb, binary) {
 			}
 		}
 	}
-	xhr.send()
+	if (options.method.toUpperCase() === 'POST') {
+		xhr.send(options.data)
+	} else {
+		xhr.send()
+	}
 }
 
 
