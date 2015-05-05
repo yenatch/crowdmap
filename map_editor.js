@@ -771,7 +771,6 @@ var MapViewer = {
 	commit: function () {
 		this.history.add(this.current_map.name)
 		this.history.push(this.current_map.blockdata.slice())
-		console.log(this.history.all)
 	},
 	undo: function () {
 		this.history.undo()
