@@ -1114,6 +1114,7 @@ var drawMetatile = function (props) {
 	var block_h = props.tile_h * props.meta_h
 	var block = props.block < props.tileset.metatiles.length ? props.block : 0
 	var metatile = props.tileset.metatiles[block]
+	if (!metatile) return false
 	var row_index = 0
 	var tile_y = 0
 	for (var y = 0; y < props.meta_h; y++) {
@@ -1131,6 +1132,7 @@ var drawMetatile = function (props) {
 		row_index += props.meta_w
 		tile_y += props.tile_h
 	}
+	return true
 }
 
 var Map = {
@@ -1300,6 +1302,7 @@ var Map = {
 	},
 
 	getBlock: function (x, y) {
+		if (!this.blockdata) return -1
 		return this.blockdata[x + y * this.width]
 	},
 
