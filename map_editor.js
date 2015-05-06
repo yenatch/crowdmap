@@ -219,7 +219,17 @@ function openMap (event) {
 }
 
 function saveMap (event) {
-	print( 'save' )
+	var data = new FormData()
+	data.append('json', JSON.stringify({
+		data: view.current_map.blockdata,
+	}))
+
+	var filename = view.current_map.blockdata_path
+	request(filename, {
+		method: 'POST',
+		data: data,
+	})
+	print( 'saved', filename )
 }
 
 function reloadMap (event) {
@@ -1285,7 +1295,7 @@ var Map = {
 
 	loadBlockdata: function () {
 		var self = this
-		request(this.blockdata_path, { binary: true })
+		request(this.blockdata_path, { binary: true, cache: false })
 		.then(function (blockdata) {
 			self.blockdata = blockdata
 		})
@@ -1439,8 +1449,13 @@ function ajax(url, cb, options) {
 	options = Object.update({
 		binary: false,
 		method: 'GET',
-		data: '',
+		data: undefined,
+		cache: true,
 	}, options)
+
+	if (options.cache === false) {
+		url += ((/\?/).test(url) ? "&" : "?") + (new Date()).getTime()
+	}
 
 	var xhr = new XMLHttpRequest()
 	xhr.open(options.method, url, !!cb)
@@ -1461,11 +1476,7 @@ function ajax(url, cb, options) {
 			}
 		}
 	}
-	if (options.method.toUpperCase() === 'POST') {
-		xhr.send(options.data)
-	} else {
-		xhr.send()
-	}
+	xhr.send(options.data)
 }
 
 
