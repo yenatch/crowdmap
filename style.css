@@ -88,20 +88,23 @@ html {
 	background-color: #444;
 }
 
-.pickerbar {
+.picker-wrapper {
+	transition: right 0.15s;
 	display: block;
-	background-color: #111;
 	position: fixed;
+	top: 0;
+	right: 0;
+	height: 100%;
+	padding: 8px;
+	box-sizing: padding-box;
+}
+
+.pickerbar {
+	background-color: #111;
 	overflow: hidden;
 	overflow-y: scroll;
-	height: auto;
-	width: auto;
-	top: 0;
-	bottom: 0;
-	right: 0;
-	margin: 8px 8px 8px 8px;
+	max-height: 100%;
 	z-index: 10;
-	-webkit-transition: right 0.15s;
 }
 .pickerbar:hover {
 }

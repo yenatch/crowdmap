@@ -551,17 +551,22 @@ var MapPicker = {
 
 		this.attachPickerClickEvents()
 
+		this.wrapper = createElement('div', {
+			id: 'picker-wrapper',
+			className: 'picker-wrapper',
+		})
 		this.container = createElement('div', {
 			id: 'pickerbar',
 			className: 'pickerbar',
 		})
 		this.container.appendChild(this.canvas)
+		this.wrapper.appendChild(this.container)
 
 	},
 
 	attach: function (container) {
 		container = container || document.body
-		replaceChild(container, this.container)
+		replaceChild(container, this.wrapper)
 	},
 
 	attachPickerClickEvents: function () {
