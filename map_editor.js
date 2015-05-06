@@ -515,16 +515,23 @@ var getEventCoord = function (event) {
 
 var MapPicker = {
 
+	get size () {
+		return this.tileset.metatiles.length
+	},
+	get blockdata () {
+		return range(this.size)
+	},
+	get height () {
+		return Math.ceil(this.size / this.width)
+	},
+
 	init: function (viewer) {
 		var self = this
 
 		this.viewer = viewer
-		this.tileset = viewer.tileset // for bookkeeping
+		this.tileset = viewer.current_map.tileset
 
-		this.size = 128
 		this.width = 4
-		this.blockdata = range(this.size)
-		this.height = this.size / this.width
 
 		this.meta_w = 4
 		this.meta_h = 4
@@ -607,6 +614,10 @@ var MapPicker = {
 
 		if (this.tileset !== this.viewer.current_map.tileset) {
 			this.tileset = this.viewer.current_map.tileset
+			this.redraw = true
+		}
+
+		if (this.tileset.redraw) {
 			this.redraw = true
 		}
 
@@ -1347,6 +1358,7 @@ var Tileset = {
 			self.palmap = self.serializePalmap(values.shift())
 			self.palette = self.readPalette(values.shift())
 			self.getColorizedTiles()
+			self.redraw = true
 		})
 	},
 
