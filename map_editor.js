@@ -219,16 +219,19 @@ function openMap (event) {
 }
 
 function saveMap (event) {
+	var filename = view.current_map.blockdata_path
+
 	var data = new FormData()
 	data.append('json', JSON.stringify({
 		data: view.current_map.blockdata,
+		filename: filename,
 	}))
 
-	var filename = view.current_map.blockdata_path
-	request(filename, {
+	request('save.py', {
 		method: 'POST',
 		data: data,
 	})
+
 	print( 'saved', filename )
 }
 
