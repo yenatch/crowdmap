@@ -2,27 +2,21 @@
 
 import SimpleHTTPServer
 import SocketServer
-import sys
 import json
 import os
 import imp
+import argparse
 
-try:
-	PORT = int(sys.argv[1])
-except:
-	PORT = 8000
-
-def import_module(path):
-	# return __import__(path)
-	module_name = os.path.splitext(os.path.basename(path))[0]
+def import_module(module_name):
+	path = os.path.join(os.path.dirname(__file__), module_name + '.py')
 	return imp.load_source(module_name, path)
-
 
 class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 	def do_POST(self):
 		"""
-		Receives json and passes it into an entry point of some module.
+		Receives json and runs a command if applicable.
+		Ignores the path.
 		"""
 		length = int(self.headers.getheader('content-length'))
 		data = self.rfile.read(length)
@@ -34,23 +28,23 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 		parsed_data = json.loads(data)
 
-		path = self.translate_path(self.path)
-		module = import_module(path)
-		module.main(parsed_data)
+		commands = import_module('commands')
+		commands.main(parsed_data)
 
 		self.wfile.write('ok')
-		print '"POST {}"'.format(path)
+		print '"POST {}"'.format(self.path)
 
 def main():
-	pass # nice try
-
-def run():
+	ap = argparse.ArgumentParser()
+	ap.add_argument('port', nargs='?', default='8000')
+	args = ap.parse_args()
+	port = int(args.port)
 	try:
-		httpd = SocketServer.TCPServer(("", PORT), Handler)
-		print "serving at port", PORT
+		httpd = SocketServer.TCPServer(("", port), Handler)
+		print "serving at port", port
 		httpd.serve_forever()
 	except KeyboardInterrupt:
-		print 'port', PORT, 'closed'
+		print 'port', port, 'closed'
 
 if __name__ == '__main__':
-	run()
+	main()

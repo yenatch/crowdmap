@@ -225,14 +225,16 @@ function saveMap (event) {
 	data.append('json', JSON.stringify({
 		data: view.current_map.blockdata,
 		filename: filename,
+		command: 'save',
 	}))
 
-	request('save.py', {
+	request('', {
 		method: 'POST',
 		data: data,
 	})
-
-	print( 'saved', filename )
+	.then(function () {
+		print( 'saved', filename )
+	})
 }
 
 function reloadMap (event) {
