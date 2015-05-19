@@ -1,5 +1,14 @@
 var Promise = Promise || ES6Promise.Promise
 
+String.prototype.contains = String.prototype.contains || function (term) {
+	return this.indexOf(term) !== -1
+}
+
+var addQuery = function (url, query) {
+	url += url.contains('?') ? '&' : '?'
+	url += query
+	return url
+}
 
 var isRightClick = function (event) {
 	return event.which == 3 || event.button == 2
@@ -1455,11 +1464,11 @@ function ajax(url, cb, options) {
 		binary: false,
 		method: 'GET',
 		data: undefined,
-		cache: true,
+		cache: false,
 	}, options)
 
-	if (options.cache === false) {
-		url += ((/\?/).test(url) ? "&" : "?") + (new Date()).getTime()
+	if (options.cache === false && options.method !== 'POST') {
+		url = addQuery(url, Date.now())
 	}
 
 	var xhr = new XMLHttpRequest()
