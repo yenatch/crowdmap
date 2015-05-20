@@ -571,6 +571,7 @@ var MapPicker = {
 		this.drawcanvas = createElement('canvas')
 		this.drawcontext = this.drawcanvas.getContext('2d')
 
+		this.scale = 1
 		this.redraw = true
 
 		this.attachPickerClickEvents()
@@ -638,8 +639,11 @@ var MapPicker = {
 			height: this.height * this.meta_h * this.tile_h,
 		}
 
-		Object.update(this.canvas, dimensions, { careful: true })
 		Object.update(this.drawcanvas, dimensions, { careful: true })
+
+		dimensions.width  *= this.scale
+		dimensions.height *= this.scale
+		Object.update(this.canvas, dimensions, { careful: true })
 
 		if (this.tileset !== this.viewer.current_map.tileset) {
 			this.tileset = this.viewer.current_map.tileset
@@ -689,6 +693,15 @@ var MapPicker = {
 	drawSelection: function () {
 		if (!this.selection) return
 
+		var self = this
+		var fillRect = function (x1, y1, x2, y2) {
+			x1 *= self.scale
+			y1 *= self.scale
+			x2 *= self.scale
+			y2 *= self.scale
+			self.context.fillRect(x1, y1, x2, y2)
+		}
+
 		var x = this.selection.x
 		var y = this.selection.y
 
@@ -700,9 +713,14 @@ var MapPicker = {
 		this.context.save()
 		this.context.globalCompositeOperation = 'lighten'
 		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
-		this.context.fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
+		var x1 = x - x % block_w
+		var y1 = y - y % block_h
+		var x2 = block_w
+		var y2 = block_h
+		fillRect(x1, y1, x2, y2)
 		//this.context.fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
 		this.context.restore()
+
 	},
 
 }
@@ -855,7 +873,7 @@ var MapViewer = {
 		})
 		this.container.appendChild(this.canvas)
 
-
+		this.scale = 1
 		this.redraw = true
 	},
 
@@ -971,8 +989,11 @@ var MapViewer = {
 			height: (6 + map.height) * this.meta_h * this.tile_h,
 		}
 
-		Object.update(this.canvas, dimensions, { careful: true })
 		Object.update(this.drawcanvas, dimensions, { careful: true })
+
+		dimensions.width  *= this.scale
+		dimensions.height *= this.scale
+		Object.update(this.canvas, dimensions, { careful: true })
 
 		this.drawMap(map)
 		this.drawMapBorder(map)
@@ -1053,6 +1074,15 @@ var MapViewer = {
 			return
 		}
 
+		var self = this
+		var fillRect = function (x1, y1, x2, y2) {
+			x1 *= self.scale
+			y1 *= self.scale
+			x2 *= self.scale
+			y2 *= self.scale
+			self.context.fillRect(x1, y1, x2, y2)
+		}
+
 		var x = this.selection.x
 		var y = this.selection.y
 
@@ -1064,9 +1094,9 @@ var MapViewer = {
 		this.context.save()
 		this.context.globalCompositeOperation = 'lighten'
 		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
-		this.context.fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
+		fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
 		this.context.fillStyle = 'rgba(255, 170, 170, 20)'
-		this.context.fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
+		fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
 		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
 
 		var connections = this.current_map.map_header_2.connections
@@ -1081,7 +1111,7 @@ var MapViewer = {
 			var y2 = info.y2 * block_h
 			if (x >= x1 && x < x2)
 			if (y >= y1 && y < y2) {
-				this.context.fillRect(x1, y1, x2-x1, y2-y1)
+				fillRect(x1, y1, x2-x1, y2-y1)
 			}
 		}
 
