@@ -694,12 +694,12 @@ var MapPicker = {
 		if (!this.selection) return
 
 		var self = this
-		var fillRect = function (x1, y1, x2, y2) {
-			x1 *= self.scale
-			y1 *= self.scale
-			x2 *= self.scale
-			y2 *= self.scale
-			self.context.fillRect(x1, y1, x2, y2)
+		var fillRect = function (x, y, w, h) {
+			x *= self.scale
+			y *= self.scale
+			w *= self.scale
+			h *= self.scale
+			self.context.fillRect(x, y, w, h)
 		}
 
 		var x = this.selection.x
@@ -713,11 +713,11 @@ var MapPicker = {
 		this.context.save()
 		this.context.globalCompositeOperation = 'lighten'
 		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
-		var x1 = x - x % block_w
-		var y1 = y - y % block_h
-		var x2 = block_w
-		var y2 = block_h
-		fillRect(x1, y1, x2, y2)
+		x = x - x % block_w
+		y = y - y % block_h
+		var w = block_w
+		var h = block_h
+		fillRect(x, y, w, h)
 		//this.context.fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
 		this.context.restore()
 
@@ -1075,12 +1075,12 @@ var MapViewer = {
 		}
 
 		var self = this
-		var fillRect = function (x1, y1, x2, y2) {
-			x1 *= self.scale
-			y1 *= self.scale
-			x2 *= self.scale
-			y2 *= self.scale
-			self.context.fillRect(x1, y1, x2, y2)
+		var fillRect = function (x, y, w, h) {
+			x *= self.scale
+			y *= self.scale
+			w *= self.scale
+			h *= self.scale
+			self.context.fillRect(x, y, w, h)
 		}
 
 		var x = this.selection.x
