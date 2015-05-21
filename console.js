@@ -24,7 +24,12 @@ function resize(width, height, filler, map) {
 	// Blockdata should probably be a 2d array so this function doesn't have to exist.
 
 	map = map || view.current_map
-	filler = filler || 1
+	if (typeof filler === 'undefined') {
+		filler = view.paint_block
+		if (typeof filler === 'undefined') {
+			filler = view.current_map.map_header_2.border_block
+		}
+	}
 
 	var last_w = map.width
 	var last_h = map.height
@@ -35,9 +40,9 @@ function resize(width, height, filler, map) {
 
 	if (last_w < width) {
 		var blockdata = []
-		for (var y = 0; y < last_h; y++) {
+		for (var y = 0; y < Math.min(last_h, height); y++) {
 			var start = y * last_w
-			blockdata.concat(map.blockdata.slice(start, start + last_w))
+			blockdata = blockdata.concat(map.blockdata.slice(start, start + last_w))
 			for (var x = last_w; x < width; x++) {
 				blockdata.push(filler)
 			}
@@ -45,9 +50,9 @@ function resize(width, height, filler, map) {
 		map.blockdata = blockdata
 	} else if (last_w > width) {
 		var blockdata = []
-		for (var y = 0; y < last_h; y++) {
+		for (var y = 0; y < Math.min(last_h, height); y++) {
 			var start = y * last_w
-			blockdata.concat(map.blockdata.slice(start, start + width))
+			blockdata = blockdata.concat(map.blockdata.slice(start, start + width))
 		}
 		map.blockdata = blockdata
 	}
@@ -61,6 +66,7 @@ function resize(width, height, filler, map) {
 	}
 
 	view.commit()
+	view.redraw = true
 
 }
 
