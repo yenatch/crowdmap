@@ -143,6 +143,23 @@ function loadConstants (path) {
 	})
 }
 
+function getMapGroupNames () {
+	return request(config.map_header_path)
+	.then(readMapGroupNames)
+}
+
+function readMapGroupNames (text) {
+	var lines = text.split('\n')
+	var start = '\tdw '
+	lines = lines.filter(function (line) {
+		return line.substr(0, start.length) === start
+	})
+	var names = lines.map(function (line) {
+		return line.substr(start.length).split(',')[0]
+	})
+
+	return names
+}
 
 function getMapNames () {
 	return request(config.map_header_path)
@@ -166,40 +183,128 @@ function readMapNames (text) {
 
 print = console.log.bind(console)
 
+function clearDialogs () {
+	var dialogs = document.getElementsByClassName('dialog')
+	Array.prototype.map.call(dialogs, function (elem) {
+		elem.parentElement.removeChild(elem)
+	})
+}
+
+function newDialog (parent, id) {
+	var div = createElement('div', {id: id, className: 'dialog'})
+
+	var style = window.getComputedStyle(parent)
+	var left = [
+		style.borderWidth,
+		style.marginLeft, style.marginRight,
+		style.paddingLeft, style.paddingRight,
+		style.width
+	].reduce(function (sum, x) {
+		sum = sum || 0 // firefox
+		return parseInt(sum)+ parseInt(x)
+	})
+	div.style.left = left + 'px'
+
+	return div
+}
+
 function newMap (event) {
-	print( 'new' )
+	var new_id = 'dialog_new'
+	var existing = document.getElementById(new_id)
+
+	clearDialogs()
+
+	if (existing) return
+
+	var dialog = newDialog(event.target, new_id)
+	document.body.appendChild(dialog)
+	var content = createElement('div', {className: 'map_attributes'})
+
+	var div = createElement('div', {className: 'map_header_item'})
+	div.appendChild(createElement('div', {innerHTML: 'label', className: 'map_header_key'}))
+	var label_input = createElement('input', {className: 'map_header_param'})
+	div.appendChild(label_input)
+	content.appendChild(div)
+
+	var div = createElement('div', {className: 'map_header_item'})
+	div.appendChild(createElement('div', {innerHTML: 'map group', className: 'map_header_key'}))
+	var group_list = createElement('select', {className: 'map_header_param'})
+	getMapGroupNames().then(function (names) {
+		group_list.innerHTML = ''
+		names.map(function (name) {
+			group_list.appendChild(createElement('option', {value: name, innerHTML: name}))
+		})
+		group_list.appendChild(createElement('option', {value: '__new__', innerHTML: 'Add a new group'}))
+	})
+	div.appendChild(group_list)
+	content.appendChild(div)
+
+	var button = createElement('button', {innerHTML: 'yep do it', className: 'map_header_confirm'})
+	button.onclick = function (event) {
+		var label = label_input.value
+		if (!label) return
+		var group = group_list.value
+		send_command({
+			command: 'add_map',
+			label: label,
+			group: group,
+			width: 20,
+			height: 20,
+			header: config.default_map_header,
+			header_2: config.default_map_header_2,
+		})
+		.then(function () {
+			console.log('added ' + label + ' in group ' + group)
+			clearDialogs()
+			loadMap(label)
+		})
+	}
+
+	content.appendChild(button)
+
+	dialog.appendChild(content)
+}
+
+function editMapHeader (event) {
+	var edit_id = 'dialog_edit'
+	var existing = document.getElementById(edit_id)
+
+	clearDialogs()
+
+	if (existing) return
+
+	var dialog = newDialog(event.target, edit_id)
+	document.body.appendChild(dialog)
+	var content = createElement('div', {className: 'map_attributes'})
+
+	var header = view.current_map.map_header || Object.create(config.default_map_header)
+	for (var key in header) {
+		var value = header[key]
+		var div = createElement('div', {className: 'map_header_item'})
+		div.appendChild(createElement('div', {innerHTML: key, className: 'map_header_key'}))
+		div.appendChild(createElement('input', {name: key, value: value, className: 'map_header_param'}))
+		content.appendChild(div)
+	}
+	dialog.appendChild(content)
 }
 
 function openMap (event) {
-	var open_id = 'tooltip_open'
+	var open_id = 'dialog_open'
 	var existing = document.getElementById(open_id)
-	if (existing) {
-		document.body.removeChild(existing)
-	} else {
-		var tooltip_div = createElement('div', {id: open_id, className: 'tooltip'})
-		tooltip_div.style.visibility = 'hidden'
 
-		var style = window.getComputedStyle(event.target)
-		var left = [
-			style.borderWidth,
-			style.marginLeft, style.marginRight,
-			style.paddingLeft, style.paddingRight,
-			style.width
-		].reduce(function (sum, x) {
-			sum = sum || 0 // firefox
-			return parseInt(sum)+ parseInt(x)
-		})
-		tooltip_div.style.left = left + 'px'
+	clearDialogs()
 
-		document.body.appendChild(tooltip_div)
+	if (!existing) {
 
-		var list_div = createElement('div', {className: 'map_list'})
-		tooltip_div.appendChild(list_div)
+		var dialog = newDialog(event.target, open_id)
+
+		document.body.appendChild(dialog)
+
+		var list = createElement('div', {className: 'map_list'})
+		dialog.appendChild(list)
 
 		getMapNames()
 		.then(function (names) {
-			tooltip_div.style.visibility = ''
-
 			var selected
 			var select = function (div) {
 				selected = div
@@ -207,7 +312,7 @@ function openMap (event) {
 			}
 			var deselect = function (div) {
 				selected = undefined
-				div.className = div.className.replace(/\bselected\b/g, '')
+				if (div) div.className = div.className.replace(/\bselected\b/g, '')
 			}
 
 			// populate the list with names
@@ -215,32 +320,38 @@ function openMap (event) {
 				var name_div = createElement('div', {className: 'map_name'})
 				name_div.innerHTML = name
 				name_div.onclick = function (event_) {
-					if (selected) deselect(selected)
+					deselect(selected)
 					select(name_div)
 					view.loadMap(name)
 				}
-				if (name === view.current_map.name) {
-					select(name_div)
+				if (view && view.current_map) {
+					if (name === view.current_map.name) {
+						select(name_div)
+					}
 				}
-				list_div.appendChild(name_div)
+				list.appendChild(name_div)
 			})
 		})
 	}
 }
 
+function send_command(content) {
+	var data = new FormData()
+	data.append('json', JSON.stringify(content))
+
+	return request('', {
+		method: 'POST',
+		data: data,
+	})
+}
+
 function saveMap (event) {
 	var filename = view.current_map.blockdata_path
 
-	var data = new FormData()
-	data.append('json', JSON.stringify({
-		data: view.current_map.blockdata,
-		filename: filename,
+	send_command({
 		command: 'save',
-	}))
-
-	request('', {
-		method: 'POST',
-		data: data,
+		filename: filename,
+		data: view.current_map.blockdata,
 	})
 	.then(function () {
 		print( 'saved', filename )
@@ -340,12 +451,15 @@ var Toolbar = {
 
 	button_protos: {
 
-		/*
 		new: {
-			innerHTML: 'New',
+			innerHTML: '+',
 			onclick: newMap,
 		},
-		*/
+
+		edit: {
+			innerHTML: '...',
+			onclick: editMapHeader,
+		},
 
 		open: {
 			innerHTML: '☰',
@@ -867,12 +981,13 @@ var MapViewer = {
 		this.drawcanvas = document.createElement('canvas')
 		this.drawcontext = this.drawcanvas.getContext('2d')
 
-
+		this.wrapper = createElement('div', { className: 'view-wrapper' })
 		this.container = createElement('div', {
 			id: 'view_container',
 			className: 'view_container',
 		})
 		this.container.appendChild(this.canvas)
+		this.wrapper.appendChild(this.container)
 
 		this.scale = 1
 		this.redraw = true
@@ -880,7 +995,7 @@ var MapViewer = {
 
 	attach: function (container) {
 		container = container || document.body
-		replaceChild(container, this.container)
+		replaceChild(container, this.wrapper)
 	},
 
 	attachMapClickEvents: function () {

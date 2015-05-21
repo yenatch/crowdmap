@@ -6,6 +6,10 @@ html {
 	min-height: 100%;
 }
 
+* {
+	font-family: Segoe UI Symbol;
+}
+
 .toolbar {
 	overflow: hidden;
 	background-color: #111;
@@ -16,7 +20,7 @@ html {
 	left: 0px;
 	width: 52px;
 	height: 100%;
-	z-index: 10;
+	z-index: 30;
 	user-select: none;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -57,16 +61,39 @@ html {
 	float: right;
 }
 
-.tooltip {
+.dialog {
 	position: fixed;
 	top: 0;
-	min-width: 100px;
 	max-height: 100%;
-	overflow-y: scroll;
 	background-color: #222;
+	transition: width 0.15s;
+	-webkit-transition: width 0.15s;
+	z-index: 20;
+}
+.dialog:not(#dialog_open) {
+	padding: 10px;
+}
+.map_header_item {
+	margin: 8px;
+}
+.map_header_key {
+	display: inline-block;
+	padding: 2px 8px 2px 2px;
+}
+.map_header_param {
+	display: inline-block;
+	float: right;
+}
+.map_header_confirm {
+	display: inline-block;
+}
+.dialog#dialog_open {
+	overflow-y: scroll;
+	min-height: 100%;
+	min-width: 300px;
 }
 .map_list {
-	margin: 10px;
+	margin: 18px;
 }
 .map_name {
 	padding: 1px 4px;
@@ -86,6 +113,11 @@ html {
 }
 .map_name.selected {
 	background-color: #444;
+}
+
+.resize-bar {
+	background: #444;
+	position: absolute;
 }
 
 .picker-wrapper {
@@ -109,12 +141,14 @@ html {
 .pickerbar:hover {
 }
 
+.view-wrapper {
+	text-align: center;
+}
 .view_container {
 	position: relative;
-	margin-left: auto;
-	margin-right: auto;
+	display: inline-block;
+	transition: width 0.15s height 0.15s;
 }
-
 .map_viewer {
 	margin-left: auto;
 	margin-right: auto;
@@ -143,7 +177,7 @@ html {
 	top: 52px;
 }
 
-.dialog {
+.old_dialog {
 	position: fixed;
 	text-align: center;
 	background-color: #333;
