@@ -103,7 +103,8 @@ function init() {
 	picker = Object.create(MapPicker)
 	painter = Object.create(Painter)
 
-	setup(config.default_map)
+	var map_name = document.location.hash.substr(1) || config.default_map
+	loadMap(map_name)
 	.then(function () {
 
 		view.attach(document.body)
@@ -121,7 +122,7 @@ function init() {
 	})
 }
 
-function setup (name) {
+function loadMap (name) {
 
 	return Promise.resolve()
 	.then(function() {
