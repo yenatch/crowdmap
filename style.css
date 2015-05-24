@@ -148,6 +148,8 @@ html {
 	position: relative;
 	display: inline-block;
 	transition: width 0.15s height 0.15s;
+	margin-left: 52px;
+	margin-right: 160px;
 }
 .map_viewer {
 	margin-left: auto;
