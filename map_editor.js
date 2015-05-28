@@ -1092,6 +1092,9 @@ var MapViewer = {
 
 	draw: function () {
 		if (this.current_map) {
+			if (this.current_map.tileset.redraw) {
+				this.redraw = true
+			}
 			if (this.redraw) {
 				this.blockdata = []
 				this.redraw = false
