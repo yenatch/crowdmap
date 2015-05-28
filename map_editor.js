@@ -67,6 +67,10 @@ var config = {
 	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
 
+	getTilesetImagePath: function (id) {
+		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
+		return path
+	},
 
 	default_map_header: {
 		label: '',
@@ -272,6 +276,7 @@ function editMapHeader (event) {
 	clearDialogs()
 
 	if (existing) return
+	if (typeof view.current_map === 'undefined') return
 
 	var dialog = newDialog(event.target, edit_id)
 	document.body.appendChild(dialog)
@@ -279,13 +284,104 @@ function editMapHeader (event) {
 
 	var header = view.current_map.map_header || Object.create(config.default_map_header)
 	for (var key in header) {
+		if (key === 'label') continue
+		if (key === 'tileset') continue
 		var value = header[key]
 		var div = createElement('div', {className: 'map_header_item'})
 		div.appendChild(createElement('div', {innerHTML: key, className: 'map_header_key'}))
-		div.appendChild(createElement('input', {name: key, value: value, className: 'map_header_param'}))
+		var input = createElement('input', {name: key, value: value, className: 'map_header_param'})
+		;(function (input, key) {
+		input.addEventListener('change', function (event) {
+			console.log(key)
+			if (input.value) {
+				if (view.current_map.map_header[key] !== input.value) {
+					view.current_map.map_header[key] = input.value
+				}
+			}
+		})})(input, key)
+		div.appendChild(input)
 		content.appendChild(div)
 	}
+
+	var tileset_preview = new Image()
+	tileset_preview.src = config.getTilesetImagePath(header.tileset)
+	content.appendChild(tileset_preview)
+
+	var tileset_list = tilesetList()
+	var selected
+
+	tileset_list.list_promise.then(function (list) {
+		list.map(function (elem, i) {
+			elem.addEventListener('click', function (event) {
+				view.current_map.map_header.tileset = i
+				view.current_map.reloadTileset()
+			})
+			elem.addEventListener('click', function (event) {
+				tileset_preview.src = config.getTilesetImagePath(i)
+				if (selected === i) {
+					content.removeChild(tileset_list.element)
+				} else {
+					selected = i
+					tileset_list.select(i)
+				}
+			})
+		})
+	})
+
+	tileset_preview.addEventListener('click', function (event) {
+		if (content.children['tileset_list']) {
+			content.removeChild(tileset_list.element)
+		} else {
+			selected = view.current_map.map_header.tileset
+			tileset_list.select(selected)
+			content.appendChild(tileset_list.element)
+		}
+	})
+
 	dialog.appendChild(content)
+}
+
+function getTilesetNames () {
+	return Promise.resolve(range(36))
+}
+
+function tilesetList () {
+
+	var div = createElement('div', {id: 'tileset_list', className: 'tileset-list'})
+
+	var list_promise = getTilesetNames()
+	.then(function (names) {
+		var list = []
+		names.map(function (name, i) {
+			var container = createElement('div', {className: 'tileset-preview'})
+			var image = new Image()
+			image.src = config.getTilesetImagePath(i)
+			container.appendChild(image)
+			div.appendChild(container)
+			list[i] = image
+		})
+		return Promise.resolve(list)
+	})
+
+	var select = function (selected) {
+		getTilesetNames()
+		.then(function (names) {
+			names.map(function (name, i) {
+				var element = div.children[i]
+				if (i === selected) {
+					element.className = 'tileset-preview selected'
+				} else {
+					element.className = 'tileset-preview'
+				}
+			})
+		})
+	}
+
+	return {
+		list_promise: list_promise,
+		element: div,
+		select: select,
+	}
 }
 
 function openMap (event) {
@@ -294,45 +390,43 @@ function openMap (event) {
 
 	clearDialogs()
 
-	if (!existing) {
+	if (existing) { return }
 
-		var dialog = newDialog(event.target, open_id)
+	var dialog = newDialog(event.target, open_id)
+	document.body.appendChild(dialog)
 
-		document.body.appendChild(dialog)
+	var list = createElement('div', {className: 'map_list'})
+	dialog.appendChild(list)
 
-		var list = createElement('div', {className: 'map_list'})
-		dialog.appendChild(list)
+	getMapNames()
+	.then(function (names) {
+		var selected
+		var select = function (div) {
+			selected = div
+			div.className += ' selected'
+		}
+		var deselect = function (div) {
+			selected = undefined
+			if (div) div.className = div.className.replace(/\bselected\b/g, '')
+		}
 
-		getMapNames()
-		.then(function (names) {
-			var selected
-			var select = function (div) {
-				selected = div
-				div.className += ' selected'
+		// populate the list with names
+		names.map(function (name) {
+			var name_div = createElement('div', {className: 'map_name'})
+			name_div.innerHTML = name
+			name_div.onclick = function (event_) {
+				deselect(selected)
+				select(name_div)
+				view.loadMap(name)
 			}
-			var deselect = function (div) {
-				selected = undefined
-				if (div) div.className = div.className.replace(/\bselected\b/g, '')
-			}
-
-			// populate the list with names
-			names.map(function (name) {
-				var name_div = createElement('div', {className: 'map_name'})
-				name_div.innerHTML = name
-				name_div.onclick = function (event_) {
-					deselect(selected)
+			if (view && view.current_map) {
+				if (name === view.current_map.name) {
 					select(name_div)
-					view.loadMap(name)
 				}
-				if (view && view.current_map) {
-					if (name === view.current_map.name) {
-						select(name_div)
-					}
-				}
-				list.appendChild(name_div)
-			})
+			}
+			list.appendChild(name_div)
 		})
-	}
+	})
 }
 
 function send_command(content) {
@@ -1589,7 +1683,7 @@ var Tileset = {
 	},
 
 	get image_path () {
-		var path = config.tiles_dir + this.id.toString().zfill(2) + '.png'
+		var path = config.getTilesetImagePath(this.id)
 		return path
 	},
 

@@ -69,6 +69,7 @@ html {
 	transition: width 0.15s;
 	-webkit-transition: width 0.15s;
 	z-index: 20;
+	overflow-y: auto;
 }
 .dialog:not(#dialog_open) {
 	padding: 10px;
@@ -87,6 +88,23 @@ html {
 .map_header_confirm {
 	display: inline-block;
 }
+
+.tileset-list {
+	max-height: 300px;
+	max-width: 500px;
+	overflow-y: auto;
+}
+.tileset-preview {
+	display: inline-block;
+	vertical-align: top;
+	width: 96px;
+	height: 128px;
+	margin: 4px;
+}
+.tileset-preview.selected {
+	outline: solid red;
+}
+
 .dialog#dialog_open {
 	overflow-y: scroll;
 	min-height: 100%;
