@@ -792,6 +792,7 @@ var MapPicker = {
 	},
 
 	drawMetatile: function (x, y, block) {
+		try {
 		drawMetatile({
 			x: x,
 			y: y,
@@ -803,6 +804,7 @@ var MapPicker = {
 			meta_w: this.meta_w,
 			meta_h: this.meta_h,
 		})
+		} catch (e) {}
 	},
 
 	drawSelection: function () {
@@ -1268,6 +1270,7 @@ var MapViewer = {
 		var x_ = this.origin.x + x
 		var y_ = this.origin.y + y
 
+		try {
 		drawMetatile({
 			x: x_,
 			y: y_,
@@ -1279,6 +1282,7 @@ var MapViewer = {
 			meta_w: meta_w,
 			meta_h: meta_h,
 		})
+		} catch (e) {}
 
 		if (config) {
 			this.drawcontext.save()
