@@ -83,7 +83,7 @@ def add_map(data):
 
 	lines_2 = text_2.split('\n')
 	lines_2.append(header_2_line)
-	new_text_2 = '\n'.join(lines_2)
+	new_text_2 = '\n'.join(lines_2) + '\n'
 
 	blk = bytearray([1] * width * height)
 
@@ -128,6 +128,7 @@ def add_map(data):
 	include += 'INCLUDE "maps/{}.asm"'.format(label)
 	include += 'SECTION "{} Blockdata", ROMX\n'.format(label)
 	include += '{0}_BlockData: INCBIN "maps/{0}.blk"'.format(label)
+	include += '\n'
 
 	with open(path, 'w') as out:
 		out.write(new_text)
