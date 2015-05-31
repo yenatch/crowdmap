@@ -1043,6 +1043,66 @@ var History = {
 
 }
 
+var makeResizable = (function () {
+
+	var styles = {
+		n:  { top:    -1, left:   0, right:  0,  height: 1, },
+		s:  { bottom: -1, left:   0, right:  0,  height: 1, },
+		e:  { right:  -1, top:    0, bottom: 0,  width:  1, },
+		w:  { left:   -1, top:    0, bottom: 0,  width:  1, },
+		ne: { top:    -1, right: -1, width:  1,  height: 1, },
+		nw: { top:    -1, left:  -1, width:  1,  height: 1, },
+		se: { bottom: -1, right: -1, width:  1,  height: 1, },
+		sw: { bottom: -1, left:  -1, width:  1,  height: 1, },
+	}
+
+	return function (element, directions, callback) {
+		directions = directions || ['n','s','e','w','ne','nw','se','sw']
+		directions.map(function (direction) {
+			var elem = createElement('div', {
+				id: direction,
+				className: 'resize-bar',
+			})
+			var style = styles[direction]
+			for (var attribute in style) {
+				style[attribute] *= 5
+				style[attribute] += 'px'
+			}
+			Object.update(elem.style, style)
+			elem.style.cursor = direction + '-resize'
+			elem.addEventListener('mousedown', start)
+			element.appendChild(elem)
+
+			var x, y, w, h
+			function start (event) {
+				event.preventDefault()
+				var style = window.getComputedStyle(element)
+				x = event.clientX
+				y = event.clientY
+				w = parseInt(style.width)
+				h = parseInt(style.height)
+				document.addEventListener('mousemove', drag, false)
+				document.addEventListener('mouseup', stop, false)
+			}
+			function drag (event) {
+				var yd = direction.contains('n') ? -1 : direction.contains('s') ? 1 : 0
+				var xd = direction.contains('w') ? -1 : direction.contains('e') ? 1 : 0
+
+				if (callback) {
+					callback({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
+				} else {
+					if (xd) element.style.width = (w - x + event.clientX * xd) + 'px'
+					if (yd) element.style.height = (h - y + event.clientY * yd) + 'px'
+				}
+			}
+			function stop (event) {
+				document.removeEventListener('mousemove', drag, false)
+				document.removeEventListener('mouseup', stop, false)
+			}
+		})
+	}
+})()
+
 var MapViewer = {
 
 	world: World,
@@ -1097,12 +1157,38 @@ var MapViewer = {
 		this.wrapper.appendChild(this.container)
 
 		this.scale = 1
+		this.attachResize()
+
 		this.redraw = true
 	},
 
 	attach: function (container) {
 		container = container || document.body
 		replaceChild(container, this.wrapper)
+	},
+
+	attachResize: function () {
+		var self = this
+		var round = Math.round
+		makeResizable(self.container, undefined /* all directions */, function (props) {
+			var event = props.event
+			var x = event.clientX, y = event.clientY
+
+			var map = self.current_map
+			var x1 = 0, y1 = 0, x2 = map.width, y2 = map.height
+			var xd = props.xd, yd = props.yd
+
+			var w = self.meta_w * self.tile_w * self.scale
+			var h = self.meta_h * self.tile_h * self.scale
+
+			var rect = self.container.getBoundingClientRect()
+			if (xd < 0) x1 += round((x - rect.left)   / w)
+			if (xd > 0) x2 += round((x - rect.right)  / w)
+			if (yd < 0) y1 += round((y - rect.top)    / h)
+			if (yd > 0) y2 += round((y - rect.bottom) / h)
+
+			crop(x1, y1, x2, y2)
+		})
 	},
 
 	attachMapClickEvents: function () {
