@@ -25,10 +25,21 @@ var range = function (length) {
 Object.update = Object.update || function (object, properties, options) {
 	options = options || {
 		careful: false, // Useful for updating trapped properties only when they're actually different.
+		setdefault: false, // If the property exists, don't touch it
 	}
 	for (var i in properties) {
 		var prop = properties[i]
-		if (!options.careful || object[i] !== prop) {
+		if (options.careful) {
+			if (object[i] !== prop) {
+				object[i] = prop
+			}
+		}
+		else if (options.setdefault) {
+			if (typeof object[i] === 'undefined') {
+				object[i] = prop
+			}
+		}
+		else {
 			object[i] = prop
 		}
 	}
