@@ -20,10 +20,19 @@ function tileset(id, map) {
 	})
 }
 
-function resize(width, height, filler, map) {
-	// Blockdata should probably be a 2d array so this function doesn't have to exist.
+function crop(x1, y1, x2, y2, etc) {
+	etc = etc || {}
 
-	map = map || view.current_map
+	var map = etc.map || view.current_map
+
+	var last_w = map.width
+	var last_h = map.height
+	var width  = map.width  = x2 - x1
+	var height = map.height = y2 - y1
+
+	if (last_w === width && last_h === height) return
+
+	var filler = etc.filler
 	if (typeof filler === 'undefined') {
 		filler = view.paint_block
 		if (typeof filler === 'undefined') {
@@ -31,43 +40,26 @@ function resize(width, height, filler, map) {
 		}
 	}
 
-	var last_w = map.width
-	var last_h = map.height
-	map.width = width
-	map.height = height
-
-	if (last_w === width && last_h === height) return
-
-	if (last_w < width) {
-		var blockdata = []
-		for (var y = 0; y < Math.min(last_h, height); y++) {
-			var start = y * last_w
-			blockdata = blockdata.concat(map.blockdata.slice(start, start + last_w))
-			for (var x = last_w; x < width; x++) {
-				blockdata.push(filler)
-			}
+	var blk = []
+	for (var y = y1; y < y2; y++)
+	for (var x = x1; x < x2; x++) {
+		if ((x >= 0 && x < last_w) && (y >= 0 && y < last_h)) {
+			blk.push(map.blockdata[last_w * y + x])
+		} else {
+			blk.push(filler)
 		}
-		map.blockdata = blockdata
-	} else if (last_w > width) {
-		var blockdata = []
-		for (var y = 0; y < Math.min(last_h, height); y++) {
-			var start = y * last_w
-			blockdata = blockdata.concat(map.blockdata.slice(start, start + width))
-		}
-		map.blockdata = blockdata
-	}
-	if (last_h < height) {
-		for (var y = last_h; y < height; y++)
-		for (var x = 0; x < width; x++) {
-			map.blockdata.push(filler)
-		}
-	} else if (last_h > height) {
-		map.blockdata = map.blockdata.slice(0, width * height)
 	}
 
-	view.commit()
-	view.redraw = true
+	map.blockdata = blk
 
+	if (map === view.current_map) {
+		view.commit()
+		view.redraw = true
+	}
+}
+
+function resize(width, height, filler, map) {
+	crop(0, 0, width, height, {map:map, filler:filler})
 }
 
 function newblk(path, id) {
