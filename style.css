@@ -165,9 +165,10 @@ html {
 .view_container {
 	position: relative;
 	display: inline-block;
-	transition: width 0.15s height 0.15s;
 	margin-left: 52px;
-	margin-right: 160px;
+	margin-right: 168px;
+	margin-top: 52px;
+	margin-bottom: 52px;
 }
 .map_viewer {
 	margin-left: auto;
