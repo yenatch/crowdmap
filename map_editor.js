@@ -1445,14 +1445,9 @@ var MapViewer = {
 	},
 
 	drawMetatile: function (map, x, y, block, config) {
-		var meta_w = this.meta_w
-		var meta_h = this.meta_h
-		var tile_w = this.tile_w
-		var tile_h = this.tile_h
-		var block_w = meta_w * tile_w
-		var block_h = meta_h * tile_h
+		map = map || this.current_map
 
-		if (block === undefined) {
+		if (typeof block === 'undefined') {
 			block = map.getBlock(x, y)
 		}
 
@@ -1462,13 +1457,18 @@ var MapViewer = {
 			this.setBlock(this.current_map, x, y, block)
 		}
 
-		var x_ = this.origin.x + x
-		var y_ = this.origin.y + y
+		x += this.origin.x
+		y += this.origin.y
+
+		var meta_w = this.meta_w
+		var meta_h = this.meta_h
+		var tile_w = this.tile_w
+		var tile_h = this.tile_h
 
 		try {
 		drawMetatile({
-			x: x_,
-			y: y_,
+			x: x,
+			y: y,
 			block: block,
 			tileset: map.tileset,
 			context: this.drawcontext,
@@ -1480,9 +1480,11 @@ var MapViewer = {
 		} catch (e) {}
 
 		if (config) {
+			var block_w = meta_w * tile_w
+			var block_h = meta_h * tile_h
 			this.drawcontext.save()
 			Object.update(this.drawcontext, config)
-			this.drawcontext.fillRect(x_ * block_w, y_ * block_h, block_w, block_h)
+			this.drawcontext.fillRect(x * block_w, y * block_h, block_w, block_h)
 			this.drawcontext.restore()
 		}
 
