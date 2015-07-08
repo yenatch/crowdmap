@@ -1477,6 +1477,9 @@ var MapViewer = {
 			this.setBlock(this.current_map, x, y, block)
 		}
 
+		var border_block = map.map_header_2.border_block
+		block = block || border_block
+
 		x += this.origin.x
 		y += this.origin.y
 
