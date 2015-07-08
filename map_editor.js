@@ -797,6 +797,7 @@ var MapPicker = {
 
 		this.drawcanvas = createElement('canvas')
 		this.drawcontext = this.drawcanvas.getContext('2d')
+		this.drawcontext.font = '8px Segoe UI Symbol, sans-serif'
 
 		this.scale = 1
 		this.redraw = true
@@ -897,6 +898,26 @@ var MapPicker = {
 			var block = y * this.width + x
 			this.drawMetatile(x, y, block)
 		}
+		this.drawBlockNumbers()
+	},
+
+	drawBlockNumbers: function () {
+		this.drawcontext.save()
+		this.drawcontext.fillStyle = 'white'
+		this.drawcontext.strokeStyle = 'black'
+		this.drawcontext.lineWidth = 3
+		this.drawcontext.textBaseline = 'top'
+		var i = 0
+		for (var y = 0; y < this.height; y++)
+		for (var x = 0; x < this.width; x++) {
+			var text_x = x * this.meta_w * this.tile_w
+			var text_y = y * this.meta_h * this.tile_h
+			var text = i.toString(16).toUpperCase()
+			this.drawcontext.strokeText(text, text_x, text_y)
+			this.drawcontext.fillText(text, text_x, text_y)
+			i += 1
+		}
+		this.drawcontext.restore()
 	},
 
 	drawMetatile: function (x, y, block) {
