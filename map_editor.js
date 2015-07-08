@@ -315,8 +315,10 @@ function editMapHeader (event) {
 		content.appendChild(div)
 	}
 
-	var tileset_preview = new Image()
-	tileset_preview.src = config.getTilesetImagePath(header.tileset)
+	var tileset_preview_image = new Image()
+	tileset_preview_image.src = config.getTilesetImagePath(header.tileset)
+	var tileset_preview = createElement('div', {className: 'tileset-preview'})
+	tileset_preview.appendChild(tileset_preview_image)
 	content.appendChild(tileset_preview)
 
 	var tileset_list = tilesetList()
@@ -329,9 +331,10 @@ function editMapHeader (event) {
 				view.current_map.reloadTileset()
 			})
 			elem.addEventListener('click', function (event) {
-				tileset_preview.src = config.getTilesetImagePath(i)
+				tileset_preview_image.src = config.getTilesetImagePath(i)
 				if (selected === i) {
 					content.removeChild(tileset_list.element)
+					content.appendChild(tileset_preview)
 				} else {
 					selected = i
 					tileset_list.select(i)
@@ -344,6 +347,7 @@ function editMapHeader (event) {
 		if (content.children['tileset_list']) {
 			content.removeChild(tileset_list.element)
 		} else {
+			content.removeChild(tileset_preview)
 			selected = view.current_map.map_header.tileset
 			tileset_list.select(selected)
 			content.appendChild(tileset_list.element)

@@ -69,7 +69,6 @@ html {
 	transition: width 0.15s;
 	-webkit-transition: width 0.15s;
 	z-index: 20;
-	overflow-y: auto;
 }
 .dialog:not(#dialog_open) {
 	padding: 10px;
@@ -91,7 +90,7 @@ html {
 
 .tileset-list {
 	max-height: 300px;
-	max-width: 500px;
+	max-width: 440px;
 	overflow-y: auto;
 }
 .tileset-preview {
