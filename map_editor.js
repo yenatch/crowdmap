@@ -1761,7 +1761,14 @@ var Tileset = {
 	},
 
 	readPalette: function (text) {
-		return divvy(serializeRGB(text), 4)
+		var palettes = divvy(serializeRGB(text), 4)
+		var i = {
+			morn: 0,
+			day:  8,
+			nite: 16,
+			dark: 24,
+		}[config.time]
+		return palettes.slice(i, i + 8)
 	},
 
 	updatePalette: function () {
@@ -1788,7 +1795,7 @@ var Tileset = {
 	},
 
 	get palette_path () {
-		var path = config.palette_dir + config.time + '.pal'
+		var path = config.palette_dir + 'bg.pal'
 		return path
 	},
 
@@ -1881,11 +1888,13 @@ function serializeRGB(text) {
 	var colors = []
 	var lines = text.split('\n')
 	lines.forEach(function (line) {
-		var color = macroValues(line, 'RGB')
-		if (color) {
-			colors.push(color.map(function (x) {
-				return x * 8
-			}))
+		if (line) {
+			var color = macroValues(line, 'RGB')
+			if (color) {
+				colors.push(color.map(function (x) {
+					return x * 8
+				}))
+			}
 		}
 	})
 	return colors
