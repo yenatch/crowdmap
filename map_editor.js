@@ -329,6 +329,8 @@ function editMapHeader (event) {
 			elem.addEventListener('click', function (event) {
 				view.current_map.map_header.tileset = i
 				view.current_map.reloadTileset()
+				view.redraw = true
+				picker.redraw = true
 			})
 			elem.addEventListener('click', function (event) {
 				tileset_preview_image.src = config.getTilesetImagePath(i)
@@ -875,10 +877,6 @@ var MapPicker = {
 			this.redraw = true
 		}
 
-		if (this.tileset.redraw) {
-			this.redraw = true
-		}
-
 		if (this.redraw) {
 			this.render()
 			this.redraw = false
@@ -1288,9 +1286,6 @@ var MapViewer = {
 
 	draw: function () {
 		if (this.current_map) {
-			if (this.current_map.tileset.redraw) {
-				this.redraw = true
-			}
 			if (this.redraw) {
 				this.blockdata = []
 				this.redraw = false
