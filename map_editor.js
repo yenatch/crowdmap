@@ -79,6 +79,7 @@ var config = {
 	map_constants_path: root + 'constants/map_constants.asm',
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
+	roof_permissions: [ 1, 2, 4 ],
 
 	getTilesetImagePath: function (id) {
 		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
@@ -1722,7 +1723,7 @@ var Map = {
 		var self = this
 		var tileset = Object.create(Tileset)
 
-		return tileset.init(this.map_header.tileset, this.map_header.group)
+		return tileset.init(this.map_header.tileset, this.map_header)
 		.then(function () {
 			self.tileset = tileset
 		})
@@ -1730,7 +1731,7 @@ var Map = {
 
 	reloadTileset: function () {
 		var self = this
-		return this.tileset.init(this.map_header.tileset, this.map_header.group)
+		return this.tileset.init(this.map_header.tileset, this.map_header)
 	},
 
 	getBlock: function (x, y) {
@@ -1766,10 +1767,10 @@ function imagePromise(image) {
 
 var Tileset = {
 
-	init: function (id, map_group) {
+	init: function (id, map_header) {
 		var self = this
 		this.id = id
-		this.map_group = map_group || 0
+		this.header = map_header || config.default_map_header
 
 		this.image = new Image()
 		this.image.src = this.image_path
@@ -1837,7 +1838,7 @@ var Tileset = {
 			var bg = self.readPalette(values.shift()).slice(time * 8, time * 8 + 8)
 
 			var roofs = divvy(serializeRGB(values.shift()), 2)
-			var which_roof = self.map_group
+			var which_roof = self.header.group
 			if (typeof which_roof === 'undefined') {
 				which_roof = -1
 			}
@@ -1869,10 +1870,11 @@ var Tileset = {
 	},
 
 	getColorizedTiles: function () {
-		console.log(this.palmap)
 		this.tiles = colorizeTiles(this.image, this.palette, this.palmap)
 
-		var roof = config.roofs[this.map_group]
+		var roof = config.roofs[this.header.group]
+		if (typeof roof === 'undefined') roof = -1
+		if (config.roof_permissions.indexOf(this.header.permission) === -1) roof = -1
 		if (roof !== -1) {
 			var palmap = []
 			for (var i = 0; i < 9; i++) {
@@ -1901,7 +1903,7 @@ var Tileset = {
 	},
 
 	get roof_image_path () {
-		var roof = config.roofs[this.map_group]
+		var roof = config.roofs[this.header.group]
 		if (roof === -1) {
 			roof = 0
 		}
