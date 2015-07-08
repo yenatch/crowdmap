@@ -78,6 +78,8 @@ var config = {
 	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
 
+	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
+
 	getTilesetImagePath: function (id) {
 		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
 		path = addQuery(path, Date.now())
@@ -630,6 +632,26 @@ function readMapHeader(text, name) {
 	]
 
 	var header = getMacroAttributes(line, '\tmap_header ', attributes)
+
+	var header_i = indexLineStart(lines, start)
+	var group = 0
+	var groups = []
+	for (var i = 0; i < lines.length; i++) {
+		if (lines[i].contains('\tdw ')) {
+			groups.push(lines[i].split('\tdw ')[1])
+		} else {
+			var maybe_group = groups.indexOf(lines[i].split(':')[0])
+			if (maybe_group !== -1) {
+				if (i < header_i) {
+					group = maybe_group + 1
+				} else {
+					break
+				}
+			}
+		}
+	}
+	header.group = group
+
 	return header
 }
 
@@ -1700,7 +1722,7 @@ var Map = {
 		var self = this
 		var tileset = Object.create(Tileset)
 
-		return tileset.init(this.map_header.tileset)
+		return tileset.init(this.map_header.tileset, this.map_header.group)
 		.then(function () {
 			self.tileset = tileset
 		})
@@ -1708,7 +1730,7 @@ var Map = {
 
 	reloadTileset: function () {
 		var self = this
-		return this.tileset.init(this.map_header.tileset)
+		return this.tileset.init(this.map_header.tileset, this.map_header.group)
 	},
 
 	getBlock: function (x, y) {
@@ -1736,26 +1758,33 @@ function getNybbles(data) {
 	return nybbles
 }
 
+function imagePromise(image) {
+	return new Promise( function (resolve, reject) {
+		image.onload = resolve
+	})
+}
+
 var Tileset = {
 
-	init: function (id) {
+	init: function (id, map_group) {
 		var self = this
 		this.id = id
+		this.map_group = map_group || 0
+
+		this.image = new Image()
+		this.image.src = this.image_path
+
+		this.roof_image = new Image()
+		this.roof_image.src = this.roof_image_path
 
 		return Promise.all([
-			request(this.metatile_path, { binary: true }),
-			request(this.palmap_path, { binary: true }),
-			request(this.palette_path),
-			new Promise( function (resolve, reject) {
-				self.image = new Image()
-				self.image.src = self.image_path
-				self.image.onload = resolve
-			})
+			this.loadMetatiles(),
+			this.loadPalmap(),
+			this.loadPalette(),
+			imagePromise(self.image),
+			imagePromise(self.roof_image),
 		])
 		.then( function (values) {
-			self.metatiles = self.serializeMetatiles(values.shift())
-			self.palmap = self.serializePalmap(values.shift())
-			self.palette = self.readPalette(values.shift())
 			self.getColorizedTiles()
 			self.redraw = true
 		})
@@ -1785,21 +1814,75 @@ var Tileset = {
 
 	readPalette: function (text) {
 		var palettes = divvy(serializeRGB(text), 4)
-		var i = {
-			morn: 0,
-			day:  8,
-			nite: 16,
-			dark: 24,
-		}[config.time]
-		return palettes.slice(i, i + 8)
+		return palettes
 	},
 
-	updatePalette: function () {
-		request(this.palette_path)
+	getTimeOfDayPal: function () {
+		return {
+			morn: 0,
+			day:  1,
+			nite: 2,
+			dark: 3,
+		}[config.time]
+	},
+
+	loadPalette: function () {
+		var self = this
+		return Promise.all([
+			request(this.palette_path),
+			request(this.roof_palette_path)
+		])
+		.then(function (values) {
+			var time = self.getTimeOfDayPal()
+			var bg = self.readPalette(values.shift()).slice(time * 8, time * 8 + 8)
+
+			var roofs = divvy(serializeRGB(values.shift()), 2)
+			var which_roof = self.map_group
+			if (typeof which_roof === 'undefined') {
+				which_roof = -1
+			}
+			var palette = bg.slice()
+			if (which_roof !== -1) {
+				var roof = roofs.slice(which_roof * 2)[time >> 1]
+				palette[6][1] = roof[0]
+				palette[6][2] = roof[1]
+			}
+
+			self.palette = palette
+		})
+	},
+
+	loadMetatiles: function () {
+		var self = this
+		request(this.metatile_path, { binary: true })
+		.then(function (data) {
+			self.metatiles = self.serializeMetatiles(data)
+		})
+	},
+
+	loadPalmap: function () {
+		var self = this
+		request(this.palmap_path, { binary: true })
+		.then(function (data) {
+			self.palmap = self.serializePalmap(data)
+		})
 	},
 
 	getColorizedTiles: function () {
+		console.log(this.palmap)
 		this.tiles = colorizeTiles(this.image, this.palette, this.palmap)
+
+		var roof = config.roofs[this.map_group]
+		if (roof !== -1) {
+			var palmap = []
+			for (var i = 0; i < 9; i++) {
+				palmap.push(6)
+			}
+			this.roof = colorizeTiles(this.roof_image, this.palette, palmap)
+			for (var i = 0; i < 9; i++) {
+				this.tiles[i + 0xa] = this.roof[i]
+			}
+		}
 	},
 
 	get metatile_path () {
@@ -1817,8 +1900,22 @@ var Tileset = {
 		return path
 	},
 
+	get roof_image_path () {
+		var roof = config.roofs[this.map_group]
+		if (roof === -1) {
+			roof = 0
+		}
+		var path = config.tiles_dir + 'roofs/' + roof + '.png'
+		return path
+	},
+
 	get palette_path () {
 		var path = config.palette_dir + 'bg.pal'
+		return path
+	},
+
+	get roof_palette_path () {
+		var path = config.palette_dir + 'roof.pal'
 		return path
 	},
 
