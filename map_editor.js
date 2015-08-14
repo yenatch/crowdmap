@@ -1572,6 +1572,49 @@ var drawMetatile = function (props) {
 	return true
 }
 
+function getMapConstantsText () {
+	return request(config.map_constants_path)
+}
+
+function getMapDimensions (map_constant) {
+	function has_macro (line, macro) {
+		var re = new RegExp(macro + '\\b')
+		return (line.trim().search(re) !== -1)
+	}
+	function read_macro (line, macro) {
+		line = line.substr(line.search(macro) + macro.length)
+		args = line.split(',')
+		return args
+	}
+
+	return getMapConstantsText().then(function (text) {
+		group = 0
+		num = 0
+		lines = text.split('\n')
+		for (var i = 0; i < lines.length; i++) {
+			var line = lines[i]
+			if (has_macro(line, 'newgroup')) {
+				group += 1
+				num = 0
+			} else if (has_macro(line, 'mapgroup')) {
+				num += 1
+				args = read_macro(line, 'mapgroup')
+				console.log(group, num, args)
+				if (args[0].trim() == map_constant) {
+					console.log(line)
+					return {
+						group: group,
+						num: num,
+						height: parseInt(args[1]),
+						width: parseInt(args[2]),
+					}
+				}
+			}
+		}
+		return false
+	})
+}
+
 var Map = {
 
 	init: function (name) {
@@ -1600,17 +1643,20 @@ var Map = {
 		.then(function (values) {
 			self.map_header = values[0]
 			self.map_header_2 = values[1]
-			var base = self.map_header_2.map
-			self.width = base + '_WIDTH'
-			self.height = base + '_HEIGHT'
-			self.width = getMapConstant(self.width)
-			self.height = getMapConstant(self.height)
 		})
 		.then(function () {
-			return self.loadBlockdata()
-		})
-		.then(function () {
-			return self.loadTileset()
+			return getMapDimensions(self.map_header_2.map)
+			.then(function (stuff) {
+				self.width = stuff.width
+				self.height = stuff.height
+				console.log(stuff)
+			})
+			.then(function () {
+				return self.loadBlockdata()
+			})
+			.then(function () {
+				return self.loadTileset()
+			})
 		})
 
 	},
