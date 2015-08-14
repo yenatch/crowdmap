@@ -1599,9 +1599,7 @@ function getMapDimensions (map_constant) {
 			} else if (has_macro(line, 'mapgroup')) {
 				num += 1
 				args = read_macro(line, 'mapgroup')
-				console.log(group, num, args)
 				if (args[0].trim() == map_constant) {
-					console.log(line)
 					return {
 						group: group,
 						num: num,
