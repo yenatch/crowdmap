@@ -816,11 +816,8 @@ var MapPicker = {
 			id: 'picker',
 			className: 'picker',
 		})
-		this.context = this.canvas.getContext('2d')
 
 		this.drawcanvas = createElement('canvas')
-		this.drawcontext = this.drawcanvas.getContext('2d')
-		this.drawcontext.font = '8px Segoe UI Symbol, sans-serif'
 
 		this.scale = 1
 		this.redraw = true
@@ -906,7 +903,8 @@ var MapPicker = {
 			this.redraw = false
 		}
 
-		this.context.drawImage(
+		var context = this.canvas.getContext('2d')
+		context.drawImage(
 			this.drawcanvas,
 			0, 0, this.drawcanvas.width, this.drawcanvas.height,
 			0, 0, this.canvas.width, this.canvas.height
@@ -925,22 +923,24 @@ var MapPicker = {
 	},
 
 	drawBlockNumbers: function () {
-		this.drawcontext.save()
-		this.drawcontext.fillStyle = 'white'
-		this.drawcontext.strokeStyle = 'black'
-		this.drawcontext.lineWidth = 3
-		this.drawcontext.textBaseline = 'top'
+		var drawcontext = this.drawcanvas.getContext('2d')
+		drawcontext.save()
+		drawcontext.font = '8px Segoe UI Symbol, sans-serif'
+		drawcontext.fillStyle = 'white'
+		drawcontext.strokeStyle = 'black'
+		drawcontext.lineWidth = 3
+		drawcontext.textBaseline = 'top'
 		var i = 0
 		for (var y = 0; y < this.height; y++)
 		for (var x = 0; x < this.width; x++) {
 			var text_x = x * this.meta_w * this.tile_w
 			var text_y = y * this.meta_h * this.tile_h
 			var text = i.toString(16).toUpperCase()
-			this.drawcontext.strokeText(text, text_x, text_y)
-			this.drawcontext.fillText(text, text_x, text_y)
+			drawcontext.strokeText(text, text_x, text_y)
+			drawcontext.fillText(text, text_x, text_y)
 			i += 1
 		}
-		this.drawcontext.restore()
+		drawcontext.restore()
 	},
 
 	drawMetatile: function (x, y, block) {
@@ -950,7 +950,7 @@ var MapPicker = {
 			y: y,
 			block: block,
 			tileset: this.tileset,
-			context: this.drawcontext,
+			context: this.drawcanvas.getContext('2d'),
 			tile_w: this.tile_w,
 			tile_h: this.tile_h,
 			meta_w: this.meta_w,
@@ -962,13 +962,14 @@ var MapPicker = {
 	drawSelection: function () {
 		if (!this.selection) return
 
+		var context = this.canvas.getContext('2d')
 		var self = this
 		var fillRect = function (x, y, w, h) {
 			x *= self.scale
 			y *= self.scale
 			w *= self.scale
 			h *= self.scale
-			self.context.fillRect(x, y, w, h)
+			context.fillRect(x, y, w, h)
 		}
 
 		var x = this.selection.x
@@ -979,16 +980,16 @@ var MapPicker = {
 		var block_w = tile_w * this.meta_w
 		var block_h = tile_h * this.meta_h
 
-		this.context.save()
-		this.context.globalCompositeOperation = 'lighten'
-		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
+		context.save()
+		context.globalCompositeOperation = 'lighten'
+		context.fillStyle = 'rgba(255, 80, 80, 20)'
 		x = x - x % block_w
 		y = y - y % block_h
 		var w = block_w
 		var h = block_h
 		fillRect(x, y, w, h)
-		//this.context.fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
-		this.context.restore()
+		//context.fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
+		context.restore()
 
 	},
 
@@ -1176,8 +1177,6 @@ var MapViewer = {
 			className: 'map_viewer',
 		})
 
-		this.context = this.canvas.getContext('2d')
-
 		this.attachMapClickEvents()
 
 		this.meta_w = 4
@@ -1193,7 +1192,6 @@ var MapViewer = {
 		this.paint_block = 1
 
 		this.drawcanvas = document.createElement('canvas')
-		this.drawcontext = this.drawcanvas.getContext('2d')
 
 		this.wrapper = createElement('div', { className: 'view-wrapper' })
 		this.container = createElement('div', {
@@ -1355,7 +1353,8 @@ var MapViewer = {
 		this.drawMapBorder(map)
 		this.drawConnections(map)
 
-		this.context.drawImage(
+		var context = this.canvas.getContext('2d')
+		context.drawImage(
 			this.drawcanvas,
 			0, 0, this.drawcanvas.width, this.drawcanvas.height,
 			0, 0, this.canvas.width, this.canvas.height
@@ -1430,13 +1429,14 @@ var MapViewer = {
 			return
 		}
 
+		var context = this.canvas.getContext('2d')
 		var self = this
 		var fillRect = function (x, y, w, h) {
 			x *= self.scale
 			y *= self.scale
 			w *= self.scale
 			h *= self.scale
-			self.context.fillRect(x, y, w, h)
+			context.fillRect(x, y, w, h)
 		}
 
 		var x = this.selection.x
@@ -1447,14 +1447,17 @@ var MapViewer = {
 		var block_w = tile_w * this.meta_w
 		var block_h = tile_h * this.meta_h
 
-		this.context.save()
-		this.context.globalCompositeOperation = 'lighten'
-		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
-		fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
-		this.context.fillStyle = 'rgba(255, 170, 170, 20)'
-		fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
-		this.context.fillStyle = 'rgba(255, 80, 80, 20)'
+		context.save()
 
+		context.globalCompositeOperation = 'lighten'
+
+		context.fillStyle = 'rgba(255, 80, 80, 20)'
+		fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
+
+		context.fillStyle = 'rgba(255, 170, 170, 20)'
+		fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
+
+		context.fillStyle = 'rgba(255, 80, 80, 20)'
 		var connections = this.current_map.map_header_2.connections
 		for (var direction in connections) {
 			var connection = connections[direction]
@@ -1471,7 +1474,7 @@ var MapViewer = {
 			}
 		}
 
-		this.context.restore()
+		context.restore()
 
 	},
 
@@ -1517,7 +1520,7 @@ var MapViewer = {
 			y: y,
 			block: block,
 			tileset: map.tileset,
-			context: this.drawcontext,
+			context: this.drawcanvas.getContext('2d'),
 			tile_w: tile_w,
 			tile_h: tile_h,
 			meta_w: meta_w,
@@ -1528,10 +1531,11 @@ var MapViewer = {
 		if (config) {
 			var block_w = meta_w * tile_w
 			var block_h = meta_h * tile_h
-			this.drawcontext.save()
-			Object.update(this.drawcontext, config)
-			this.drawcontext.fillRect(x * block_w, y * block_h, block_w, block_h)
-			this.drawcontext.restore()
+			var drawcontext = this.drawcanvas.getContext('2d')
+			drawcontext.save()
+			Object.update(drawcontext, config)
+			drawcontext.fillRect(x * block_w, y * block_h, block_w, block_h)
+			drawcontext.restore()
 		}
 
 		return true
