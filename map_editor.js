@@ -79,7 +79,7 @@ var config = {
 	map_constants_path: root + 'constants/map_constants.asm',
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
-	roof_permissions: [ 1, 2, 4 ],
+	roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ],
 
 	getTilesetImagePath: function (id) {
 		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
