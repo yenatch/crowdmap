@@ -1644,10 +1644,9 @@ var Map = {
 		})
 		.then(function () {
 			return getMapDimensions(self.map_header_2.map)
-			.then(function (stuff) {
-				self.width = stuff.width
-				self.height = stuff.height
-				console.log(stuff)
+			.then(function (object) {
+				self.width = object.width
+				self.height = object.height
 			})
 			.then(function () {
 				return self.loadBlockdata()
