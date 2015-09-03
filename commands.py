@@ -41,7 +41,7 @@ def add_map(data):
 		'NONE',
 	]))
 
-	root = 'pokecrystal/'
+	root = './'
 
 	path = root + 'maps/map_headers.asm'
 	path_2 = root + 'maps/second_map_headers.asm'

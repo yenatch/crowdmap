@@ -58,7 +58,7 @@ var replaceChild = function (container, child) {
 }
 
 
-var root = '../pokecrystal/'
+var root = '../'
 
 var config = {
 
@@ -1313,7 +1313,7 @@ var MapViewer = {
 	addMap: function(map) {
 		var self = this
 		this.current_map = map
-		document.title = 'pokecrystal - ' + map.name
+		document.title = 'crowdmap - ' + map.name
 		this.blockdata = []
 	},
 

@@ -1,12 +1,7 @@
-# CrowdMap
+# crowdmap
 
-A multiplayer map editor for the [pokecrystal] disassembly.
+A multiplayer map editor for [pokecrystal].
 
-In the shell, cd to a directory containing the following:
-
-- pokecrystal/
-- crowdmap/
-
-Then run `python crowdmap/server.py`. Then go to http://localhost:8000/crowdmap.
+Clone inside your pokecrystal repo. Then run `python crowdmap/server.py 8000` and go to http://localhost:8000/crowdmap.
 
 [pokecrystal]: https://github.com/kanzure/pokecrystal
