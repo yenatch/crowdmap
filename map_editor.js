@@ -367,7 +367,7 @@ function newMap (event) {
 		.then(function () {
 			console.log('added ' + label + ' in group ' + group)
 			clearDialogs()
-			loadMap(label)
+			gotoMap(label)
 		})
 	}
 

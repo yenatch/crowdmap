@@ -89,10 +89,20 @@ def add_map(data):
 
 	constants = open(constants_path).read()
 	constants_lines = constants.split('\n')
-	constants_lines.append('GROUP_{} EQU {}'.format(map_name, group_no))
-	constants_lines.append('MAP_{} EQU {}'.format(map_name, map_no))
-	constants_lines.append('{}_WIDTH EQU {}'.format(map_name, width))
-	constants_lines.append('{}_HEIGHT EQU {}'.format(map_name, height))
+	# find group
+	g = 0
+	i = 0
+	for line in constants_lines:
+		if line.strip().startswith('newgroup'):
+			g += 1
+			i = 0
+		elif line.strip().startswith('mapgroup'):
+			i += 1
+			if g == group_no and i == map_no:
+				break
+
+	constants_lines.insert(i, '\tmapgroup {}, {}, {}'.format(map_name, height, width))
+
 	new_constants = '\n'.join(constants_lines)
 
 	script = ''
