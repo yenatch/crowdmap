@@ -405,7 +405,6 @@ function editMapHeader (event) {
 		var input = createElement('input', {name: key, value: value, className: 'map_header_param'})
 		;(function (input, key) {
 		input.addEventListener('change', function (event) {
-			console.log(key)
 			if (input.value) {
 				var value = input.value
 				if (!isNaN(parseInt(value))) {
@@ -413,6 +412,16 @@ function editMapHeader (event) {
 				}
 				if (header[key] !== value) {
 					header[key] = value
+					if (key === 'group') {
+						loadMapTileset(view.current_map)
+						.then(function () {
+							view.redraw = true
+							picker_view.redraw = true
+						})
+					} else {
+						view.redraw = true
+						picker_view.redraw = true
+					}
 				}
 			}
 		})})(input, key)
