@@ -163,8 +163,8 @@ function gotoMap(name) {
 	.then(function () {
 		view.current_map = name
 		picker_view.map = name
-		picker_view.run()
 		view.run()
+		picker_view.run()
 		return loadMapConnections(name)
 	})
 	.then(function () {
@@ -203,25 +203,19 @@ function init() {
 	view.init()
 
 	picker_view = Object.create(BlockViewer)
+	picker_view.init()
+
 	picker = Object.create(BlockPicker)
+	picker.init(picker_view)
 	
-	picker = Object.create(BlockPicker)
 	painter = Object.create(Painter)
+	painter.init(view)
 
 	var map_name = document.location.hash.substr(1) || config.default_map
 	gotoMap(map_name)
 	.then(function () {
-
 		view.attach(document.body)
-		view.run()
-
-		picker_view.init(view)
 		picker_view.attach(document.body)
-		picker_view.run()
-
-		picker.init(picker_view)
-
-		painter.init(view)
 		painter.run()
 	})
 }
@@ -1037,37 +1031,33 @@ var BlockViewer = {
 	},
 
 	draw: function () {
-
 		if (this.tileset) {
 
-		var dimensions = {
-			width:  this.width  * this.meta_w * this.tile_w,
-			height: this.height * this.meta_h * this.tile_h,
-		}
+			var dimensions = {
+				width:  this.width  * this.meta_w * this.tile_w,
+				height: this.height * this.meta_h * this.tile_h,
+			}
 
-		Object.update(this.drawcanvas, dimensions, { careful: true })
+			Object.update(this.drawcanvas, dimensions, { careful: true })
 
-		dimensions.width  *= this.scale
-		dimensions.height *= this.scale
-		Object.update(this.canvas, dimensions, { careful: true })
+			dimensions.width  *= this.scale
+			dimensions.height *= this.scale
+			Object.update(this.canvas, dimensions, { careful: true })
 
-		if (this.tileset) {
 			if (this.redraw) {
 				this.render()
 				this.redraw = false
 			}
+
+			var context = this.canvas.getContext('2d')
+			context.drawImage(
+				this.drawcanvas,
+				0, 0, this.drawcanvas.width, this.drawcanvas.height,
+				0, 0, this.canvas.width, this.canvas.height
+			)
+
+			this.drawSelection()
 		}
-
-		var context = this.canvas.getContext('2d')
-		context.drawImage(
-			this.drawcanvas,
-			0, 0, this.drawcanvas.width, this.drawcanvas.height,
-			0, 0, this.canvas.width, this.canvas.height
-		)
-
-		}
-
-		this.drawSelection()
 	},
 
 	render: function () {
