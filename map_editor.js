@@ -22,6 +22,15 @@ var range = function (length) {
 	return list
 }
 
+function getNybbles(data) {
+	var nybbles = []
+	data.forEach(function (b) {
+		nybbles.push (b & 0xf)
+		nybbles.push (b >>> 4)
+	})
+	return nybbles
+}
+
 Object.update = Object.update || function (object, properties, options) {
 	options = options || {}
 	if (typeof options.careful === 'undefined') options.careful = false // Useful for updating trapped properties only when they're actually different.
@@ -79,6 +88,7 @@ var config = {
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ],
+	roof_start: 0xa,
 
 	getTilesetImagePath: function (id) {
 		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
@@ -86,11 +96,42 @@ var config = {
 		return path
 	},
 
+	getBlockdataPath: function (name) {
+		return this.blockdata_dir + name + '.blk'
+	},
+
+	getMetatilePath: function (id) {
+		return this.metatiles_dir + id.toString().zfill(2) + '_metatiles.bin'
+	},
+
+	getPalmapPath: function (id) {
+		return this.palmap_dir + id.toString().zfill(2) + '_palette_map.bin'
+	},
+
+	getRoofImagePath: function (group) {
+		var roof = this.roofs[group]
+		if (roof === -1) {
+			roof = 0
+		}
+		var path = this.tiles_dir + 'roofs/' + roof + '.png'
+		return path
+	},
+
+	getPalettePath: function (id) {
+		var path = config.palette_dir + 'bg.pal'
+		return path
+	},
+
+	getRoofPalettePath: function () {
+		var path = this.palette_dir + 'roof.pal'
+		return path
+	},
+
 	default_map_header: {
 		label: '',
 		tileset: 1,
 		permission: 0,
-		location: 'OLIVINE_CITY',
+		location: 'SPECIAL_MAP',
 		music: 'MUSIC_NONE',
 		lighting: 0,
 		fish: 1,
@@ -106,59 +147,113 @@ var config = {
 
 }
 
+function gotoMap(name) {
+	if (Data.maps[name]) {
+		if (Data.maps[name].loaded) {
+			view.current_map = name
+			var tileset = Data.tilesets[Data.maps[name].header.tileset]
+			if (tileset) {
+				picker_view.map = name
+				picker_view.run()
+				picker_view.redraw = true
+			}
+			view.run()
+			view.redraw = true
+		}
+	}
+	return loadMap(name)
+	.then(function () {
+		view.current_map = name
+		picker_view.map = name
+		picker_view.redraw = true
+		view.redraw = true
+		return loadMapConnections(name)
+	})
+	.then(function () {
+		view.redraw = true
+	})
+}
+
+function loadMapAndConnections(name) {
+	return loadMap(name)
+	.then(function () {
+		loadMapConnections(name)
+	})
+}
+
+function loadMapConnections(name) {
+	var map = Data.maps[name]
+	var promises = []
+	for (var dir in map.attributes.connections) {
+		var connection = map.attributes.connections[dir]
+		promises.push(loadMap(connection.name))
+	}
+	return Promise.all(promises)
+}
+
+
 function main() {
 	init()
 }
 
 function init() {
 
-	ippon_manzoku = Object.create(Toolbar)
-	ippon_manzoku.init()
+	toolbar = Object.create(Toolbar)
+	toolbar.init()
 
 	view = Object.create(MapViewer)
 	view.init()
 
-	picker = Object.create(MapPicker)
+	picker_view = Object.create(BlockViewer)
+	picker = Object.create(BlockPicker)
+	
+	picker = Object.create(BlockPicker)
 	painter = Object.create(Painter)
 
 	var map_name = document.location.hash.substr(1) || config.default_map
-	loadMap(map_name)
+	gotoMap(map_name)
 	.then(function () {
 
 		view.attach(document.body)
 		view.run()
 
-		picker.init(view)
-		picker.attach(document.body)
-		picker.run()
+		picker_view.init(view)
+		picker_view.attach(document.body)
+		picker_view.run()
+
+		picker.init(picker_view)
 
 		painter.init(view)
 		painter.run()
-
-		view.history.init(view)
-		view.commit()
 	})
 }
 
-function loadMap (name) {
+window.addEventListener('popstate', function (event) {
+	var map_name = document.location.hash.substr(1)
+	if (map_name) {
+		gotoMap(map_name)
+	}
+})
 
-	return Promise.resolve()
-	.then(function() {
-		return loadConstants(config.map_constants_path)
-	})
-	.then(function () {
-		return view.loadMap(name)
-	})
+function getTileset(map_name) {
+	var map = Data.maps[map_name]
+	var tileset = Data.tilesets[map.header.tileset]
+	return tileset
 }
 
-
-var map_constants
-
-function loadConstants (path) {
-	return request(path)
-	.then(function (text) {
-		map_constants = constants(text)
-	})
+function getTilesetTiles(tileset, roof) {
+	if (typeof roof === 'undefined') {
+		return tileset.tiles
+	}
+	var tilesets = tileset.with_roofs[roof]
+	if (typeof tilesets === 'undefined') {
+		return tileset.tiles
+	}
+	if (config.roofs[roof] !== -1) {
+		return tilesets.tiles
+	} else {
+		return tilesets.tiles_just_palette
+	}
 }
 
 function getMapGroupNames () {
@@ -290,13 +385,17 @@ function editMapHeader (event) {
 	clearDialogs()
 
 	if (existing) return
-	if (typeof view.current_map === 'undefined') return
+	if (!view.current_map) return
+
+	var map = Data.maps[view.current_map]
+	if (!map) return
+	if (!map.loaded) return
 
 	var dialog = newDialog(event.target, edit_id)
 	document.body.appendChild(dialog)
 	var content = createElement('div', {className: 'map_attributes'})
 
-	var header = view.current_map.map_header || Object.create(config.default_map_header)
+	var header = map.header
 	for (var key in header) {
 		if (key === 'label') continue
 		if (key === 'tileset') continue
@@ -308,8 +407,12 @@ function editMapHeader (event) {
 		input.addEventListener('change', function (event) {
 			console.log(key)
 			if (input.value) {
-				if (view.current_map.map_header[key] !== input.value) {
-					view.current_map.map_header[key] = input.value
+				var value = input.value
+				if (!isNaN(parseInt(value))) {
+					value = parseInt(value)
+				}
+				if (header[key] !== value) {
+					header[key] = value
 				}
 			}
 		})})(input, key)
@@ -329,10 +432,12 @@ function editMapHeader (event) {
 	tileset_list.list_promise.then(function (list) {
 		list.map(function (elem, i) {
 			elem.addEventListener('click', function (event) {
-				view.current_map.map_header.tileset = i
-				view.current_map.reloadTileset()
-				view.redraw = true
-				picker.redraw = true
+				header.tileset = i
+				loadMapTileset(view.current_map)
+				.then(function () {
+					view.redraw = true
+					picker_view.redraw = true
+				})
 			})
 			elem.addEventListener('click', function (event) {
 				tileset_preview_image.src = config.getTilesetImagePath(i)
@@ -352,7 +457,7 @@ function editMapHeader (event) {
 			content.removeChild(tileset_list.element)
 		} else {
 			content.removeChild(tileset_preview)
-			selected = view.current_map.map_header.tileset
+			selected = header.tileset
 			tileset_list.select(selected)
 			content.appendChild(tileset_list.element)
 		}
@@ -437,10 +542,10 @@ function openMap (event) {
 			name_div.onclick = function (event_) {
 				deselect(selected)
 				select(name_div)
-				view.loadMap(name)
+				gotoMap(name)
 			}
-			if (view && view.current_map) {
-				if (name === view.current_map.name) {
+			if (view) {
+				if (name === view.current_map) {
 					select(name_div)
 				}
 			}
@@ -460,12 +565,12 @@ function send_command(content) {
 }
 
 function saveMap (event) {
-	var filename = view.current_map.blockdata_path
+	var filename = config.getBlockdataPath(view.current_map)
 
 	send_command({
 		command: 'save',
 		filename: filename,
-		data: view.current_map.blockdata,
+		data: Data.maps[view.current_map].blockdata,
 	})
 	.then(function () {
 		print( 'saved', filename )
@@ -473,9 +578,11 @@ function saveMap (event) {
 }
 
 function reloadMap (event) {
-	view.loadMap(view.current_map.name)
+	return loadMap(view.current_map)
 	.then(function () {
-		view.commit()
+		view.run()
+		picker_view.run()
+		//view.commit()
 	})
 }
 
@@ -508,25 +615,26 @@ function setBrightness (time, element) {
 
 	config.time = time
 
-	var promises = []
-	promises.push(view.current_map.reloadTileset())
-	for (var direction in view.current_map.connected_maps) {
-		var map = view.current_map.connected_maps[direction]
-		promises.push(map.reloadTileset())
+	var map = Data.maps[view.current_map]
+	getTilesetWithRoof(map.header.tileset, map.header.group)
+	readTiles(map.header.tileset, map.header.group)
+	var connections = map.attributes.connections
+	for (var direction in connections) {
+		var connection = connections[direction]
+		map = Data.maps[connection.name]
+		getTilesetWithRoof(map.header.tileset, map.header.group)
 	}
-	return Promise.all(promises)
-	.then(function () {
-		view.redraw = true
-		picker.redraw = true
-	})
+
+	view.redraw = true
+	picker_view.redraw = true
 }
 
 function undo (event) {
-	view.undo()
+	History.undo()
 }
 
 function redo (event) {
-	view.redo()
+	History.redo()
 }
 
 
@@ -611,6 +719,13 @@ var Toolbar = {
 
 
 
+function loadMapHeader(name) {
+	return getMapHeader(name)
+	.then(function (header) {
+		Data.maps[name].header = header
+	})
+}
+
 function getMapHeader(name) {
 	return request(config.map_header_path)
 	.then( function (text) { return readMapHeader(text, name) } )
@@ -657,6 +772,14 @@ function readMapHeader(text, name) {
 
 function createMapHeader() {
 	return Object.create(config.default_map_header)
+}
+
+
+function loadMapAttributes(name) {
+	return getMapHeader2(name)
+	.then(function (attributes) {
+		Data.maps[name].attributes = attributes
+	})
 }
 
 function getMapHeader2(name) {
@@ -739,44 +862,53 @@ function indexLineStart(lines, start) {
 	return -1
 }
 
-var World = {
 
+var Data = {
 	maps: {},
+	tilesets: {},
+	roofs: {},
+	files: {},
+	changed_files: [],
 
-	add: function (map) {
-		this.maps[map.name] = map
-
-		for (var direction in map.connected_maps) {
-			var cmap = map.connected_maps[direction]
-			this.add(cmap)
-		}
-	},
-
-	getMap: function (name) {
-		return this.maps[name]
-	},
-
-	loadMap: function (name) {
+	loadFile: function (uri, options) {
 		var self = this
-		var map = this.getMap(name)
-		if (map !== undefined) {
-			return map.reload()
-			.then(function () {
-				return map.loadConnections()
-			})
-		} else {
-			map = Object.create(Map)
-			return map.init(name)
-			.then(function () {
-				return map.loadConnections()
-			})
-			.then(function () {
-				self.add(map)
-			})
-		}
+		return request(uri, options)
+		.then(function (data) {
+			if (data !== self.files[uri]) {
+				if (!self.changed_files.contains(uri)) {
+					self.changed_files.push(uri)
+				}
+			}
+			self.files[uri] = data
+			return data
+		})
+	},
+}
+
+var History = Object.update([], {
+	get: function () {
+		return this[this.head]
 	},
 
-}
+	redo: function () {
+		var min = Math.min
+		this.head = min(this.head + 1, this.length - 1)
+	},
+
+	undo: function () {
+		var max = Math.max
+		this.head = max(this.head - 1, 0)
+	},
+
+	commit: function (changes) {
+		// Cut off alternate futures.
+		var max = Math.max
+		this.length = min(this.length, this.head + 1)
+		this.push(changes)
+		this.head += 1
+	},
+})
+
 
 var getEventCoord = function (event) {
 	var rect = event.target.getBoundingClientRect()
@@ -786,23 +918,67 @@ var getEventCoord = function (event) {
 	}
 }
 
-var MapPicker = {
+function getCanvasSelection (event, canvas, drawcanvas) {
+	var selection = getEventCoord(event)
+	selection.x *= drawcanvas.width / canvas.width
+	selection.y *= drawcanvas.height / canvas.height
+	return selection
+}
+
+var BlockPicker = {
+
+	init: function (blockViewer) {
+		this.viewer = blockViewer
+		this.attachPickerMouseEvents()
+	},
+
+	getSelection: function (event) {
+		this.viewer.getSelection(event)
+		this.selection = this.viewer.selection
+	},
+
+	attachPickerMouseEvents: function () {
+		var self = this
+		this.viewer.canvas.addEventListener('mousedown', function (event) {
+			event.preventDefault()
+		})
+		this.viewer.canvas.addEventListener('mousemove', function (event) {
+			self.getSelection(event)
+		})
+		this.viewer.canvas.addEventListener('mouseout', function (event) {
+			self.viewer.selection = undefined
+		})
+		this.viewer.canvas.addEventListener('click', function (event) {
+			self.getSelection(event)
+			var x = self.selection.x
+			var y = self.selection.y
+			x = (x - (x % 32)) / 32
+			y = (y - (y % 32)) / 32
+			var block = y * self.viewer.width + x
+			painter.paint_block = block
+			event.preventDefault()
+		})
+	},
+
+}
+
+var BlockViewer = {
 
 	get size () {
-		return this.tileset.metatiles.length
+		return this.tileset.blockdata.length
 	},
 	get blockdata () {
-		return range(this.size)
+		return this.tileset.blockdata
 	},
 	get height () {
 		return Math.ceil(this.size / this.width)
 	},
+	get tileset () {
+		return Data.tilesets[Data.maps[this.map].header.tileset]
+	},
 
-	init: function (viewer) {
+	init: function () {
 		var self = this
-
-		this.viewer = viewer
-		this.tileset = viewer.current_map.tileset
 
 		this.width = 4
 
@@ -821,17 +997,16 @@ var MapPicker = {
 		this.scale = 1
 		this.redraw = true
 
-		this.attachPickerClickEvents()
-
-		this.wrapper = createElement('div', {
-			id: 'picker-wrapper',
-			className: 'picker-wrapper',
-		})
 		this.container = createElement('div', {
 			id: 'pickerbar',
 			className: 'pickerbar',
 		})
 		this.container.appendChild(this.canvas)
+
+		this.wrapper = createElement('div', {
+			id: 'picker-wrapper',
+			className: 'picker-wrapper',
+		})
 		this.wrapper.appendChild(this.container)
 
 	},
@@ -841,45 +1016,22 @@ var MapPicker = {
 		replaceChild(container, this.wrapper)
 	},
 
-	attachPickerClickEvents: function () {
-		var self = this
-		this.canvas.addEventListener('mousedown', function (event) {
-			event.preventDefault()
-		})
-		this.canvas.addEventListener('mousemove', function (event) {
-			self.getSelection(event)
-		})
-		this.canvas.addEventListener('mouseout', function (event) {
-			self.selection = undefined
-		})
-		this.canvas.addEventListener('click', function (event) {
-			self.getSelection(event)
-			var x = self.selection.x
-			var y = self.selection.y
-			x = (x - (x % 32)) / 32
-			y = (y - (y % 32)) / 32
-			self.block = y * self.width + x
-			self.viewer.paint_block = self.block
-			event.preventDefault()
-		})
-	},
-
-	getSelection: function (event) {
-		this.selection = getEventCoord(event)
-		this.selection.x *= this.drawcanvas.width / this.canvas.width
-		this.selection.y *= this.drawcanvas.height / this.canvas.height
-	},
-
 	run: function () {
 		var self = this
 		function draw () {
+			self.running = false
 			self.draw()
 			window.requestAnimationFrame(draw)
+			self.running = true
 		}
-		window.requestAnimationFrame(draw)
+		if (!self.running) {
+			window.requestAnimationFrame(draw)
+		}
 	},
 
 	draw: function () {
+
+		if (this.tileset) {
 
 		var dimensions = {
 			width:  this.width  * this.meta_w * this.tile_w,
@@ -892,14 +1044,11 @@ var MapPicker = {
 		dimensions.height *= this.scale
 		Object.update(this.canvas, dimensions, { careful: true })
 
-		if (this.tileset !== this.viewer.current_map.tileset) {
-			this.tileset = this.viewer.current_map.tileset
-			this.redraw = true
-		}
-
-		if (this.redraw) {
-			this.render()
-			this.redraw = false
+		if (this.tileset) {
+			if (this.redraw) {
+				this.render()
+				this.redraw = false
+			}
 		}
 
 		var context = this.canvas.getContext('2d')
@@ -908,6 +1057,8 @@ var MapPicker = {
 			0, 0, this.drawcanvas.width, this.drawcanvas.height,
 			0, 0, this.canvas.width, this.canvas.height
 		)
+
+		}
 
 		this.drawSelection()
 	},
@@ -943,19 +1094,23 @@ var MapPicker = {
 	},
 
 	drawMetatile: function (x, y, block) {
-		try {
 		drawMetatile({
 			x: x,
 			y: y,
 			block: block,
 			tileset: this.tileset,
+			roof: Data.maps[this.map].header.group,
+			permission: Data.maps[this.map].header.permission,
 			context: this.drawcanvas.getContext('2d'),
 			tile_w: this.tile_w,
 			tile_h: this.tile_h,
 			meta_w: this.meta_w,
 			meta_h: this.meta_h,
 		})
-		} catch (e) {}
+	},
+
+	getSelection: function (event) {
+		this.selection = getCanvasSelection(event, this.canvas, this.drawcanvas)
 	},
 
 	drawSelection: function () {
@@ -1001,16 +1156,87 @@ var Painter = {
 	},
 
 	run: function () {
-		this.viewer.canvas.addEventListener('mousemove', this.update.bind(this))
-		this.viewer.canvas.addEventListener('mousedown', this.update.bind(this))
-		this.viewer.canvas.addEventListener('mouseup', function () { this.viewer.commit() }.bind(this))
+		var self = this
+
+		this.viewer.canvas.addEventListener('mouseup', function (event) {
+			self.mousedown = false
+			event.preventDefault()
+		})
+		this.viewer.canvas.addEventListener('mouseout', function (event) {
+			self.viewer.selection = undefined
+			self.mousedown = false
+		})
+		this.viewer.canvas.addEventListener('mousemove', function (event) {
+			event.preventDefault()
+			self.update(event)
+		})
+		this.viewer.canvas.addEventListener('mousedown', function (event) {
+			event.preventDefault()
+			self.mousedown = true
+			self.update(event)
+		})
+		this.viewer.canvas.addEventListener('mouseup', function () {
+			//self.viewer.commit()
+		})
 		this.viewer.canvas.addEventListener('contextmenu', function (event) {
 			event.preventDefault()
+		})
+
+		this.viewer.canvas.addEventListener('click', function (event) {
+			self.viewer.getSelection(event)
+			var x = self.viewer.selection.x / 32
+			var y = self.viewer.selection.y / 32
+
+			var connections = Data.maps[self.viewer.current_map].attributes.connections
+			var connect = false
+			for (var direction in connections) {
+				var connection = connections[direction]
+				var info = getConnectionInfo(connection, Data.maps[self.viewer.current_map], Data.maps[connection.name])
+				if (info)
+				if (x >= info.x1 && x < info.x2)
+				if (y >= info.y1 && y < info.y2) {
+					connect = connection
+					break
+				}
+			}
+			if (connect) {
+				print(connect.direction + ' to ' + connect.name)
+				gotoMap(connect.name)
+			}
+			event.preventDefault()
+		})
+
+		this.attachResize()
+	},
+
+	attachResize: function () {
+		var self = this
+		var round = Math.round
+		makeResizable(self.viewer.container, undefined /* all directions */, function (props) {
+			var event = props.event
+			var x = event.clientX, y = event.clientY
+
+			var map = Data.maps[self.viewer.current_map]
+			var x1 = 0, y1 = 0, x2 = map.width, y2 = map.height
+			var xd = props.xd, yd = props.yd
+
+			var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
+			var h = self.viewer.meta_h * self.viewer.tile_h * self.viewer.scale
+
+			var rect = self.viewer.container.getBoundingClientRect()
+			if (xd < 0) x1 += round((x - rect.left)   / w)
+			if (xd > 0) x2 += round((x - rect.right)  / w)
+			if (yd < 0) y1 += round((y - rect.top)    / h)
+			if (yd > 0) y2 += round((y - rect.bottom) / h)
+
+			crop(x1, y1, x2, y2)
+			self.viewer.redraw = true
 		})
 	},
 
 	update: function (event) {
-		if (this.viewer.mousedown) {
+		this.viewer.getSelection(event)
+		if (this.mousedown) {
 			var x = this.viewer.selection.x
 			var y = this.viewer.selection.y
 			x = (x - (x % 32)) / 32
@@ -1018,7 +1244,7 @@ var Painter = {
 			x -= this.viewer.origin.x
 			y -= this.viewer.origin.y
 			if (isRightClick(event)) {
-				this.pick(this.viewer.getBlock(this.viewer.current_map, x, y))
+				this.pick(getBlock(this.viewer.current_map, x, y))
 			} else {
 				this.paint(x, y)
 			}
@@ -1026,66 +1252,12 @@ var Painter = {
 	},
 
 	pick: function (block) {
-		this.viewer.paint_block = block
+		this.paint_block = block
 	},
 
 	paint: function (x, y, block) {
-		if (typeof block === 'undefined') block = this.viewer.paint_block
-		this.viewer.current_map.setBlock(x, y, block)
-	},
-
-}
-
-var History = {
-	all: {},
-
-	init: function (viewer) {
-		this.viewer = viewer
-	},
-
-	add: function (name) {
-		if (typeof this.all[name] === 'undefined') {
-			this.all[name] = []
-			this.all[name].index = -1
-		}
-	},
-
-	get current () {
-		var name = this.viewer.current_map.name
-		var current = this.all[name]
-		return current
-	},
-
-	set current (value) {
-		var name = this.viewer.current_map.name
-		this.all[name] = value
-	},
-
-	redo: function () {
-		var min = Math.min
-		this.current.index = min(this.current.index + 1, this.current.length - 1)
-	},
-
-	undo: function () {
-		var max = Math.max
-		this.current.index = max(this.current.index - 1, 0)
-	},
-
-	push: function (value) {
-
-		// Don't be redundant
-		var state = this.current[this.current.index]
-		if (state) {
-			if (value.every(function (v, i) { return v == state[i] })) return
-		}
-
-		if (this.current.length > this.current.index + 1) {
-			var index = this.current.index
-			this.current = this.current.slice(0, index + 1)
-			this.current.index = index
-		}
-		this.current.push(value)
-		this.current.index += 1
+		if (typeof block === 'undefined') block = this.paint_block
+		setBlock(this.viewer.current_map, x, y, block)
 	},
 
 }
@@ -1150,33 +1322,35 @@ var makeResizable = (function () {
 	}
 })()
 
+function setBlock (name, x, y, block) {
+	var map = Data.maps[name]
+	if (x >= 0 && x < map.width)
+	if (y >= 0 && y < map.height) {
+		map.blockdata[x + y * map.width] = block
+	}
+}
+
+function getBlock (name, x, y) {
+	var map = Data.maps[name]
+	return map.blockdata[x + y * map.width]
+}
+
 var MapViewer = {
-
-	world: World,
-
-	history: History,
-	commit: function () {
-		this.history.add(this.current_map.name)
-		this.history.push(this.current_map.blockdata.slice())
-	},
-	undo: function () {
-		this.history.undo()
-		this.current_map.blockdata = this.history.current[this.history.current.index].slice()
-	},
-	redo: function () {
-		this.history.redo()
-		this.current_map.blockdata = this.history.current[this.history.current.index].slice()
-	},
-
 	init: function () {
-		var self = this
-
 		this.canvas = createElement('canvas', {
 			id: 'map_viewer',
 			className: 'map_viewer',
 		})
 
-		this.attachMapClickEvents()
+		this.drawcanvas = createElement('canvas')
+
+		this.container = createElement('div', { className: 'view_container' })
+		this.container.appendChild(this.canvas)
+
+		this.wrapper = createElement('div', { className: 'view-wrapper' })
+		this.wrapper.appendChild(this.container)
+
+		this.scale = 1
 
 		this.meta_w = 4
 		this.meta_h = 4
@@ -1188,21 +1362,6 @@ var MapViewer = {
 			y: 3,
 		}
 
-		this.paint_block = 1
-
-		this.drawcanvas = document.createElement('canvas')
-
-		this.wrapper = createElement('div', { className: 'view-wrapper' })
-		this.container = createElement('div', {
-			id: 'view_container',
-			className: 'view_container',
-		})
-		this.container.appendChild(this.canvas)
-		this.wrapper.appendChild(this.container)
-
-		this.scale = 1
-		this.attachResize()
-
 		this.redraw = true
 	},
 
@@ -1211,122 +1370,21 @@ var MapViewer = {
 		replaceChild(container, this.wrapper)
 	},
 
-	attachResize: function () {
-		var self = this
-		var round = Math.round
-		makeResizable(self.container, undefined /* all directions */, function (props) {
-			var event = props.event
-			var x = event.clientX, y = event.clientY
-
-			var map = self.current_map
-			var x1 = 0, y1 = 0, x2 = map.width, y2 = map.height
-			var xd = props.xd, yd = props.yd
-
-			var w = self.meta_w * self.tile_w * self.scale
-			var h = self.meta_h * self.tile_h * self.scale
-
-			var rect = self.container.getBoundingClientRect()
-			if (xd < 0) x1 += round((x - rect.left)   / w)
-			if (xd > 0) x2 += round((x - rect.right)  / w)
-			if (yd < 0) y1 += round((y - rect.top)    / h)
-			if (yd > 0) y2 += round((y - rect.bottom) / h)
-
-			crop(x1, y1, x2, y2)
-		})
-	},
-
-	attachMapClickEvents: function () {
-
-		var self = this
-
-		this.canvas.addEventListener('mousedown', function (event) {
-			self.mousedown = true
-			event.preventDefault()
-		})
-		this.canvas.addEventListener('mouseup', function (event) {
-			self.mousedown = false
-			event.preventDefault()
-		})
-		this.canvas.addEventListener('mouseout', function (event) {
-			self.selection = undefined
-			self.mousedown = false
-			event.preventDefault()
-		})
-		this.canvas.addEventListener('mousemove', function (event) {
-			self.getSelection(event)
-			event.preventDefault()
-		})
-
-		this.canvas.addEventListener('click', function (event) {
-			self.getSelection(event)
-			var x = self.selection.x / 32
-			var y = self.selection.y / 32
-
-			var connections = self.current_map.map_header_2.connections
-			var connect = false
-			for (var direction in connections) {
-				var connection = connections[direction]
-				var info = connection.info
-				if (info)
-				if (x >= info.x1 && x < info.x2)
-				if (y >= info.y1 && y < info.y2) {
-					connect = connection
-					break
-				}
-			}
-			if (connect) {
-				print(connect.direction, 'to', connect.name)
-				self.loadMap(connect.name)
-			}
-			event.preventDefault()
-		})
-
-	},
-
-	getSelection: function (event) {
-		this.selection = getEventCoord(event)
-		this.selection.x *= this.drawcanvas.width / this.canvas.width
-		this.selection.y *= this.drawcanvas.height / this.canvas.height
-	},
-
 	run: function () {
 		var self = this
 		function draw () {
+			self.running = false
 			self.draw()
 			window.requestAnimationFrame(draw)
+			self.running = true
 		}
-		window.requestAnimationFrame(draw)
-	},
-
-	loadMap: function(name) {
-		var self = this
-		return this.world.loadMap(name)
-		.then(function () {
-			self.addMap(self.world.getMap(name))
-		})
-	},
-
-	getMap: function(name) {
-		return this.world.getMap(name)
-	},
-
-	addMap: function(map) {
-		var self = this
-		this.current_map = map
-		document.title = 'crowdmap - ' + map.name
-		this.blockdata = []
-	},
-
-	get mapList () {
-		var list = []
-		for (var name in this.world.maps) {
-			list.push(this.world.maps[name])
+		if (!self.running) {
+			window.requestAnimationFrame(draw)
 		}
-		return list
 	},
 
 	draw: function () {
-		if (this.current_map) {
+		if (this.current_map && Data.maps[this.current_map]) {
 			if (this.redraw) {
 				this.blockdata = []
 				this.redraw = false
@@ -1337,9 +1395,11 @@ var MapViewer = {
 
 	renderMap: function (map) {
 
+		var width = Data.maps[map].width
+		var height = Data.maps[map].height
 		var dimensions = {
-			width:  (6 + map.width)  * this.meta_w * this.tile_w,
-			height: (6 + map.height) * this.meta_h * this.tile_h,
+			width:  (6 + width)  * this.meta_w * this.tile_w,
+			height: (6 + height) * this.meta_h * this.tile_h,
 		}
 
 		Object.update(this.drawcanvas, dimensions, { careful: true })
@@ -1353,30 +1413,44 @@ var MapViewer = {
 		this.drawConnections(map)
 
 		var context = this.canvas.getContext('2d')
+		context.save()
+		context.globalAlpha = 0.6
 		context.drawImage(
 			this.drawcanvas,
 			0, 0, this.drawcanvas.width, this.drawcanvas.height,
 			0, 0, this.canvas.width, this.canvas.height
 		)
+		context.restore()
 
 		this.drawSelection()
+		this.darkenMapBorder()
 
 	},
 
 	drawMap: function (map) {
-		for (var y = 0; y < map.height; y++)
-		for (var x = 0; x < map.width; x++) {
+		var height = Data.maps[map].height
+		var width = Data.maps[map].width
+		for (var y = 0; y < height; y++)
+		for (var x = 0; x < width; x++) {
 			this.drawMetatile(map, x, y)
 		}
 	},
 
 	drawConnections: function (map) {
 
-		var connections = map.map_header_2.connections
+		var connections = Data.maps[map].attributes.connections
 		for (var c in connections) {
 			var connection = connections[c]
-			var info = connection.info
-			if (!info) continue
+			if (!Data.maps[connection.name]) {
+				continue
+			}
+			if (!Data.maps[connection.name].loaded) {
+				continue
+			}
+			var info = getConnectionInfo(connection, Data.maps[map], Data.maps[connection.name])
+			if (!info) {
+				continue
+			}
 
 			var strip_x = info.strip_x
 			var strip_y = info.strip_y
@@ -1385,12 +1459,12 @@ var MapViewer = {
 			var other_start = info.other_start
 
 			var direction = connection.direction
-			var other_map = map.connected_maps[direction]
-			if (other_map.blockdata !== undefined) {
+			var other_map = Data.maps[connection.name]
 
+			if (other_map.blockdata) {
 				for (var y = strip_y; y < strip_y + strip_height; y++)
 				for (var x = strip_x; x < strip_x + strip_width; x++) {
-					if (other_map.blockdata !== undefined) {
+					if (other_map.blockdata) {
 
 						var block = other_map.blockdata[
 							other_start
@@ -1399,8 +1473,8 @@ var MapViewer = {
 						]
 
 						/* connections compete with border, so maybe force for now */
-						//this.setBlock(map, x, y, -1) // force
-						this.drawMetatile(other_map, x, y, block)
+						//this.setBlock(x, y, -1) // force
+						this.drawMetatile(connection.name, x, y, block)
 					}
 				}
 			}
@@ -1408,18 +1482,76 @@ var MapViewer = {
 	},
 
 	drawMapBorder: function (map) {
-		var border_block = map.map_header_2.border_block
-
-		for (var y = -3; y < map.height + 3; y++)
-		for (var x = -3; x < map.width + 3; x++) {
-			if (y >= 0 && y < map.height) {
-				if (x >= 0 && x < map.width) {
-					x = map.width
+		var border_block = Data.maps[map].attributes.border_block
+		var width = Data.maps[map].width
+		var height = Data.maps[map].height
+		for (var y = -3; y < height + 3; y++)
+		for (var x = -3; x < width + 3; x++) {
+			if (y >= 0 && y < height) {
+				if (x >= 0 && x < width) {
+					x = width
 				}
 			}
-
 			this.drawMetatile(map, x, y, border_block)
 		}
+	},
+
+	darkenMapBorder: function () {
+
+		var map = this.current_map
+		var width = Data.maps[map].width
+		var height = Data.maps[map].height
+
+		var block_w = this.tile_w * this.meta_w
+		var block_h = this.tile_h * this.meta_h
+
+		var context = this.canvas.getContext('2d')
+		var self = this
+		var fillRect = function (x, y, w, h) {
+			x *= self.scale * block_w
+			y *= self.scale * block_h
+			w *= self.scale * block_w
+			h *= self.scale * block_h
+			context.fillRect(x, y, w, h)
+		}
+
+		var connections = Data.maps[map].attributes.connections
+		var cinfo = {}
+		for (var c in connections) {
+			var connection = connections[c]
+			var info = getConnectionInfo(connection, Data.maps[map], Data.maps[connection.name])
+			if (info) {
+				cinfo[c] = info
+			}
+		}
+
+		context.save()
+		context.fillStyle = 'rgba(0, 0, 0, 0.2)'
+		for (var y = 0; y < height + 6; y++)
+		for (var x = 0; x < width + 6; x++) {
+			if (y >= 3 && y < height + 3)
+			if (x >= 3 && x < width + 3) {
+				continue
+			}
+			var in_connection = false
+			for (var dir in cinfo) {
+				var c = cinfo[dir]
+				if (y >= c.strip_y + 3 && y < c.strip_y + 3 + c.strip_height)
+				if (x >= c.strip_x + 3 && x < c.strip_x + 3 + c.strip_width) {
+					in_connection = true
+					break
+				}
+			}
+			if (in_connection) {
+				continue
+			}
+			fillRect(x, y, 1, 1)
+		}
+		context.restore()
+	},
+
+	getSelection: function (event) {
+		this.selection = getCanvasSelection(event, this.canvas, this.drawcanvas)
 	},
 
 	drawSelection: function () {
@@ -1457,10 +1589,10 @@ var MapViewer = {
 		fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
 
 		context.fillStyle = 'rgba(255, 80, 80, 20)'
-		var connections = this.current_map.map_header_2.connections
+		var connections = Data.maps[this.current_map].attributes.connections
 		for (var direction in connections) {
 			var connection = connections[direction]
-			var info = connection.info
+			var info = getConnectionInfo(connection, Data.maps[this.current_map], Data.maps[connection.name])
 			if (!info) continue
 
 			var x1 = info.x1 * block_w
@@ -1477,32 +1609,40 @@ var MapViewer = {
 
 	},
 
-	getBlock: function (map, x, y) {
-		return this.blockdata[x + 3 + (y + 3) * (map.width + 6)]
+	getBlock: function (x, y) {
+		var row = this.blockdata[x + 3]
+		if (!row) {
+			return undefined
+		}
+		return row[y + 3]
 	},
 
-	setBlock: function (map, x, y, block) {
-		this.blockdata[x + 3 + (y + 3) * (map.width + 6)] = block
+	setBlock: function (x, y, block) {
+		var width = Data.maps[this.current_map].width
+		if (!this.blockdata[x + 3]) {
+			this.blockdata[x + 3] = new Array(width + 6)
+		}
+		this.blockdata[x + 3][y + 3] = block
 	},
 
-	blockChanged: function (map, x, y, block) {
-		return this.getBlock(map, x, y) !== block
+	blockChanged: function (x, y, block) {
+		return this.getBlock(x, y) !== block
 	},
 
 	drawMetatile: function (map, x, y, block, config) {
 		map = map || this.current_map
 
 		if (typeof block === 'undefined') {
-			block = map.getBlock(x, y)
+			block = getBlock(map, x, y)
 		}
 
-		if (!this.blockChanged(this.current_map, x, y, block)) {
+		if (!this.blockChanged(x, y, block)) {
 			return false
 		} else {
-			this.setBlock(this.current_map, x, y, block)
+			this.setBlock(x, y, block)
 		}
 
-		var border_block = map.map_header_2.border_block
+		var border_block = Data.maps[map].attributes.border_block
 		block = block || border_block
 
 		x += this.origin.x
@@ -1513,19 +1653,19 @@ var MapViewer = {
 		var tile_w = this.tile_w
 		var tile_h = this.tile_h
 
-		try {
 		drawMetatile({
 			x: x,
 			y: y,
 			block: block,
-			tileset: map.tileset,
+			tileset: getTileset(map),
+			roof: Data.maps[map].header.group,
+			permission: Data.maps[map].header.permission,
 			context: this.drawcanvas.getContext('2d'),
 			tile_w: tile_w,
 			tile_h: tile_h,
 			meta_w: meta_w,
 			meta_h: meta_h,
 		})
-		} catch (e) {}
 
 		if (config) {
 			var block_w = meta_w * tile_w
@@ -1539,13 +1679,21 @@ var MapViewer = {
 
 		return true
 	},
-
 }
 
 var drawMetatile = function (props) {
 	/*
-	props: {x, y, block, tileset, context, tile_w, tile_h, meta_w, meta_h}
+	props: {x, y, block, tileset, context, tile_w, tile_h, meta_w, meta_h[, roof, permission]}
 	*/
+
+	var roof = props.roof
+	if (props.permission) {
+		if (config.roof_permissions.indexOf(props.permission) === -1) {
+			roof = undefined
+		}
+	}
+	var tiles = getTilesetTiles(props.tileset, roof)
+
 	var block_w = props.tile_w * props.meta_w
 	var block_h = props.tile_h * props.meta_h
 	var block = props.block < props.tileset.metatiles.length ? props.block : 0
@@ -1560,7 +1708,7 @@ var drawMetatile = function (props) {
 			cur_tile -= 0x20
 		}
 		props.context.drawImage(
-			props.tileset.tiles[cur_tile],
+			tiles[cur_tile],
 			props.x * block_w + x * props.tile_w,
 			props.y * block_h + tile_y
 		)
@@ -1571,11 +1719,21 @@ var drawMetatile = function (props) {
 	return true
 }
 
+function loadMapDimensions (name) {
+	return getMapDimensions(name)
+	.then(function (data) {
+		Data.maps[name].group = data.group
+		Data.maps[name].num = data.num
+		Data.maps[name].width = data.width
+		Data.maps[name].height = data.height
+	})
+}
+
 function getMapConstantsText () {
 	return request(config.map_constants_path)
 }
 
-function getMapDimensions (map_constant) {
+function getMapDimensions (name) {
 	function has_macro (line, macro) {
 		var re = new RegExp(macro + '\\b')
 		return (line.trim().search(re) !== -1)
@@ -1585,6 +1743,8 @@ function getMapDimensions (map_constant) {
 		args = line.split(',')
 		return args
 	}
+
+	var map_constant = Data.maps[name].attributes.map
 
 	return getMapConstantsText().then(function (text) {
 		group = 0
@@ -1612,198 +1772,117 @@ function getMapDimensions (map_constant) {
 	})
 }
 
-var Map = {
-
-	init: function (name) {
-
-		this.name = name
-
-		if (this.name) {
-			return this.loadMap()
-		} else {
-			return this.createMap()
-		}
-
-	},
-
-	reload: function () {
-		return this.loadMap()
-	},
-
-	loadMap: function () {
-		var self = this
-
+function loadMap(name) {
+	if (!Data.maps[name]) {
+		Data.maps[name] = {}
+	}
+	return Promise.all([
+		loadMapHeader(name),
+		loadMapAttributes(name)
+	])
+	.then(function () {
 		return Promise.all([
-			getMapHeader(this.name),
-			getMapHeader2(this.name)
+			loadBlockdata(name),
+			loadMapTileset(name),
+			loadMapDimensions(name)
 		])
-		.then(function (values) {
-			self.map_header = values[0]
-			self.map_header_2 = values[1]
-		})
 		.then(function () {
-			return getMapDimensions(self.map_header_2.map)
-			.then(function (object) {
-				self.width = object.width
-				self.height = object.height
-			})
-			.then(function () {
-				return self.loadBlockdata()
-			})
-			.then(function () {
-				return self.loadTileset()
-			})
+			Data.maps[name].loaded = true
 		})
-
-	},
-
-	loadConnections: function () {
-		var self = this
-		self.connected_maps = {}
-		var connections = self.map_header_2.connections
-		var promises = []
-		var connection
-		var other_map
-		for (var direction in connections) {
-			connection = connections[direction]
-			/* TODO figure out whether to use World.getMap */
-			other_map = Object.create(Map)
-			self.connected_maps[direction] = other_map
-			promises.push(
-				other_map.init(connection.name)
-				.then(function (connection, other_map) {
-					connection.info = self.getConnectionInfo(connection, other_map)
-				}.bind(this, connection, other_map))
-			)
-		}
-		return Promise.all(promises)
-	},
-
-	getConnectionInfo: function (connection, other_map) {
-
-		var direction = connection.direction
-
-		var strip_y = {
-			north: -3,
-			south: this.height,
-			west: connection.align,
-			east: connection.align,
-		}[direction]
-
-		var strip_x = {
-			north: connection.align,
-			south: connection.align,
-			west: -3,
-			east: this.width,
-		}[direction]
-
-		var strip_length = connection.strip_length
-
-		var strip_height = {
-			north: 3,
-			south: 3,
-			west: strip_length,
-			east: strip_length,
-		}[direction]
-
-		var strip_width = {
-			north: strip_length,
-			south: strip_length,
-			west: 3,
-			east: 3,
-		}[direction]
-
-		var other = other_map
-		var other_start = {
-			north: connection.offset + other.width * (other.height - 3),
-			south: connection.offset,
-			west: other.width * connection.offset + other.width - 3,
-			east: other.width * connection.offset,
-		}[direction]
-
-		var x1 = strip_x + 3
-		var x2 = x1 + strip_width
-		var y1 = strip_y + 3
-		var y2 = y1 + strip_height
-
-		return {
-			strip_y: strip_y,
-			strip_x: strip_x,
-			strip_width: strip_width,
-			strip_height: strip_height,
-			other_start: other_start,
-
-			x1: x1,
-			x2: x2,
-			y1: y1,
-			y2: y2,
-		}
-
-	},
-
-	get blockdata_path () {
-		var path = config.blockdata_dir + this.name + '.blk'
-		return path
-	},
-
-	loadBlockdata: function () {
-		var self = this
-		request(this.blockdata_path, { binary: true, cache: false })
-		.then(function (blockdata) {
-			self.blockdata = blockdata
-		})
-	},
-
-	createMap: function () {
-
-		this.map_header = createMapHeader()
-		this.map_header_2 = createMapHeader2()
-
-		this.createBlockdata()
-
-		return this.loadTileset()
-
-	},
-
-	loadTileset: function () {
-		var self = this
-		var tileset = Object.create(Tileset)
-
-		return tileset.init(this.map_header.tileset, this.map_header)
-		.then(function () {
-			self.tileset = tileset
-		})
-	},
-
-	reloadTileset: function () {
-		var self = this
-		return this.tileset.init(this.map_header.tileset, this.map_header)
-	},
-
-	getBlock: function (x, y) {
-		if (!this.blockdata) return -1
-		return this.blockdata[x + y * this.width]
-	},
-
-	setBlock: function (x, y, block) {
-		if (y >= 0 && y < this.height)
-		if (x >= 0 && x < this.width) {
-			this.blockdata[x + y * this.width] = block
-		}
-	},
-}
-
-function getNybbles(data) {
-
-	var nybbles = []
-
-	data.map(function (b) {
-		nybbles.push (b & 0xf)
-		nybbles.push (b >>> 4)
 	})
-
-	return nybbles
 }
+
+function loadBlockdata (name) {
+	return request(config.getBlockdataPath(name), { binary: true, cache: false })
+	.then(function (blockdata) {
+		Data.maps[name].blockdata = blockdata
+	})
+}
+
+function loadMapTileset (name) {
+	return Promise.all([
+		loadTileset(Data.maps[name].header.tileset),
+		loadMapRoof(name)
+	])
+	.then(function () {
+		getTilesetWithRoof(Data.maps[name].header.tileset, Data.maps[name].header.group)
+	})
+}
+
+function getConnectionInfo (connection, map, other) {
+
+	if (!map) return false
+	if (!other) return false
+
+	var direction = connection.direction
+
+	var strip_y = {
+		north: -3,
+		south: map.height,
+		west: connection.align,
+		east: connection.align,
+	}[direction]
+
+	var strip_x = {
+		north: connection.align,
+		south: connection.align,
+		west: -3,
+		east: map.width,
+	}[direction]
+
+	var strip_length = connection.strip_length
+
+	var strip_height = {
+		north: 3,
+		south: 3,
+		west: strip_length,
+		east: strip_length,
+	}[direction]
+
+	var strip_width = {
+		north: strip_length,
+		south: strip_length,
+		west: 3,
+		east: 3,
+	}[direction]
+
+	var other_start = {
+		north: connection.offset + other.width * (other.height - 3),
+		south: connection.offset,
+		west: other.width * connection.offset + other.width - 3,
+		east: other.width * connection.offset,
+	}[direction]
+
+	var x1 = strip_x + 3
+	var x2 = x1 + strip_width
+	var y1 = strip_y + 3
+	var y2 = y1 + strip_height
+
+	return {
+		strip_y: strip_y,
+		strip_x: strip_x,
+		strip_width: strip_width,
+		strip_height: strip_height,
+		other_start: other_start,
+		x1: x1,
+		x2: x2,
+		y1: y1,
+		y2: y2,
+	}
+}
+
+function getMapBlock(map, x, y) {
+	if (!map.blockdata) return -1
+	return map.blockdata[x + y * map.width]
+}
+
+function setMapBlock(map, x, y, block) {
+	if (y >= 0 && y < map.height)
+	if (x >= 0 && x < map.width) {
+		map.blockdata[x + y * map.width] = block
+	}
+}
+
 
 function imagePromise(image) {
 	return new Promise( function (resolve, reject) {
@@ -1811,163 +1890,165 @@ function imagePromise(image) {
 	})
 }
 
-var Tileset = {
-
-	init: function (id, map_header) {
-		var self = this
-		this.id = id
-		this.header = map_header || config.default_map_header
-
-		this.image = new Image()
-		this.image.src = this.image_path
-
-		this.roof_image = new Image()
-		this.roof_image.src = this.roof_image_path
-
-		return Promise.all([
-			this.loadMetatiles(),
-			this.loadPalmap(),
-			this.loadPalette(),
-			imagePromise(self.image),
-			imagePromise(self.roof_image),
-		])
-		.then( function (values) {
-			self.getColorizedTiles()
-			self.redraw = true
-		})
-	},
-
-	serializeMetatiles: function (data) {
-
-		var metatiles = []
-		var meta_w = 4
-		var meta_h = 4
-		var metatile
-		var index
-		for (var i = 0; (index = i * meta_w * meta_h) < data.length; i++) {
-			metatile = []
-			for (var j = 0; j < meta_w * meta_h; j++) {
-				metatile.push(data[index + j])
-			}
-			metatiles.push(metatile)
-		}
-		return metatiles
-
-	},
-
-	serializePalmap: function (data) {
-		return getNybbles(data)
-	},
-
-	readPalette: function (text) {
-		var palettes = divvy(serializeRGB(text), 4)
-		return palettes
-	},
-
-	getTimeOfDayPal: function () {
-		return {
-			morn: 0,
-			day:  1,
-			nite: 2,
-			dark: 3,
-		}[config.time]
-	},
-
-	loadPalette: function () {
-		var self = this
-		return Promise.all([
-			request(this.palette_path),
-			request(this.roof_palette_path)
-		])
-		.then(function (values) {
-			var time = self.getTimeOfDayPal()
-			var bg = self.readPalette(values.shift()).slice(time * 8, time * 8 + 8)
-
-			var roofs = divvy(serializeRGB(values.shift()), 2)
-			var which_roof = self.header.group
-			if (typeof which_roof === 'undefined') {
-				which_roof = -1
-			}
-			var palette = bg.slice()
-			if (which_roof !== -1) {
-				var roof = roofs.slice(which_roof * 2)[time >> 1]
-				palette[6][1] = roof[0]
-				palette[6][2] = roof[1]
-			}
-
-			self.palette = palette
-		})
-	},
-
-	loadMetatiles: function () {
-		var self = this
-		request(this.metatile_path, { binary: true })
-		.then(function (data) {
-			self.metatiles = self.serializeMetatiles(data)
-		})
-	},
-
-	loadPalmap: function () {
-		var self = this
-		request(this.palmap_path, { binary: true })
-		.then(function (data) {
-			self.palmap = self.serializePalmap(data)
-		})
-	},
-
-	getColorizedTiles: function () {
-		this.tiles = colorizeTiles(this.image, this.palette, this.palmap)
-
-		var roof = config.roofs[this.header.group]
-		if (typeof roof === 'undefined') roof = -1
-		if (config.roof_permissions.indexOf(this.header.permission) === -1) roof = -1
-		if (roof !== -1) {
-			var palmap = []
-			for (var i = 0; i < 9; i++) {
-				palmap.push(6)
-			}
-			this.roof = colorizeTiles(this.roof_image, this.palette, palmap)
-			for (var i = 0; i < 9; i++) {
-				this.tiles[i + 0xa] = this.roof[i]
-			}
-		}
-	},
-
-	get metatile_path () {
-		var path = config.metatiles_dir + this.id.toString().zfill(2) + '_metatiles.bin'
-		return path
-	},
-
-	get palmap_path () {
-		var path = config.palmap_dir + this.id.toString().zfill(2) + '_palette_map.bin'
-		return path
-	},
-
-	get image_path () {
-		var path = config.getTilesetImagePath(this.id)
-		return path
-	},
-
-	get roof_image_path () {
-		var roof = config.roofs[this.header.group]
-		if (roof === -1) {
-			roof = 0
-		}
-		var path = config.tiles_dir + 'roofs/' + roof + '.png'
-		return path
-	},
-
-	get palette_path () {
-		var path = config.palette_dir + 'bg.pal'
-		return path
-	},
-
-	get roof_palette_path () {
-		var path = config.palette_dir + 'roof.pal'
-		return path
-	},
-
+function loadTileset (id) {
+	if (!Data.tilesets[id]) {
+		Data.tilesets[id] = {}
+	}
+	return Promise.all([
+		loadMetatiles(id),
+		loadPalmap(id),
+		loadPalette(id),
+		loadTilesetImage(id)
+	])
+	.then(function () {
+		readTiles(id)
+	})
 }
+
+function loadMetatiles(id) {
+	return request(config.getMetatilePath(id), { binary: true })
+	.then(function (data) {
+		var metatiles = serializeMetatiles(data)
+		Data.tilesets[id].metatiles = metatiles
+		Data.tilesets[id].blockdata = range(metatiles.length)
+	})
+}
+
+function loadPalmap(id) {
+	return request(config.getPalmapPath(id), { binary: true })
+	.then(function (data) {
+		Data.tilesets[id].palmap = serializePalmap(data)
+	})
+}
+
+function loadPalette(id) {
+	return request(config.getPalettePath(id))
+	.then(function (text) {
+		var all_palettes = readPalette(text)
+		var palettes = {}
+		var times = ['morn', 'day', 'nite', 'dark']
+		times.forEach(function (time, i) {
+			var index = i * 8
+			palettes[time] = all_palettes.slice(index, index + 8)
+		})
+		Data.tilesets[id].palettes = palettes
+	})
+}
+
+function loadTilesetImage(id) {
+	var image = new Image()
+	image.src = config.getTilesetImagePath(id)
+	return imagePromise(image)
+	.then(function () {
+		Data.tilesets[id].image = image
+	})
+}
+
+function readTiles(id) {
+	var tileset = Data.tilesets[id]
+	var palette = tileset.palettes[config.time]
+	var tiles = colorizeTiles(tileset.image, palette, tileset.palmap)
+	Data.tilesets[id].tiles = tiles
+}
+
+function serializeMetatiles (data) {
+	var meta_w = 4
+	var meta_h = 4
+	var metatiles = divvy(data, meta_w * meta_h)
+	return metatiles
+}
+
+function serializePalmap (data) {
+	return getNybbles(data)
+}
+
+function readPalette (text, colors_per_pal) {
+	if (typeof colors_per_pal === 'undefined') colors_per_pal = 4
+	var palettes = divvy(serializeRGB(text), colors_per_pal)
+	return palettes
+}
+
+
+function loadMapRoof (map_name) {
+	var map = Data.maps[map_name]
+	return loadRoof(map.header.group)
+}
+
+function loadRoof (roof) {
+	if (!Data.roofs[roof]) {
+		Data.roofs[roof] = {}
+	}
+	return Promise.all([
+		loadRoofPalette(roof),
+		loadRoofImage(roof)
+	])
+	.then(function () {
+		//readRoofTiles(roof)
+	})
+}
+
+function loadRoofPalette (roof) {
+	return request(config.getRoofPalettePath(roof))
+	.then(function (text) {
+		var all_palettes = readPalette(text, 2)
+		var palettes = {}
+		var times = ['morn', 'day', 'nite', 'dark']
+		times.forEach(function (time, i) {
+			var index = roof * 2 + (i >> 1)
+			palettes[time] = all_palettes[index]
+		})
+		Data.roofs[roof].palettes = palettes
+	})
+}
+
+function loadRoofImage(roof) {
+	var image = new Image()
+	image.src = config.getRoofImagePath(roof)
+	return imagePromise(image)
+	.then(function () {
+		Data.roofs[roof].image = image
+	})
+}
+
+function readRoofTiles(roof) {
+	var roof = Data.roofs[roof]
+	var palette = roof.palettes[config.time]
+	var tiles = colorizeTiles(roof.image, palette)
+	roof.tiles = tiles
+}
+
+
+function getTilesetWithRoof (id, r) {
+	var tileset = Data.tilesets[id]
+	var roof = Data.roofs[r]
+	if (!tileset.with_roofs) {
+		tileset.with_roofs = {}
+	}
+	if (!tileset.with_roofs[r]) {
+		tileset.with_roofs[r] = {}
+	}
+
+	var palette = tileset.palettes[config.time].slice()
+	var roof_palette = roof.palettes[config.time]
+	palette[6] = palette[6].slice()
+	palette[6][1] = roof_palette[0]
+	palette[6][2] = roof_palette[1]
+
+	var tiles = colorizeTiles(tileset.image, palette, tileset.palmap)
+	tileset.with_roofs[r].tiles_just_palette = tiles
+
+	var roof_tiles = colorizeTiles(roof.image, [palette[6]])
+	tiles = mergeRoofTiles(tiles.slice(), roof_tiles)
+	tileset.with_roofs[r].tiles = tiles
+}
+
+function mergeRoofTiles(tiles, roof_tiles) {
+	roof_tiles.forEach(function (tile, i) {
+		tiles[i + config.roof_start] = tile
+	})
+	return tiles
+}
+
 
 function canvas(properties) {
 	return createElement('canvas', properties)
@@ -2002,7 +2083,7 @@ function ajax(url, cb, options) {
 		xhr.onload = function () {
 			var response = xhr.responseText
 			if (options.binary) {
-				data = []
+				var data = []
 				for (var i = 0; i < response.length; i++) {
 					data.push(response.charCodeAt(i) & 0xff)
 				}
@@ -2084,7 +2165,12 @@ function colorizeTiles(img, palette, palmap) {
 		x2 = x1 + 8
 		y2 = y1 + 8
 
-		pal = palette[palmap[tile >= 0x60 ? tile + 0x20 : tile] & 7]
+		if (palmap) {
+			var i = palmap[tile >= 0x60 ? tile + 0x20 : tile]
+			pal = palette[i & 7]
+		} else {
+			pal = palette[0]
+		}
 
 		var tileImage = colorize(image, pal, x1, y1, x2, y2)
 		var tileCanvas = canvas({ width: 8, height: 8 })

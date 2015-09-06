@@ -23,7 +23,8 @@ function tileset(id, map) {
 function crop(x1, y1, x2, y2, etc) {
 	etc = etc || {}
 
-	var map = etc.map || view.current_map
+	var map_name = etc.map || view.current_map
+	var map = Data.maps[map_name]
 
 	var last_w = map.width
 	var last_h = map.height
@@ -38,12 +39,11 @@ function crop(x1, y1, x2, y2, etc) {
 		}
 	}
 
-
 	var filler = etc.filler
 	if (typeof filler === 'undefined') {
 		filler = view.paint_block
 		if (typeof filler === 'undefined') {
-			filler = view.current_map.map_header_2.border_block
+			filler = map.attributes.border_block
 		}
 	}
 
@@ -51,7 +51,7 @@ function crop(x1, y1, x2, y2, etc) {
 	for (var y = y1; y < y2; y++)
 	for (var x = x1; x < x2; x++) {
 		if ((x >= 0 && x < last_w) && (y >= 0 && y < last_h)) {
-			blk.push(map.getBlock(x, y))
+			blk.push(getBlock(map_name, x, y))
 		} else {
 			blk.push(filler)
 		}
