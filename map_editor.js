@@ -155,22 +155,20 @@ function gotoMap(name) {
 			if (tileset) {
 				picker_view.map = name
 				picker_view.run()
-				picker_view.redraw = true
 			}
 			view.run()
-			view.redraw = true
 		}
 	}
 	return loadMap(name)
 	.then(function () {
 		view.current_map = name
 		picker_view.map = name
-		picker_view.redraw = true
-		view.redraw = true
+		picker_view.run()
+		view.run()
 		return loadMapConnections(name)
 	})
 	.then(function () {
-		view.redraw = true
+		view.run()
 	})
 }
 
@@ -415,12 +413,12 @@ function editMapHeader (event) {
 					if (key === 'group') {
 						loadMapTileset(view.current_map)
 						.then(function () {
-							view.redraw = true
-							picker_view.redraw = true
+							view.run()
+							picker_view.run()
 						})
 					} else {
-						view.redraw = true
-						picker_view.redraw = true
+						view.run()
+						picker_view.run()
 					}
 				}
 			}
@@ -444,8 +442,8 @@ function editMapHeader (event) {
 				header.tileset = i
 				loadMapTileset(view.current_map)
 				.then(function () {
-					view.redraw = true
-					picker_view.redraw = true
+					view.run()
+					picker_view.run()
 				})
 			})
 			elem.addEventListener('click', function (event) {
@@ -634,8 +632,8 @@ function setBrightness (time, element) {
 		getTilesetWithRoof(map.header.tileset, map.header.group)
 	}
 
-	view.redraw = true
-	picker_view.redraw = true
+	view.run()
+	picker_view.run()
 }
 
 function undo (event) {
@@ -1004,7 +1002,6 @@ var BlockViewer = {
 		this.drawcanvas = createElement('canvas')
 
 		this.scale = 1
-		this.redraw = true
 
 		this.container = createElement('div', {
 			id: 'pickerbar',
@@ -1033,6 +1030,7 @@ var BlockViewer = {
 			window.requestAnimationFrame(draw)
 			self.running = true
 		}
+		self.redraw = true
 		if (!self.running) {
 			window.requestAnimationFrame(draw)
 		}
@@ -1370,8 +1368,6 @@ var MapViewer = {
 			x: 3,
 			y: 3,
 		}
-
-		this.redraw = true
 	},
 
 	attach: function (container) {
@@ -1387,6 +1383,7 @@ var MapViewer = {
 			window.requestAnimationFrame(draw)
 			self.running = true
 		}
+		self.redraw = true
 		if (!self.running) {
 			window.requestAnimationFrame(draw)
 		}
