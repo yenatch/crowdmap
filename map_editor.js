@@ -1,151 +1,4 @@
-var Promise = Promise || ES6Promise.Promise
 
-String.prototype.contains = String.prototype.contains || function (term) {
-	return this.indexOf(term) !== -1
-}
-
-var addQuery = function (url, query) {
-	url += url.contains('?') ? '&' : '?'
-	url += query
-	return url
-}
-
-var isRightClick = function (event) {
-	return event.which == 3 || event.button == 2
-}
-
-var range = function (length) {
-	var list = []
-	for (var i = 0; i < length; i++) {
-		list.push(i)
-	}
-	return list
-}
-
-function getNybbles(data) {
-	var nybbles = []
-	data.forEach(function (b) {
-		nybbles.push (b & 0xf)
-		nybbles.push (b >>> 4)
-	})
-	return nybbles
-}
-
-Object.update = Object.update || function (object, properties, options) {
-	options = options || {}
-	if (typeof options.careful === 'undefined') options.careful = false // Useful for updating trapped properties only when they're actually different.
-	if (typeof options.setdefault === 'undefined') options.setdefault = false // If the property exists, don't touch it
-	for (var i in properties) {
-		var prop = properties[i]
-		if (options.careful) {
-			if (object[i] !== prop) {
-				object[i] = prop
-			}
-		}
-		else if (options.setdefault) {
-			if (typeof object[i] === 'undefined') {
-				object[i] = prop
-			}
-		}
-		else {
-			object[i] = prop
-		}
-	}
-	return object
-}
-
-var replaceChild = function (container, child) {
-	var maybe = container.children[child.id]
-	if (maybe !== undefined) {
-		if (maybe !== child) {
-			container.removeChild(maybe)
-			container.appendChild(child)
-		}
-	} else {
-		container.appendChild(child)
-	}
-}
-
-
-var root = '../'
-
-var config = {
-
-	time: 'day',
-	default_map: 'OlivineCity',
-
-	blockdata_dir:      root + 'maps/',
-	tiles_dir:          root + 'gfx/tilesets/',
-	palette_dir:        root + 'tilesets/',
-	metatiles_dir:      root + 'tilesets/',
-	collision_dir:      root + 'tilesets/',
-	palmap_dir:         root + 'tilesets/',
-	asm_dir:            root + 'maps/',
-	ow_dir:             root + 'gfx/overworld/',
-	map_header_path:    root + 'maps/map_headers.asm',
-	map_header_2_path:  root + 'maps/second_map_headers.asm',
-	map_constants_path: root + 'constants/map_constants.asm',
-
-	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
-	roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ],
-	roof_start: 0xa,
-
-	getTilesetImagePath: function (id) {
-		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
-		path = addQuery(path, Date.now())
-		return path
-	},
-
-	getBlockdataPath: function (name) {
-		return this.blockdata_dir + name + '.blk'
-	},
-
-	getMetatilePath: function (id) {
-		return this.metatiles_dir + id.toString().zfill(2) + '_metatiles.bin'
-	},
-
-	getPalmapPath: function (id) {
-		return this.palmap_dir + id.toString().zfill(2) + '_palette_map.bin'
-	},
-
-	getRoofImagePath: function (group) {
-		var roof = this.roofs[group]
-		if (roof === -1) {
-			roof = 0
-		}
-		var path = this.tiles_dir + 'roofs/' + roof + '.png'
-		return path
-	},
-
-	getPalettePath: function (id) {
-		var path = config.palette_dir + 'bg.pal'
-		return path
-	},
-
-	getRoofPalettePath: function () {
-		var path = this.palette_dir + 'roof.pal'
-		return path
-	},
-
-	default_map_header: {
-		label: '',
-		tileset: 1,
-		permission: 0,
-		location: 'SPECIAL_MAP',
-		music: 'MUSIC_NONE',
-		lighting: 0,
-		fish: 1,
-	},
-
-	default_map_header_2: {
-		label: '',
-		map: undefined,
-		border_block: 0,
-		which_connections: '',
-		connections: {},
-	},
-
-}
 
 function gotoMap(name) {
 	if (Data.maps[name]) {
@@ -234,18 +87,19 @@ function getTileset(map_name) {
 }
 
 function getTilesetTiles(tileset, roof) {
-	if (typeof roof === 'undefined') {
-		return tileset.tiles
+	if (config.roof_tilesets.indexOf(tileset.id) !== -1) {
+		if (typeof roof !== 'undefined') {
+			var tilesets = tileset.with_roofs[roof]
+			if (typeof tileset !== 'undefined') {
+				if (config.roofs[roof] !== -1) {
+					return tilesets.tiles
+				} else {
+					return tilesets.tiles_just_palette
+				}
+			}
+		}
 	}
-	var tilesets = tileset.with_roofs[roof]
-	if (typeof tilesets === 'undefined') {
-		return tileset.tiles
-	}
-	if (config.roofs[roof] !== -1) {
-		return tilesets.tiles
-	} else {
-		return tilesets.tiles_just_palette
-	}
+	return tileset.tiles
 }
 
 function getMapGroupNames () {
@@ -1682,13 +1536,7 @@ var drawMetatile = function (props) {
 	props: {x, y, block, tileset, context, tile_w, tile_h, meta_w, meta_h[, roof, permission]}
 	*/
 
-	var roof = props.roof
-	if (props.permission) {
-		if (config.roof_permissions.indexOf(props.permission) === -1) {
-			roof = undefined
-		}
-	}
-	var tiles = getTilesetTiles(props.tileset, roof)
+	var tiles = getTilesetTiles(props.tileset, props.roof)
 
 	var block_w = props.tile_w * props.meta_w
 	var block_h = props.tile_h * props.meta_h
@@ -1888,7 +1736,7 @@ function imagePromise(image) {
 
 function loadTileset (id) {
 	if (!Data.tilesets[id]) {
-		Data.tilesets[id] = {}
+		Data.tilesets[id] = { id: id, }
 	}
 	return Promise.all([
 		loadMetatiles(id),
@@ -1950,7 +1798,7 @@ function readTiles(id) {
 function serializeMetatiles (data) {
 	var meta_w = 4
 	var meta_h = 4
-	var metatiles = divvy(data, meta_w * meta_h)
+	var metatiles = subdivide(data, meta_w * meta_h)
 	return metatiles
 }
 
@@ -1960,7 +1808,7 @@ function serializePalmap (data) {
 
 function readPalette (text, colors_per_pal) {
 	if (typeof colors_per_pal === 'undefined') colors_per_pal = 4
-	var palettes = divvy(serializeRGB(text), colors_per_pal)
+	var palettes = subdivide(serializeRGB(text), colors_per_pal)
 	return palettes
 }
 
@@ -2046,54 +1894,6 @@ function mergeRoofTiles(tiles, roof_tiles) {
 }
 
 
-function canvas(properties) {
-	return createElement('canvas', properties)
-}
-
-
-function request(url, options) {
-	return new Promise( function (resolve, reject) {
-		ajax(url, resolve, options)
-	})
-}
-
-function ajax(url, cb, options) {
-	options = options || {}
-	options = Object.update({
-		binary: false,
-		method: 'GET',
-		data: undefined,
-		cache: false,
-	}, options)
-
-	if (options.cache === false && options.method !== 'POST') {
-		url = addQuery(url, Date.now())
-	}
-
-	var xhr = new XMLHttpRequest()
-	xhr.open(options.method, url, !!cb)
-	if (options.binary) {
-		xhr.overrideMimeType('text/plain; charset=x-user-defined');
-	}
-	if (cb) {
-		xhr.onload = function () {
-			var response = xhr.responseText
-			if (options.binary) {
-				var data = []
-				for (var i = 0; i < response.length; i++) {
-					data.push(response.charCodeAt(i) & 0xff)
-				}
-				cb(data)
-			} else {
-				cb(response)
-			}
-		}
-	}
-	xhr.send(options.data)
-}
-
-
-
 
 function getPalettes(url) {
 	var palettes = [];
@@ -2121,7 +1921,7 @@ function getPalettes(url) {
 }
 
 
-function divvy(list, length) {
+function subdivide(list, length) {
 	var new_list = []
 	for (var i = 0; i < list.length; i += length) {
 		new_list.push(list.slice(i, i + length))
@@ -2169,7 +1969,7 @@ function colorizeTiles(img, palette, palmap) {
 		}
 
 		var tileImage = colorize(image, pal, x1, y1, x2, y2)
-		var tileCanvas = canvas({ width: 8, height: 8 })
+		var tileCanvas = createElement('canvas', { width: 8, height: 8 })
 		tileCanvas.getContext('2d').putImageData(tileImage, 0, 0)
 		tiles.push(tileCanvas)
 
@@ -2210,23 +2010,15 @@ function colorize(image, palette, x1, y1, x2, y2) {
 
 
 function getRawImage(img) {
-	var ctx = canvas({ width: img.width, height: img.height }).getContext('2d')
+	var ctx = createElement('canvas', { width: img.width, height: img.height }).getContext('2d')
 	ctx.drawImage(img, 0, 0)
 	var imageData = ctx.getImageData(0, 0, img.width, img.height)
 	return imageData
 }
 
 function getImageTemplate(width, height) {
-	var ctx = canvas({ width: width, height: height }).getContext('2d')
+	var ctx = createElement('canvas', { width: width, height: height }).getContext('2d')
 	return ctx.createImageData(width, height)
 }
 
-
-String.prototype.repeat = function(length) {
-	return new Array(length + 1).join(this);
-}
-
-String.prototype.zfill = function(length) {
-	return '0'.repeat(length - this.length) + this;
-}
 
