@@ -1874,9 +1874,11 @@ function getTilesetWithRoof (id, r) {
 
 	var palette = tileset.palettes[config.time].slice()
 	var roof_palette = roof.palettes[config.time]
-	palette[6] = palette[6].slice()
-	palette[6][1] = roof_palette[0]
-	palette[6][2] = roof_palette[1]
+	if (typeof roof_palette !== 'undefined') {
+		palette[6] = palette[6].slice()
+		palette[6][1] = roof_palette[0]
+		palette[6][2] = roof_palette[1]
+	}
 
 	var tiles = colorizeTiles(tileset.image, palette, tileset.palmap)
 	tileset.with_roofs[r].tiles_just_palette = tiles

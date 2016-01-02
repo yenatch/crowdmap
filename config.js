@@ -42,7 +42,7 @@ var config = {
 
 	getRoofImagePath: function (group) {
 		var roof = this.roofs[group]
-		if (roof === -1) {
+		if (roof === -1 || typeof roof === 'undefined') {
 			roof = 0
 		}
 		var path = this.tiles_dir + 'roofs/' + roof + '.png'
