@@ -66,6 +66,14 @@ var replaceChild = function (container, child) {
 	}
 }
 
+function subdivide(list, length) {
+	var new_list = []
+	for (var i = 0; i < list.length; i += length) {
+		new_list.push(list.slice(i, i + length))
+	}
+	return new_list
+}
+
 
 function request(url, options) {
 	return new Promise( function (resolve, reject) {
@@ -106,6 +114,10 @@ function ajax(url, cb, options) {
 		}
 	}
 	xhr.send(options.data)
+}
+
+String.prototype.title = function () {
+	return this.replace(/[a-zA-Z]*/g, function (word) { return word.substr(0, 1).toUpperCase() + word.substr(1).toLowerCase() })
 }
 
 String.prototype.repeat = function(length) {

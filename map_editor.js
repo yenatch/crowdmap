@@ -573,6 +573,21 @@ var Toolbar = {
 }
 
 
+/*
+function loadMapProperty(map_name, property) {
+	return config.read(property, name)
+	.then(function (result) {
+		Data.maps[name][property] = result
+	})
+}
+*/
+
+function loadMapEvents(name) {
+	return config.readEvents(name)
+	.then(function (events) {
+		Data.maps[name].events = events
+	})
+}
 
 function loadMapHeader(name) {
 	return getMapHeader(name)
@@ -1240,6 +1255,7 @@ var MapViewer = {
 				this.redraw = false
 			}
 			this.renderMap(this.current_map)
+			this.renderEvents()
 		}
 	},
 
@@ -1274,6 +1290,43 @@ var MapViewer = {
 
 		this.drawSelection()
 		this.darkenMapBorder()
+
+	},
+
+	getCurrentMap: function () {
+		return Data.maps[this.current_map]
+	},
+
+	renderEvents: function () {
+		var events = this.getCurrentMap().events
+		var container = this.container
+
+		var children = this.container.children
+		var remove = []
+		for (var i = 0; i < children.length; i++) {
+			var child = children[i]
+			if (['npc', 'warp', 'sign', 'trap'].indexOf(child.className) !== -1) {
+				remove.push(child)
+			}
+		}
+
+		var add_event = function (npc) {
+			var index = remove.indexOf(npc.element)
+			if (index !== -1) {
+				remove.splice(index, 1)
+			} else {
+				container.appendChild(npc.element)
+			}
+		}
+
+		events.npcs.forEach(add_event)
+		events.warps.forEach(add_event)
+		events.traps.forEach(add_event)
+		events.signs.forEach(add_event)
+
+		remove.forEach(function (child) {
+			container.removeChild(child)
+		})
 
 	},
 
@@ -1584,16 +1637,16 @@ function getMapDimensions (name) {
 	}
 	function read_macro (line, macro) {
 		line = line.substr(line.search(macro) + macro.length)
-		args = line.split(',')
+		var args = line.split(',')
 		return args
 	}
 
 	var map_constant = Data.maps[name].attributes.map
 
 	return getMapConstantsText().then(function (text) {
-		group = 0
-		num = 0
-		lines = text.split('\n')
+		var group = 0
+		var num = 0
+		var lines = text.split('\n')
 		for (var i = 0; i < lines.length; i++) {
 			var line = lines[i]
 			if (has_macro(line, 'newgroup')) {
@@ -1622,7 +1675,8 @@ function loadMap(name) {
 	}
 	return Promise.all([
 		loadMapHeader(name),
-		loadMapAttributes(name)
+		loadMapAttributes(name),
+		loadMapEvents(name),
 	])
 	.then(function () {
 		return Promise.all([
@@ -1630,9 +1684,9 @@ function loadMap(name) {
 			loadMapTileset(name),
 			loadMapDimensions(name)
 		])
-		.then(function () {
-			Data.maps[name].loaded = true
-		})
+	})
+	.then(function () {
+		Data.maps[name].loaded = true
 	})
 }
 
@@ -1922,14 +1976,6 @@ function getPalettes(url) {
 	return palettes;
 }
 
-
-function subdivide(list, length) {
-	var new_list = []
-	for (var i = 0; i < list.length; i += length) {
-		new_list.push(list.slice(i, i + length))
-	}
-	return new_list
-}
 
 function serializeRGB(text) {
 	var colors = []
