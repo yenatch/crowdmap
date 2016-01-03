@@ -149,14 +149,45 @@ function read_warps(macros) {
 	return warps
 }
 
+function read_signs(macros) {
+	var signs = read_named_list(macros, [
+		'y', 'x',
+		'function',
+		'script',
+	])
+	signs.forEach(function (sign) {
+		sign.x = rgbasm_parse(sign.x) + 4
+		sign.y = rgbasm_parse(sign.y) + 4
+		sign.image_path = 'sign.png'
+	})
+	return signs
+}
+
+function read_traps(macros) {
+	var traps = read_named_list(macros, [
+		'trigger',
+		'y', 'x',
+		'unknown1',
+		'script',
+		'unknown2',
+		'unknown3',
+	])
+	traps.forEach(function (trap) {
+		trap.x = rgbasm_parse(trap.x) + 4
+		trap.y = rgbasm_parse(trap.y) + 4
+		trap.image_path = 'trap.png'
+	})
+	return traps
+}
+
 function readEventText (text, map_name) {
 	var lines = asmAtLabel(text, map_name + '_MapEventHeader')
 	var macros = read_macros(lines)
 	
 	var filler = macros.shift().values
 	var warps = read_warps(macros)
-	var traps = read_list(macros)
-	var signs = read_list(macros)
+	var traps = read_traps(macros)
+	var signs = read_signs(macros)
 	var npcs = read_npcs(macros)
 
 	return getMapConstants().then(function(map_constants) {
@@ -164,7 +195,7 @@ function readEventText (text, map_name) {
 			var npc = npcs[i]
 			npc.sprite_id = map_constants[npc.sprite] - 1
 			var sprite_id = npc.sprite_id >= 0 && npc.sprite_id <= 102 ? npc.sprite_id : 0
-			npc.image_path = addQuery(root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png', Date.now())
+			npc.image_path = root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
 		}
 
 		var obj_groups = [[warps, 'warp'], [traps, 'trap'], [signs, 'sign'], [npcs, 'npc']]
@@ -251,6 +282,10 @@ function read_constants(text) {
 		if (index !== -1) {
 			const_value = 0
 		}
+		var index = line.search(/\bconst_value\b/)
+		if (index !== -1) {
+			const_value = rgbasm_parse(line.substr(index + 'const_value'.length).replace(/set/i, '').replace(/=/i, '').trim())
+		}
 		var index = line.search(/\bconst\b/)
 		if (index !== -1) {
 			var key = line.substr(index + 'const'.length).trim()
@@ -261,82 +296,3 @@ function read_constants(text) {
 	}
 	return constants
 }
-
-/*
-
-function eventHeader(asm, mapName) {
-	var header = asmAtLabel(asm, mapName + '_MapEventHeader');
-	var classes = {
-		unknown: function(){}, // "filler"
-		warp_def: Warp,
-		xy_trigger: XYTrigger,
-		signpost: Signpost,
-		person_event: PersonEvent
-	};
-	return readHeader(header, classes);
-}
-
-var Warp = function(asm) {
-	var attributes = [
-		'y',
-		'x',
-		'warp_id',
-		'map_group',
-		'map_no'
-	];
-	var values = macroValues(asm, 'warp_def');
-	for (var i = 0; i < attributes.length; i++) {
-		this[attributes[i]] = values[i];
-	}
-}
-
-var XYTrigger = function(asm) {
-        var attributes = [
-        	'number',
-        	'y',
-        	'x',
-        	'unknown1',
-        	'script',
-        	'unknown2',
-        	'unknown3'
-        ];
-	var values = macroValues(asm, 'xy_trigger');
-	for (var i = 0; i < attributes.length; i++) {
-		this[attributes[i]] = values[i];
-	}
-}
-
-var Signpost = function(asm) {
-	var attributes = [
-		'y',
-		'x',
-		'function',
-		'pointer',
-	];
-	var values = macroValues(asm, 'signpost');
-	for (var i = 0; i < attributes.length; i++) {
-		this[attributes[i]] = values[i];
-	}
-}
-
-var PersonEvent = function(asm) {
-	var attributes = [
-		'pic',
-		'y',
-		'x',
-		'facing',
-		'movement',
-		'clock_hour',
-		'clock_daytime',
-		'color_function',
-		'sight_range',
-		'script_label',
-		'bit_no'
-	];
-	var values = macroValues(asm, 'person_event');
-	for (var i = 0; i < attributes.length; i++) {
-		this[attributes[i]] = values[i];
-	}
-}
-
-*/
