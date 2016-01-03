@@ -135,10 +135,9 @@ def add_map(data):
 	include = open(include_path).read()
 	include += '\n'
 	include += 'SECTION "{}", ROMX\n'.format(label)
-	include += 'INCLUDE "maps/{}.asm"'.format(label)
+	include += 'INCLUDE "maps/{}.asm"\n'.format(label)
 	include += 'SECTION "{} Blockdata", ROMX\n'.format(label)
-	include += '{0}_BlockData: INCBIN "maps/{0}.blk"'.format(label)
-	include += '\n'
+	include += '{0}_BlockData: INCBIN "maps/{0}.blk"\n'.format(label)
 
 	with open(path, 'w') as out:
 		out.write(new_text)
