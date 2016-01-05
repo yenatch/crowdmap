@@ -210,7 +210,9 @@ function readEventText (text, map_name) {
 					}
 					npc.element.className = className
 
-					npc.element.style.opacity = '0.7'
+					if (className !== 'npc') {
+						npc.element.style.opacity = '0.7'
+					}
 					if (npc.image_path) {
 						npc.element.style.background = 'url(' + npc.image_path + ')'
 					}
