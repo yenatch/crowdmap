@@ -1601,11 +1601,15 @@ var drawMetatile = function (props) {
 	for (var y = 0; y < props.meta_h; y++) {
 	for (var x = 0; x < props.meta_w; x++) {
 		var cur_tile = metatile[x + row_index]
+		if (cur_tile >= tiles.length) {
+			cur_tile = 0
+		}
 		if (cur_tile >= 0x80) {
 			cur_tile -= 0x20
 		}
+		var tile = tiles[cur_tile]
 		props.context.drawImage(
-			tiles[cur_tile],
+			tile,
 			props.x * block_w + x * props.tile_w,
 			props.y * block_h + tile_y
 		)
