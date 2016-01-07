@@ -131,6 +131,10 @@ function read_npcs(macros) {
 		'script',
 		'event_flag'
 	])
+	npcs.forEach(function (npc) {
+		npc.x = rgbasm_parse(npc.x) - 4
+		npc.y = rgbasm_parse(npc.y) - 4
+	})
 	return npcs
 }
 
@@ -142,8 +146,8 @@ function read_warps(macros) {
 		'map_num',
 	])
 	warps.forEach(function (warp) {
-		warp.x = rgbasm_parse(warp.x) + 4
-		warp.y = rgbasm_parse(warp.y) + 4
+		warp.x = rgbasm_parse(warp.x)
+		warp.y = rgbasm_parse(warp.y)
 		warp.image_path = 'warp.png'
 	})
 	return warps
@@ -156,8 +160,8 @@ function read_signs(macros) {
 		'script',
 	])
 	signs.forEach(function (sign) {
-		sign.x = rgbasm_parse(sign.x) + 4
-		sign.y = rgbasm_parse(sign.y) + 4
+		sign.x = rgbasm_parse(sign.x)
+		sign.y = rgbasm_parse(sign.y)
 		sign.image_path = 'sign.png'
 	})
 	return signs
@@ -173,8 +177,8 @@ function read_traps(macros) {
 		'unknown3',
 	])
 	traps.forEach(function (trap) {
-		trap.x = rgbasm_parse(trap.x) + 4
-		trap.y = rgbasm_parse(trap.y) + 4
+		trap.x = rgbasm_parse(trap.x)
+		trap.y = rgbasm_parse(trap.y)
 		trap.image_path = 'trap.png'
 	})
 	return traps
@@ -219,12 +223,39 @@ function readEventText (text, map_name) {
 
 					npc.element.style.width = '16px'
 					npc.element.style.height = '16px'
-					npc.element.style.left = parseInt(npc.x) * 16 + 32 + 'px'
-					npc.element.style.top = parseInt(npc.y) * 16 + 32 + 'px'
 					npc.element.style.position = 'absolute'
 				})
 			}
 		)
+
+		var all_obj = [npcs, warps, traps, signs].reduce(function (x, y) { return x.concat(y) })
+		all_obj.forEach(function (npc) {
+			var dragging = false
+			npc.element.style.webkitUserSelect = 'none'
+			npc.element.style.mozUserSelect = 'none'
+			npc.element.style.cursor = '-webkit-grab'
+			npc.element.addEventListener('mousedown', function (event) {
+				dragging = true
+				npc.element.style.cursor = '-webkit-grabbing'
+			})
+			document.addEventListener('mousemove', function (event) {
+				if (dragging) {
+					var rect = npc.element.getBoundingClientRect()
+					var x = event.pageX - rect.left
+					if (x < 0) x -= 16
+					x = (x - x % 16) / 16
+					var y = event.pageY - rect.top
+					if (y < 0) y -= 16
+					y = (y - y % 16) / 16
+					npc.x += x
+					npc.y += y
+				}
+			})
+			document.addEventListener('mouseup', function (event) {
+				dragging = false
+				npc.element.style.cursor = '-webkit-grab'
+			})
+		})
 
 		warps.forEach(function (warp) {
 			warp.element.addEventListener('contextmenu', function (event) {

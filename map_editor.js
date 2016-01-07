@@ -1317,6 +1317,8 @@ var MapViewer = {
 			} else {
 				container.appendChild(npc.element)
 			}
+			npc.element.style.left = (parseInt(npc.x) + 6) * 16 + 'px'
+			npc.element.style.top = (parseInt(npc.y) + 6) * 16 + 'px'
 		}
 
 		events.npcs.forEach(add_event)
