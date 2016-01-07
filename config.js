@@ -241,10 +241,10 @@ function readEventText (text, map_name) {
 			document.addEventListener('mousemove', function (event) {
 				if (dragging) {
 					var rect = npc.element.getBoundingClientRect()
-					var x = event.pageX - rect.left
+					var x = event.clientX - rect.left
 					if (x < 0) x -= 16
 					x = (x - x % 16) / 16
-					var y = event.pageY - rect.top
+					var y = event.clientY - rect.top
 					if (y < 0) y -= 16
 					y = (y - y % 16) / 16
 					npc.x += x
