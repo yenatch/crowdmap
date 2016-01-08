@@ -194,6 +194,86 @@ function readEventText (text, map_name) {
 	var signs = read_signs(macros)
 	var npcs = read_npcs(macros)
 
+	var obj_groups = [[warps, 'warp'], [traps, 'trap'], [signs, 'sign'], [npcs, 'npc']]
+	obj_groups.forEach(
+		function (stuff) {
+			var objs = stuff[0]
+			var className = stuff[1]
+			objs.forEach(function (npc) {
+
+				if (typeof npc.element === 'undefined') {
+					npc.element = createElement('div')
+				}
+				npc.element.className = className
+
+				if (className !== 'npc') {
+					npc.element.style.opacity = '0.7'
+				}
+				if (npc.image_path) {
+					npc.element.style.background = 'url(' + npc.image_path + ')'
+				}
+
+				npc.element.style.width = '16px'
+				npc.element.style.height = '16px'
+				npc.element.style.position = 'absolute'
+			})
+		}
+	)
+
+	var all_obj = [].concat(npcs, warps, traps, signs)
+	all_obj.forEach(function (npc) {
+		var dragging = false
+
+		npc.element.addEventListener('mousedown', function (event) {
+			dragging = true
+		})
+		document.addEventListener('mousemove', function (event) {
+			if (dragging) {
+				var rect = npc.element.getBoundingClientRect()
+				var x = event.clientX - rect.left
+				if (x < 0) x -= 16
+				x = (x - x % 16) / 16
+				var y = event.clientY - rect.top
+				if (y < 0) y -= 16
+				y = (y - y % 16) / 16
+				npc.x += x
+				npc.y += y
+			}
+		})
+		document.addEventListener('mouseup', function (event) {
+			dragging = false
+		})
+	})
+
+	all_obj.forEach(function (npc) {
+		// Have a grabby hand when moving npcs around.
+		npc.element.style.webkitUserSelect = 'none'
+		npc.element.style.mozUserSelect = 'none'
+		npc.element.style.cursor = '-webkit-grab'
+		var last_cursor
+		npc.element.addEventListener('mousedown', function (event) {
+			npc.element.style.cursor = '-webkit-grabbing'
+			last_cursor = document.body.style.cursor
+			document.body.style.cursor = '-webkit-grabbing'
+		})
+		document.addEventListener('mouseup', function (event) {
+			npc.element.style.cursor = '-webkit-grab'
+			document.body.style.cursor = last_cursor
+		})
+	})
+
+	warps.forEach(function (warp) {
+		warp.element.addEventListener('contextmenu', function (event) {
+			event.preventDefault()
+			// We're stuck with the map constant, so we can only approximate the corresponding label.
+			// This seems to work for the majority of maps.
+			var map_name = warp.map_num.substr(4).title().replace(/_/g, '')
+			map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
+			console.log('warp to ' + map_name)
+			gotoMap(map_name)
+		})
+	})
+
 	return getMapConstants().then(function(map_constants) {
 		for (var i = 0; i < npcs.length; i++) {
 			var npc = npcs[i]
@@ -201,75 +281,8 @@ function readEventText (text, map_name) {
 			var sprite_id = npc.sprite_id >= 0 && npc.sprite_id <= 102 ? npc.sprite_id : 0
 			npc.image_path = root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
 		}
-
-		var obj_groups = [[warps, 'warp'], [traps, 'trap'], [signs, 'sign'], [npcs, 'npc']]
-		obj_groups.forEach(
-			function (stuff) {
-				var objs = stuff[0]
-				var className = stuff[1]
-				objs.forEach(function (npc) {
-
-					if (typeof npc.element === 'undefined') {
-						npc.element = createElement('div')
-					}
-					npc.element.className = className
-
-					if (className !== 'npc') {
-						npc.element.style.opacity = '0.7'
-					}
-					if (npc.image_path) {
-						npc.element.style.background = 'url(' + npc.image_path + ')'
-					}
-
-					npc.element.style.width = '16px'
-					npc.element.style.height = '16px'
-					npc.element.style.position = 'absolute'
-				})
-			}
-		)
-
-		var all_obj = [npcs, warps, traps, signs].reduce(function (x, y) { return x.concat(y) })
-		all_obj.forEach(function (npc) {
-			var dragging = false
-			npc.element.style.webkitUserSelect = 'none'
-			npc.element.style.mozUserSelect = 'none'
-			npc.element.style.cursor = '-webkit-grab'
-			npc.element.addEventListener('mousedown', function (event) {
-				dragging = true
-				npc.element.style.cursor = '-webkit-grabbing'
-			})
-			document.addEventListener('mousemove', function (event) {
-				if (dragging) {
-					var rect = npc.element.getBoundingClientRect()
-					var x = event.clientX - rect.left
-					if (x < 0) x -= 16
-					x = (x - x % 16) / 16
-					var y = event.clientY - rect.top
-					if (y < 0) y -= 16
-					y = (y - y % 16) / 16
-					npc.x += x
-					npc.y += y
-				}
-			})
-			document.addEventListener('mouseup', function (event) {
-				dragging = false
-				npc.element.style.cursor = '-webkit-grab'
-			})
-		})
-
-		warps.forEach(function (warp) {
-			warp.element.addEventListener('contextmenu', function (event) {
-				event.preventDefault()
-				// We're stuck with the map constant, so we can only approximate the corresponding label.
-				// This seems to work for the majority of maps.
-				var map_name = warp.map_num.substr(4).title().replace(/_/g, '')
-				map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
-				console.log('warp to ' + map_name)
-				gotoMap(map_name)
-			})
-		})
-
-	}).then(function () {
+	})
+	.then(function () {
 		return {
 			warps: warps,
 			traps: traps,

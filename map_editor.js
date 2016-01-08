@@ -1,6 +1,7 @@
 
 
 function gotoMap(name) {
+	var loaded = false
 	if (Data.maps[name]) {
 		if (Data.maps[name].loaded) {
 			view.current_map = name
@@ -10,9 +11,16 @@ function gotoMap(name) {
 				picker_view.run()
 			}
 			view.run()
+			loaded = true
 		}
 	}
+
+	var loading_div = createElement('div', { className: 'loading-splash', })
+	view.container.appendChild(loading_div)
+	var remove_loading_div = function () {view.container.removeChild(loading_div)}
+
 	return loadMap(name)
+	.then(remove_loading_div)
 	.then(function () {
 		view.current_map = name
 		picker_view.map = name
@@ -64,10 +72,10 @@ function init() {
 	painter = Object.create(Painter)
 	painter.init(view)
 
+	view.attach(document.body)
 	var map_name = document.location.hash.substr(1) || config.default_map
 	gotoMap(map_name)
 	.then(function () {
-		view.attach(document.body)
 		picker_view.attach(document.body)
 		painter.run()
 	})
@@ -1298,33 +1306,66 @@ var MapViewer = {
 	},
 
 	renderEvents: function () {
-		var events = this.getCurrentMap().events
-		var container = this.container
+		var all_npcs = this.getAllEvents()
 
+		all_npcs.forEach(function (npc) {
+			if (npc.image_path) {
+				var bg = 'url(' + npc.image_path + ')'
+				if (bg !== npc.element.style.background) {
+					npc.element.style.background = bg
+				}
+			}
+		})
+
+		all_npcs.forEach(function (npc) {
+			npc.element.style.left = (parseInt(npc.x) + 6) * 16 + 'px'
+			npc.element.style.top = (parseInt(npc.y) + 6) * 16 + 'px'
+		})
+
+		this.addNewEvents()
+	},
+
+	getEvents: function () {
+		var events = this.getCurrentMap().events
+		return events
+	},
+
+	getAllEvents: function () {
+		var events = this.getEvents()
+		var all_npcs = [].concat(events.npcs, events.warps, events.traps, events.signs)
+		return all_npcs
+	},
+
+	addNewEvents: function () {
+		// Remove any unused events, without re-adding existing ones.
+
+		var all_npcs = this.getAllEvents()
+
+		var container = this.container
 		var children = this.container.children
 		var remove = []
+
+		function is_npc (child) {
+			return (['npc', 'warp', 'sign', 'trap'].indexOf(child.className) !== -1)
+		}
+
+		// Get a list of all the events.
 		for (var i = 0; i < children.length; i++) {
 			var child = children[i]
-			if (['npc', 'warp', 'sign', 'trap'].indexOf(child.className) !== -1) {
+			if (is_npc(child)) {
 				remove.push(child)
 			}
 		}
 
-		var add_event = function (npc) {
+		// Remove existing events from the list, and add events who don't exist yet.
+		all_npcs.forEach(function (npc) {
 			var index = remove.indexOf(npc.element)
 			if (index !== -1) {
 				remove.splice(index, 1)
 			} else {
 				container.appendChild(npc.element)
 			}
-			npc.element.style.left = (parseInt(npc.x) + 6) * 16 + 'px'
-			npc.element.style.top = (parseInt(npc.y) + 6) * 16 + 'px'
-		}
-
-		events.npcs.forEach(add_event)
-		events.warps.forEach(add_event)
-		events.traps.forEach(add_event)
-		events.signs.forEach(add_event)
+		})
 
 		remove.forEach(function (child) {
 			container.removeChild(child)
