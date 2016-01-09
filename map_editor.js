@@ -1038,7 +1038,6 @@ var Painter = {
 		})
 		this.viewer.canvas.addEventListener('mouseout', function (event) {
 			self.viewer.selection = undefined
-			self.mousedown = false
 		})
 		this.viewer.canvas.addEventListener('mousemove', function (event) {
 			event.preventDefault()
