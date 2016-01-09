@@ -260,6 +260,9 @@ function readEventText (text, map_name) {
 			npc.element.style.cursor = '-webkit-grab'
 			document.body.style.cursor = last_cursor
 		})
+		npc.element.addEventListener('drag', function (event) {
+			event.preventDefault()
+		})
 	})
 
 	warps.forEach(function (warp) {
