@@ -31,13 +31,13 @@ html {
 
 .toolbar {
 	overflow: hidden;
-	background-color: #111;
-	background: -webkit-linear-gradient(bottom, #111, #333);
+	background-color: #333;
+	background: -webkit-linear-gradient(bottom, #2c2c2c, #343434);
 	position: fixed;
 	margin: 0px;
 	top: 0px;
 	left: 0px;
-	width: 52px;
+	width: 228px;
 	height: 100%;
 	z-index: 30;
 	user-select: none;
@@ -46,9 +46,32 @@ html {
 	-khtml-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
+
+	transition: width 0.15s;
+	-webkit-transition: width 0.15s;
+}
+
+.toolbar_extended {
+	background-color: rgba(56, 56, 56, 0.5);
+	position: absolute;
+	left: 52px;
+	width: 160px;
+	padding-left: 16px;
+	height: 100%;
 }
 
 .tool {
+}
+
+.tool:hover {
+	color: #ccb;
+	background-color: #222;
+}
+.tool:active {
+	color: #998;
+}
+
+.tool_icon {
 	margin: 4px;
 	width: 44px;
 	height: 44px;
@@ -63,21 +86,28 @@ html {
 	border-radius: 2px;
 	-webkit-transition: background-color 0.1s;
 }
-.tool:hover {
-	color: #ccb;
-	background-color: #222;
-}
-.tool:active {
-	color: #998;
-}
 
-.tool#reload {
+.tool_icon#reload {
 	font-size: 24px;
 	float: right;
 }
-.tool#time {
+.tool_icon#time {
 	font-size: 28px;
 	float: right;
+}
+
+.tool_desc {
+	position: absolute;
+	display: inline-block;
+	width: 160px;
+	height: 36px;
+	padding-top: 16px;
+	padding-left: 16px;
+	user-select: none;
+	cursor: default;
+}
+.tool_desc:hover {
+	//background-color: #2c2c2c;
 }
 
 .dialog {
@@ -125,8 +155,8 @@ html {
 
 .dialog#dialog_open {
 	overflow-y: scroll;
+	overflow-x: hidden;
 	min-height: 100%;
-	min-width: 300px;
 }
 .map_list {
 	margin: 18px;

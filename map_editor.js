@@ -160,16 +160,8 @@ function clearDialogs () {
 function newDialog (parent, id) {
 	var div = createElement('div', {id: id, className: 'dialog'})
 
-	var style = window.getComputedStyle(parent)
-	var left = [
-		style.borderWidth,
-		style.marginLeft, style.marginRight,
-		style.paddingLeft, style.paddingRight,
-		style.width
-	].reduce(function (sum, x) {
-		sum = sum || 0 // firefox
-		return parseInt(sum)+ parseInt(x)
-	})
+	var rect = parent.getBoundingClientRect()
+	var left = rect.right
 	div.style.left = left + 'px'
 
 	return div
@@ -183,7 +175,7 @@ function newMap (event) {
 
 	if (existing) return
 
-	var dialog = newDialog(event.target, new_id)
+	var dialog = newDialog(event.currentTarget, new_id)
 	document.body.appendChild(dialog)
 	var content = createElement('div', {className: 'map_attributes'})
 
@@ -245,7 +237,7 @@ function editMapHeader (event) {
 	if (!map) return
 	if (!map.loaded) return
 
-	var dialog = newDialog(event.target, edit_id)
+	var dialog = newDialog(event.currentTarget, edit_id)
 	document.body.appendChild(dialog)
 	var content = createElement('div', {className: 'map_attributes'})
 
@@ -380,7 +372,8 @@ function openMap (event) {
 
 	if (existing) { return }
 
-	var dialog = newDialog(event.target, open_id)
+	var dialog = newDialog(event.currentTarget, open_id)
+	dialog.style.width = '0px'
 	document.body.appendChild(dialog)
 
 	var list = createElement('div', {className: 'map_list'})
@@ -414,6 +407,7 @@ function openMap (event) {
 			}
 			list.appendChild(name_div)
 		})
+		dialog.style.width = '400px'
 	})
 }
 
@@ -457,19 +451,19 @@ function toggleBrightness (event) {
 		morn: 'day',
 	}[config.time]
 
-	setBrightness(time, event.target)
+	setBrightness(time, event.currentTarget)
 }
 
 function setBrightness (time, element) {
 
 	if (element) {
-		element.style.color = {
+		element.children[0].style.color = {
 			day:  '#aaa',
 			nite: '#666',
 			morn: '#888',
 		}[time]
 
-		element.innerHTML = {
+		element.children[0].innerHTML = {
 			day:  '☀',
 			nite: '🌙',
 			morn: '☀',
@@ -515,65 +509,125 @@ function createElement(type, properties) {
 var Toolbar = {
 
 	init: function () {
-		this.elem = this.createElement('div', {
+		this.element = this.createElement('div', {
 			id: 'toolbar',
 			className: 'toolbar',
 		})
+		var ext = this.createElement('div', {
+			id: 'toolbar-extended',
+			className: 'toolbar_extended',
+		})
+		this.element.appendChild(ext)
 
 		this.buttons = {}
-		for (var k in this.button_protos) {
-			var button = this.createElement('div', this.button_protos[k])
+		for (var k in this.button_defs) {
+			var def = this.button_defs[k]
+			var button = this.createElement('div')
 			button.id = k
 			button.className = 'tool'
+
+			def.listeners.forEach(function (listener) {
+				button.addEventListener(listener[0], listener[1])
+			})
+
+			var icon = this.createElement('div')
+			icon.innerHTML = def.icon
+			icon.className = 'tool_icon'
+			button.appendChild(icon)
+
+			var text = this.createElement('div')
+			text.innerHTML = def.text
+			text.className = 'tool_desc'
+			button.appendChild(text)
+
 			this.buttons[k] = button
-			this.elem.appendChild(button)
+			this.element.appendChild(button)
 		}
 
-		document.body.appendChild(this.elem)
+		// Click the bar to hide button text.
+		var hider = this.createElement('div')
+		hider.style.width = '100%'
+		hider.style.height = '100%'
+		var self = this
+		var hidden = false
+		hider.addEventListener('click', function (event) {
+			if (hidden) {
+				self.element.style.width = '228px'
+			} else {
+				self.element.style.width = '52px'
+			}
+			hidden = !hidden
+		})
+		this.element.appendChild(hider)
+
+		document.body.appendChild(this.element)
 	},
 
 	createElement: createElement,
 
-	button_protos: {
-
+	button_defs: {
 		new: {
-			innerHTML: '+',
-			onclick: newMap,
+			icon: '+',
+			text: 'New map',
+			listeners: [
+				['click', newMap],
+			],
 		},
 
 		edit: {
-			innerHTML: '...',
-			onclick: editMapHeader,
+			icon: '...',
+			text: 'Map properties',
+			listeners: [
+				['click', editMapHeader],
+			],
 		},
 
 		open: {
-			innerHTML: '☰',
-			onclick: openMap,
+			icon: '☰',
+			text: 'Map list',
+			listeners: [
+				['click',  openMap],
+			],
 		},
 
 		save: {
-			innerHTML: '💾', //&#x1f4be;
-			onclick: saveMap,
+			icon: '💾', //&#x1f4be;
+			text: 'Save map',
+			listeners: [
+				['click',  saveMap],
+			],
 		},
 
 		reload: {
-			innerHTML: '⟳',
-			onclick: reloadMap,
+			icon: '⟳',
+			text: 'Reload',
+			listeners: [
+				['click',  reloadMap],
+			],
 		},
 
 		time: {
-			innerHTML: '☀',
-			onclick: toggleBrightness,
+			icon: '☀',
+			text: 'Lighting',
+			listeners: [
+				['click',  toggleBrightness],
+			],
 		},
 
 		undo: {
-			innerHTML: '↺',
-			onclick: undo,
+			icon: '↺',
+			text: 'Undo',
+			listeners: [
+				['click',  undo],
+			],
 		},
 
 		redo: {
-			innerHTML: '↻',
-			onclick: redo,
+			icon: '↻',
+			text: 'Redo',
+			listeners: [
+				['click',  redo],
+			],
 		},
 
 	},
