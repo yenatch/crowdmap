@@ -23,6 +23,7 @@ html {
 	align-items: center;
 	font-size: 16em;
 	pointer-events: none;
+	color: #ffffff;
 }
 .loading-splash::after {
 	content: "⌛"; // hourglass
