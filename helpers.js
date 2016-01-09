@@ -93,7 +93,7 @@ function ajax(url, cb, options) {
 	var xhr = new XMLHttpRequest()
 	xhr.open(options.method, url, !!cb)
 	if (options.cache === false && options.method !== 'POST') {
-		xhr.setRequestHeader('Cache-Control', 'max-age=1, must-revalidate')
+		xhr.setRequestHeader('Cache-Control', 'max-age=0, must-revalidate')
 	}
 	if (options.binary) {
 		xhr.overrideMimeType('text/plain; charset=x-user-defined');
