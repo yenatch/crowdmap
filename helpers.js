@@ -91,7 +91,7 @@ function ajax(url, cb, options) {
 	}, options)
 
 	if (options.cache === false && options.method !== 'POST') {
-		url = addQuery(url, Date.now())
+		//url = addQuery(url, Date.now())
 	}
 
 	var xhr = new XMLHttpRequest()

@@ -24,7 +24,7 @@ var config = {
 
 	getTilesetImagePath: function (id) {
 		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
-		path = addQuery(path, Date.now())
+		//path = addQuery(path, Date.now())
 		return path
 	},
 
