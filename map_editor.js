@@ -1287,14 +1287,11 @@ var MapViewer = {
 		this.drawConnections(map)
 
 		var context = this.canvas.getContext('2d')
-		context.save()
-		context.globalAlpha = 0.6
 		context.drawImage(
 			this.drawcanvas,
 			0, 0, this.drawcanvas.width, this.drawcanvas.height,
 			0, 0, this.canvas.width, this.canvas.height
 		)
-		context.restore()
 
 		this.drawSelection()
 		this.darkenMapBorder()
