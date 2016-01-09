@@ -90,12 +90,11 @@ function ajax(url, cb, options) {
 		cache: false,
 	}, options)
 
-	if (options.cache === false && options.method !== 'POST') {
-		//url = addQuery(url, Date.now())
-	}
-
 	var xhr = new XMLHttpRequest()
 	xhr.open(options.method, url, !!cb)
+	if (options.cache === false && options.method !== 'POST') {
+		xhr.setRequestHeader('Cache-Control', 'max-age=1, must-revalidate')
+	}
 	if (options.binary) {
 		xhr.overrideMimeType('text/plain; charset=x-user-defined');
 	}
