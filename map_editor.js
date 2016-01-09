@@ -2079,6 +2079,7 @@ function serializeRGB(text) {
 	var colors = []
 	var lines = text.split('\n')
 	lines.forEach(function (line) {
+		line = line.split(';')[0]
 		if (line) {
 			var color = macroValues(line, 'RGB')
 			if (color) {
