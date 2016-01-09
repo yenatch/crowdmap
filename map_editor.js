@@ -1056,30 +1056,6 @@ var Painter = {
 			event.preventDefault()
 		})
 
-		this.viewer.canvas.addEventListener('click', function (event) {
-			self.viewer.getSelection(event)
-			var x = self.viewer.selection.x / 32
-			var y = self.viewer.selection.y / 32
-
-			var connections = Data.maps[self.viewer.current_map].attributes.connections
-			var connect = false
-			for (var direction in connections) {
-				var connection = connections[direction]
-				var info = getConnectionInfo(connection, Data.maps[self.viewer.current_map], Data.maps[connection.name])
-				if (info)
-				if (x >= info.x1 && x < info.x2)
-				if (y >= info.y1 && y < info.y2) {
-					connect = connection
-					break
-				}
-			}
-			if (connect) {
-				print(connect.direction + ' to ' + connect.name)
-				gotoMap(connect.name)
-			}
-			event.preventDefault()
-		})
-
 		this.attachResize()
 	},
 
@@ -1235,6 +1211,31 @@ var MapViewer = {
 			x: 3,
 			y: 3,
 		}
+
+		var self = this
+		this.canvas.addEventListener('click', function (event) {
+			self.getSelection(event)
+			var x = self.selection.x / 32
+			var y = self.selection.y / 32
+
+			var connections = Data.maps[self.current_map].attributes.connections
+			var connect = false
+			for (var direction in connections) {
+				var connection = connections[direction]
+				var info = getConnectionInfo(connection, Data.maps[self.current_map], Data.maps[connection.name])
+				if (info)
+				if (x >= info.x1 && x < info.x2)
+				if (y >= info.y1 && y < info.y2) {
+					connect = connection
+					break
+				}
+			}
+			if (connect) {
+				print(connect.direction + ' to ' + connect.name)
+				gotoMap(connect.name)
+			}
+			event.preventDefault()
+		})
 	},
 
 	attach: function (container) {
@@ -1340,13 +1341,13 @@ var MapViewer = {
 
 		var container = this.container
 		var children = this.container.children
-		var remove = []
 
 		function is_npc (child) {
 			return (['npc', 'warp', 'sign', 'trap'].indexOf(child.className) !== -1)
 		}
 
 		// Get a list of all the events.
+		var remove = []
 		for (var i = 0; i < children.length; i++) {
 			var child = children[i]
 			if (is_npc(child)) {
