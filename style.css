@@ -29,6 +29,13 @@ html {
 	content: "⌛"; // hourglass
 }
 
+.coordinates {
+	color: white;
+	background: rgba(100, 100, 100, 0.7);
+	position: absolute;
+	z-index: 1000;
+}
+
 .toolbar {
 	overflow: hidden;
 	background-color: #333;

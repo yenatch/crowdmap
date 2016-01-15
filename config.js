@@ -231,10 +231,10 @@ function readEventText (text, map_name) {
 				var rect = npc.element.getBoundingClientRect()
 				var x = event.clientX - rect.left
 				if (x < 0) x -= 16
-				x = (x - x % 16) / 16
+				x = (x - (x % 16)) / 16
 				var y = event.clientY - rect.top
 				if (y < 0) y -= 16
-				y = (y - y % 16) / 16
+				y = (y - (y % 16)) / 16
 				npc.x += x
 				npc.y += y
 			}
@@ -261,6 +261,26 @@ function readEventText (text, map_name) {
 		})
 		npc.element.addEventListener('drag', function (event) {
 			event.preventDefault()
+		})
+	})
+
+	all_obj.forEach(function (npc) {
+		// Show the coordinates of the npc you're moving around.
+		var coord_div = createElement('div', { className: 'coordinates', })
+		var update = function (event) {
+			coord_div.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
+			coord_div.style.left = event.pageX + 'px'
+			coord_div.style.top = event.pageY + 'px'
+		}
+		npc.element.addEventListener('mousedown', function (event) {
+			update(event)
+			document.body.appendChild(coord_div)
+			document.body.addEventListener('mousemove', update)
+			document.body.addEventListener('mouseup', function self (event) {
+				document.body.removeChild(coord_div)
+				document.body.removeEventListener('mousemove', update)
+				document.body.removeEventListener('mouseup', self)
+			})
 		})
 	})
 
