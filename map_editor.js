@@ -277,7 +277,7 @@ function editMapHeader (event) {
 
 	var tileset_preview_image = new Image()
 	tileset_preview_image.src = config.getTilesetImagePath(header.tileset)
-	tileset_preview_image.validate = 'always'
+	tileset_preview_image.attributes.validate = 'always'
 	var tileset_preview = createElement('div', {className: 'tileset-preview'})
 	tileset_preview.appendChild(tileset_preview_image)
 	content.appendChild(tileset_preview)
@@ -337,7 +337,7 @@ function tilesetList () {
 			var container = createElement('div', {className: 'tileset-preview'})
 			var image = new Image()
 			image.src = config.getTilesetImagePath(i)
-			image.validate = 'always'
+			image.attributes.validate = 'always'
 			container.appendChild(image)
 			div.appendChild(container)
 			list[i] = image
@@ -1936,7 +1936,7 @@ function loadPalette(id) {
 function loadTilesetImage(id) {
 	var image = new Image()
 	image.src = config.getTilesetImagePath(id)
-	image.validate = 'always'
+	image.attributes.validate = 'always'
 	return imagePromise(image)
 	.then(function () {
 		Data.tilesets[id].image = image
@@ -2003,7 +2003,7 @@ function loadRoofPalette (roof) {
 function loadRoofImage(roof) {
 	var image = new Image()
 	image.src = config.getRoofImagePath(roof)
-	image.validate = 'always'
+	image.attributes.validate = 'always'
 	return imagePromise(image)
 	.then(function () {
 		Data.roofs[roof].image = image
