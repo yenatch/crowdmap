@@ -20,7 +20,7 @@ function gotoMap(name) {
 	var remove_loading_div = function () {view.container.removeChild(loading_div)}
 
 	return loadMap(name)
-	.then(remove_loading_div)
+	.then(remove_loading_div, remove_loading_div)
 	.then(function () {
 		view.current_map = name
 		picker_view.map = name
