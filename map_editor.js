@@ -1380,12 +1380,17 @@ var MapViewer = {
 
 	getEvents: function () {
 		var events = this.getCurrentMap().events
-		return events
+		return events || {}
 	},
 
 	getAllEvents: function () {
 		var events = this.getEvents()
-		var all_npcs = [].concat(events.npcs, events.warps, events.traps, events.signs)
+		var all_npcs = [].concat(
+			events.npcs || [],
+			events.warps || [],
+			events.traps || [],
+			events.signs || []
+		)
 		return all_npcs
 	},
 
