@@ -836,7 +836,7 @@ var History = Object.update([], {
 
 	commit: function (changes) {
 		// Cut off alternate futures.
-		var max = Math.max
+		var min = Math.min
 		this.length = min(this.length, this.head + 1)
 		this.push(changes)
 		this.head += 1
@@ -1104,7 +1104,7 @@ var Painter = {
 			self.mousedown = true
 			self.update(event)
 		})
-		this.viewer.canvas.addEventListener('mouseup', function () {
+		this.viewer.canvas.addEventListener('mouseup', function (event) {
 			//self.viewer.commit()
 		})
 		this.viewer.canvas.addEventListener('contextmenu', function (event) {
