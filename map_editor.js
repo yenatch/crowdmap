@@ -1778,18 +1778,25 @@ function loadMap(name) {
 	if (!Data.maps[name]) {
 		Data.maps[name] = {}
 	}
-	return Promise.all([
+	var header_promise = Promise.all([
 		loadMapHeader(name),
 		loadMapAttributes(name),
-		loadMapEvents(name),
 	])
-	.then(function () {
+	var map_promise = header_promise.then(function () {
 		return Promise.all([
 			loadBlockdata(name),
 			loadMapTileset(name),
 			loadMapDimensions(name)
 		])
 	})
+	var event_promise = header_promise.then(function () {
+		return loadMapEvents(name)
+	})
+	return Promise.all([
+		header_promise,
+		map_promise,
+		event_promise,
+	])
 	.then(function () {
 		Data.maps[name].loaded = true
 	})
