@@ -29,11 +29,14 @@ html {
 	content: "⌛"; // hourglass
 }
 
-.coordinates {
+.coordinates, .warp_info {
 	color: white;
 	background: rgba(100, 100, 100, 0.7);
 	position: absolute;
 	z-index: 1000;
+	pointer-events: none;
+	padding: 0px 2px 0px 2px;
+	border-radius: 3px;
 }
 
 .toolbar {

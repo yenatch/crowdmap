@@ -266,34 +266,36 @@ function readEventText (text, map_name) {
 
 	all_obj.forEach(function (npc) {
 		// Show the coordinates of the npc you're moving around.
-		var coord_div = createElement('div', { className: 'coordinates', })
+		var info = createElement('div', { className: 'coordinates', })
 		var update = function (event) {
-			coord_div.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
-			coord_div.style.left = event.pageX + 'px'
-			coord_div.style.top = event.pageY + 'px'
+			info.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
+			info.style.left = event.pageX + 'px'
+			info.style.top = event.pageY + 'px'
 		}
-		npc.element.addEventListener('mousedown', function (event) {
-			update(event)
-			document.body.appendChild(coord_div)
-			document.body.addEventListener('mousemove', update)
-			document.body.addEventListener('mouseup', function self (event) {
-				document.body.removeChild(coord_div)
-				document.body.removeEventListener('mousemove', update)
-				document.body.removeEventListener('mouseup', self)
-			})
-		})
+		addDragInfo(npc.element, info, update)
 	})
 
 	warps.forEach(function (warp) {
+		// We're stuck with the map constant, so we can only approximate the corresponding label.
+		// This seems to work for the majority of maps.
+		var map_name = warp.map_num.substr(4).title().replace(/_/g, '')
+		map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
+
+		// Right click on a warp to go to the destination map.
 		warp.element.addEventListener('contextmenu', function (event) {
 			event.preventDefault()
-			// We're stuck with the map constant, so we can only approximate the corresponding label.
-			// This seems to work for the majority of maps.
-			var map_name = warp.map_num.substr(4).title().replace(/_/g, '')
-			map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
 			console.log('warp to ' + map_name)
 			gotoMap(map_name)
 		})
+
+		// Hover over a warp to show the destination map.
+		var info = createElement('div', { className: 'warp_info', })
+		info.innerHTML = map_name
+		var update = function (event) {
+			info.style.left = event.pageX + 'px'
+			info.style.top = event.pageY + 'px'
+		}
+		addHoverInfo(warp.element, info, update)
 	})
 
 	return getMapConstants().then(function(map_constants) {
@@ -363,4 +365,33 @@ function read_constants(text) {
 		}
 	}
 	return constants
+}
+
+function addHoverInfo(target, div, update) {
+	target.addEventListener('mouseenter', function (event) {
+		update(event)
+		document.body.appendChild(div)
+		document.body.addEventListener('mousemove', update)
+		function self (event) {
+			document.body.removeChild(div)
+			document.body.removeEventListener('mousemove', update)
+			document.body.removeEventListener('mouseenter', self)
+			target.removeEventListener('mouseout', self)
+		}
+		document.body.addEventListener('mouseenter', self)
+		target.addEventListener('mouseout', self)
+	})
+}
+
+function addDragInfo(target, div, update) {
+	target.addEventListener('mousedown', function (event) {
+		update(event)
+		document.body.appendChild(div)
+		document.body.addEventListener('mousemove', update)
+		document.body.addEventListener('mouseup', function self (event) {
+			document.body.removeChild(div)
+			document.body.removeEventListener('mousemove', update)
+			document.body.removeEventListener('mouseup', self)
+		})
+	})
 }
