@@ -41,7 +41,7 @@ html {
 
 .toolbar {
 	overflow: hidden;
-	background-color: #333;
+	background-color: #222;
 	background: -webkit-linear-gradient(bottom, #2c2c2c, #343434);
 	position: fixed;
 	margin: 0px;
