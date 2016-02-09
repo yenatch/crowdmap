@@ -1,6 +1,15 @@
-
+window.addEventListener('popstate', function (event) {
+	var map_name = document.location.hash.substr(1)
+	if (map_name) {
+		_gotoMap(map_name)
+	}
+})
 
 function gotoMap(name) {
+	document.location.hash = name
+}
+
+function _gotoMap(name) {
 	var loaded = false
 	if (Data.maps[name]) {
 		if (Data.maps[name].loaded) {
@@ -19,18 +28,22 @@ function gotoMap(name) {
 	view.container.appendChild(loading_div)
 	var remove_loading_div = function () {view.container.removeChild(loading_div)}
 
-	return loadMap(name)
-	.then(remove_loading_div, remove_loading_div)
-	.then(function () {
+	var promise = loadMap(name)
+	promise.then(remove_loading_div, remove_loading_div)
+	promise.then(function () {
 		view.current_map = name
 		picker_view.map = name
 		view.run()
 		picker_view.run()
+	})
+	promise.then(function () {
 		return loadMapConnections(name)
 	})
 	.then(function () {
 		view.run()
 	})
+
+	return promise
 }
 
 function loadMapAndConnections(name) {
@@ -74,19 +87,12 @@ function init() {
 
 	view.attach(document.body)
 	var map_name = document.location.hash.substr(1) || config.default_map
-	gotoMap(map_name)
+	_gotoMap(map_name)
 	.then(function () {
 		picker_view.attach(document.body)
 		painter.run()
 	})
 }
-
-window.addEventListener('popstate', function (event) {
-	var map_name = document.location.hash.substr(1)
-	if (map_name) {
-		gotoMap(map_name)
-	}
-})
 
 function getTileset(map_name) {
 	var map = Data.maps[map_name]
