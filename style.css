@@ -4,6 +4,8 @@ html {
 	background-color: #333;
 	background: -webkit-linear-gradient(bottom, #303030, #343434, #383838, #3c3c3c, #404040, #444444, #484848, #4c4c4c, #505050);
 	min-height: 100%;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: pixelated;
 }
 
 * {
