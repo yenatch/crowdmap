@@ -1,9 +1,5 @@
 var Promise = Promise || ES6Promise.Promise
 
-String.prototype.contains = String.prototype.contains || function (term) {
-	return this.indexOf(term) !== -1
-}
-
 var addQuery = function (url, query) {
 	url += url.contains('?') ? '&' : '?'
 	url += query
@@ -115,14 +111,23 @@ function ajax(url, cb, options) {
 	xhr.send(options.data)
 }
 
-String.prototype.title = function () {
+String.prototype.contains = String.prototype.contains || function (term) {
+	return this.indexOf(term) !== -1
+}
+
+String.prototype.title = String.prototype.title || function () {
 	return this.replace(/[a-zA-Z]*/g, function (word) { return word.substr(0, 1).toUpperCase() + word.substr(1).toLowerCase() })
 }
 
-String.prototype.repeat = function(length) {
+String.prototype.repeat = String.prototype.repeat || function(length) {
 	return new Array(length + 1).join(this);
 }
 
-String.prototype.zfill = function(length) {
+String.prototype.zfill = String.prototype.zfill || function(length) {
 	return '0'.repeat(length - this.length) + this;
+}
+
+function zfill(number, length) {
+	// <number> can already be a string, obviously
+	return number.toString().zfill(length)
 }
