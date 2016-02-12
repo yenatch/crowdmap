@@ -1,61 +1,40 @@
 var root = '../'
 
 var config = {
+	root: root,
 
 	time: 'day',
 	default_map: 'OlivineCity',
 
-	blockdata_dir:      root + 'maps/',
-	tiles_dir:          root + 'gfx/tilesets/',
-	palette_dir:        root + 'tilesets/',
-	metatiles_dir:      root + 'tilesets/',
-	collision_dir:      root + 'tilesets/',
-	palmap_dir:         root + 'tilesets/',
 	asm_dir:            root + 'maps/',
 	ow_dir:             root + 'gfx/overworld/',
+
 	map_header_path:    root + 'maps/map_headers.asm',
 	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	//roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ], // wrong, see roof_tilesets
-	roof_tilesets: [1, 2, 4],
+	roof_tilesets: [
+		1, 'TILESET_JOHTO_1',
+		2, 'TILESET_JOHTO_2',
+		4, 'TILESET_BATTLE_TOWER_OUTSIDE',
+	],
 	roof_start: 0xa,
 
-	getTilesetImagePath: function (id) {
-		var path = this.tiles_dir + id.toString().zfill(2) + '.png'
-		return path
-	},
-
-	getBlockdataPath: function (name) {
-		return this.blockdata_dir + name + '.blk'
-	},
-
-	getMetatilePath: function (id) {
-		return this.metatiles_dir + id.toString().zfill(2) + '_metatiles.bin'
-	},
-
-	getPalmapPath: function (id) {
-		return this.palmap_dir + id.toString().zfill(2) + '_palette_map.bin'
-	},
+	getTilesetImagePath: function (id) { return root + 'gfx/tilesets/' + zfill(id, 2) + '.png' },
+	getBlockdataPath: function (name) { return root + 'maps/' + name + '.blk' },
+	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(id, 2) + '_metatiles.bin' },
+	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(id, 2) + '_palette_map.bin' },
+	getPalettePath: function () { return root + 'tilesets/bg.pal' },
+	getRoofPalettePath: function () { return root + 'tilesets/roof.pal' },
 
 	getRoofImagePath: function (group) {
 		var roof = this.roofs[group]
 		if (roof === -1 || typeof roof === 'undefined') {
 			roof = 0
 		}
-		var path = this.tiles_dir + 'roofs/' + roof + '.png'
-		return path
-	},
-
-	getPalettePath: function (id) {
-		var path = this.palette_dir + 'bg.pal'
-		return path
-	},
-
-	getRoofPalettePath: function () {
-		var path = this.palette_dir + 'roof.pal'
-		return path
+		return root + 'gfx/tilesets/roofs/' + roof + '.png'
 	},
 
 	default_map_header: {
@@ -337,7 +316,6 @@ function rgbasm_parse(value) {
 
 function read_constants(text) {
 	var constants = {}
-	var const_value = 0
 	var lines = text.split('\n')
 	for (var l = 0; l < lines.length; l++) {
 		var line = separateComment(lines[l])[0]
@@ -348,19 +326,28 @@ function read_constants(text) {
 			var value = line.substr(index + 'EQU'.length).trim()
 			constants[key] = rgbasm_parse(value)
 		}
+		var index = line.search(/=/)
+		if (index !== -1) {
+			var key = line.substr(0, index).trim()
+			var value = line.substr(index + '='.length).trim()
+			constants[key] = rgbasm_parse(value)
+		}
+		var index = line.search(/set/i)
+		if (index !== -1) {
+			var key = line.substr(0, index).trim()
+			var value = line.substr(index + 'set'.length).trim()
+			constants[key] = rgbasm_parse(value)
+		}
+
 		var index = line.search(/\bconst_def\b/)
 		if (index !== -1) {
-			const_value = 0
-		}
-		var index = line.search(/\bconst_value\b/)
-		if (index !== -1) {
-			const_value = rgbasm_parse(line.substr(index + 'const_value'.length).replace(/set/i, '').replace(/=/i, '').trim())
+			constants.const_value = 0
 		}
 		var index = line.search(/\bconst\b/)
 		if (index !== -1) {
 			var key = line.substr(index + 'const'.length).trim()
-			var value = const_value
-			const_value += 1
+			var value = constants.const_value
+			constants.const_value += 1
 			constants[key] = value
 		}
 	}
