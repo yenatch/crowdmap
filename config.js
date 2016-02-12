@@ -57,13 +57,26 @@ var config = {
 
 }
 
+
+function has_macro (line, macro) {
+	var re = new RegExp('\\b' + macro + '\\b')
+	return (line.trim().search(re) !== -1)
+}
+
+function read_macro (line, macro) {
+	var index = line.indexOf(macro) + macro.length
+	var values = line.substr(index).split(',')
+	values = values.map(rgbasm_parse)
+	return values
+}
+
 function read_macros (lines) {
 	var macros = []
 	for (var l = 0; l < lines.length; l += 1) {
 		var line = lines[l][0].trim();
 		if (line) {
 			var macro_name = line.split(/\s+/)[0]
-			var values = macroValues(line, macro_name)
+			var values = read_macro(line, macro_name)
 			macros.push({macro: macro_name, values: values})
 		}
 	}
@@ -110,8 +123,8 @@ function read_npcs(macros) {
 		'event_flag'
 	])
 	npcs.forEach(function (npc) {
-		npc.x = rgbasm_parse(npc.x) - 4
-		npc.y = rgbasm_parse(npc.y) - 4
+		npc.x -= 4
+		npc.y -= 4
 	})
 	return npcs
 }
@@ -124,8 +137,6 @@ function read_warps(macros) {
 		'map_num',
 	])
 	warps.forEach(function (warp) {
-		warp.x = rgbasm_parse(warp.x)
-		warp.y = rgbasm_parse(warp.y)
 		warp.image_path = 'warp.png'
 	})
 	return warps
@@ -138,8 +149,6 @@ function read_signs(macros) {
 		'script',
 	])
 	signs.forEach(function (sign) {
-		sign.x = rgbasm_parse(sign.x)
-		sign.y = rgbasm_parse(sign.y)
 		sign.image_path = 'sign.png'
 	})
 	return signs
@@ -155,8 +164,6 @@ function read_traps(macros) {
 		'unknown3',
 	])
 	traps.forEach(function (trap) {
-		trap.x = rgbasm_parse(trap.x)
-		trap.y = rgbasm_parse(trap.y)
 		trap.image_path = 'trap.png'
 	})
 	return traps
@@ -257,7 +264,7 @@ function readEventText (text, map_name) {
 	warps.forEach(function (warp) {
 		// We're stuck with the map constant, so we can only approximate the corresponding label.
 		// This seems to work for the majority of maps.
-		var map_name = warp.map_num.substr(4).title().replace(/_/g, '')
+		var map_name = warp.map_num.substr('MAP_'.length).title().replace(/_/g, '')
 		map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
 
 		// Right click on a warp to go to the destination map.

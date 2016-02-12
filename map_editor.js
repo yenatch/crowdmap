@@ -1742,15 +1742,6 @@ function getMapConstantsText () {
 }
 
 function getMapDimensions (name) {
-	function has_macro (line, macro) {
-		var re = new RegExp(macro + '\\b')
-		return (line.trim().search(re) !== -1)
-	}
-	function read_macro (line, macro) {
-		line = line.substr(line.search(macro) + macro.length)
-		var args = line.split(',')
-		return args
-	}
 
 	var map_constant = Data.maps[name].attributes.map
 
@@ -1765,7 +1756,7 @@ function getMapDimensions (name) {
 				num = 0
 			} else if (has_macro(line, 'mapgroup')) {
 				num += 1
-				args = read_macro(line, 'mapgroup')
+				var args = read_macro(line, 'mapgroup')
 				if (args[0].trim() == map_constant) {
 					return {
 						group: group,
