@@ -28,7 +28,11 @@ function asmAtLabel(asm, label) {
 	var content = [];
 	for (var l = 0; l < lines.length; l++) {
 		var line = lines[l];
-		if (line.indexOf(':') !== -1) break;
+		if (line.indexOf(':') !== -1) {
+			if (line[0] != '.') {
+				break;
+			}
+		}
 		content.push(separateComment(line));
 	}
 	return content;
