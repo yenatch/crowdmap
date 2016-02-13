@@ -73,11 +73,11 @@ function subdivide(list, length) {
 
 function request(url, options) {
 	return new Promise( function (resolve, reject) {
-		ajax(url, resolve, options)
+		ajax(url, resolve, reject, options)
 	})
 }
 
-function ajax(url, cb, options) {
+function ajax(url, resolve, reject, options) {
 	options = options || {}
 	options = Object.update({
 		binary: false,
@@ -87,27 +87,37 @@ function ajax(url, cb, options) {
 	}, options)
 
 	var xhr = new XMLHttpRequest()
-	xhr.open(options.method, url, !!cb)
+	xhr.open(options.method, url, true)
 	if (options.cache === false && options.method !== 'POST') {
 		xhr.setRequestHeader('Cache-Control', 'max-age=0, must-revalidate')
 	}
 	if (options.binary) {
 		xhr.overrideMimeType('text/plain; charset=x-user-defined');
 	}
-	if (cb) {
-		xhr.onload = function () {
-			var response = xhr.responseText
-			if (options.binary) {
-				var data = []
-				for (var i = 0; i < response.length; i++) {
-					data.push(response.charCodeAt(i) & 0xff)
+
+	xhr.addEventListener('readystatechange', function () {
+		var complete = 4
+		if (xhr.readyState === complete) {
+			if (xhr.status === 200) {
+				var response = xhr.responseText
+				if (options.binary) {
+					var data = []
+					for (var i = 0; i < response.length; i++) {
+						data.push(response.charCodeAt(i) & 0xff)
+					}
+					resolve(data)
+				} else {
+					resolve(response)
 				}
-				cb(data)
 			} else {
-				cb(response)
+				reject(xhr)
 			}
 		}
-	}
+	})
+	xhr.addEventListener('error', function () {
+		reject(xhr)
+	})
+
 	xhr.send(options.data)
 }
 
