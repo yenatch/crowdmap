@@ -22,10 +22,80 @@ var config = {
 	],
 	roof_start: 0xa,
 
-	getTilesetImagePath: function (id) { return root + 'gfx/tilesets/' + zfill(id, 2) + '.png' },
+	tilesets: [
+		undefined,
+		'TILESET_JOHTO_1',
+		'TILESET_JOHTO_2',
+		'TILESET_KANTO',
+		'TILESET_BATTLE_TOWER_OUTSIDE',
+		'TILESET_HOUSE_1',
+		'TILESET_KRISS_HOUSE',
+		'TILESET_POKECENTER',
+		'TILESET_GATE',
+		'TILESET_PORT',
+		'TILESET_LAB',
+		'TILESET_POWER_PLANT',
+		'TILESET_MART',
+		'TILESET_CELADON_MANSION',
+		'TILESET_GAME_CORNER',
+		'TILESET_GYM_1',
+		'TILESET_KURT_HOUSE',
+		'TILESET_TRAIN_STATION',
+		'TILESET_OLIVINE_GYM',
+		'TILESET_LIGHTHOUSE',
+		'TILESET_KRISS_HOUSE_2F',
+		'TILESET_POKECOM_CENTER',
+		'TILESET_BATTLE_TOWER',
+		'TILESET_SPROUT_TOWER',
+		'TILESET_CAVE',
+		'TILESET_PARK',
+		'TILESET_RUINS_OF_ALPH',
+		'TILESET_RADIO_TOWER',
+		'TILESET_UNDERGROUND',
+		'TILESET_ICE_PATH',
+		'TILESET_WHIRL_ISLANDS',
+		'TILESET_ILEX_FOREST',
+		'TILESET_32',
+		'TILESET_HO_OH_WORD_ROOM',
+		'TILESET_KABUTO_WORD_ROOM',
+		'TILESET_OMANYTE_WORD_ROOM',
+		'TILESET_AERODACTYL_WORD_ROOM',
+	],
+	getTilesetId: function (name) {
+		var index = config.tilesets.indexOf(name)
+		if (index != -1) {
+			return index
+		}
+		return name
+	},
+
+	// not used, but probably should be instead of hardcoding tilesets above
+	/*
+	getTilesetConstants: function () {
+		return request('constants/tilemap_constants.asm')
+		.then(read_constants)
+		.then(function (constants) {
+			var filtered = {}
+			for (constant in constants) {
+				if (constant.search(/^TILESET_/) !== -1) {
+					filtered[constant] = constants[constant]
+				}
+			}
+			return filtered
+		})
+	},
+	getTilesetId: function (name) {
+		return getTilesetConstants()
+		.then(function (constants) {
+			return constants[name]
+		})
+	},
+	*/
+
+	getTilesetImagePath: function (id) { return root + 'gfx/tilesets/' + zfill(this.getTilesetId(id), 2) + '.png' },
 	getBlockdataPath: function (name) { return root + 'maps/' + name + '.blk' },
-	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(id, 2) + '_metatiles.bin' },
-	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(id, 2) + '_palette_map.bin' },
+	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_metatiles.bin' },
+	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_palette_map.bin' },
 	getPalettePath: function () { return root + 'tilesets/bg.pal' },
 	getRoofPalettePath: function () { return root + 'tilesets/roof.pal' },
 
@@ -39,7 +109,7 @@ var config = {
 
 	default_map_header: {
 		label: '',
-		tileset: 1,
+		tileset: 'TILESET_JOHTO_1',
 		permission: 0,
 		location: 'SPECIAL_MAP',
 		music: 'MUSIC_NONE',
@@ -67,6 +137,9 @@ function read_macro (line, macro) {
 	var index = line.indexOf(macro) + macro.length
 	var values = line.substr(index).split(',')
 	values = values.map(rgbasm_parse)
+	if (values.filter(function (value) { return value !== '' }).length === 0) {
+		return []
+	}
 	return values
 }
 
@@ -84,7 +157,11 @@ function read_macros (lines) {
 }
 
 function read_list (macros) {
-	var count = macros.shift().values[0]
+	var values = []
+	while (values.length === 0) {
+		values = macros.shift().values
+	}
+	var count = values[0]
 	var list = []
 	for (var i = 0; i < count; i++) {
 		list.push(macros.shift().values)
@@ -123,8 +200,8 @@ function read_npcs(macros) {
 		'event_flag'
 	])
 	npcs.forEach(function (npc) {
-		npc.x -= 4
-		npc.y -= 4
+		//npc.x -= 4
+		//npc.y -= 4
 	})
 	return npcs
 }
@@ -133,8 +210,7 @@ function read_warps(macros) {
 	var warps = read_named_list(macros, [
 		'y', 'x',
 		'map_warp',
-		'map_group',
-		'map_num',
+		'map',
 	])
 	warps.forEach(function (warp) {
 		warp.image_path = 'warp.png'
@@ -169,11 +245,19 @@ function read_traps(macros) {
 	return traps
 }
 
+function read_filler(macros) {
+	var values = []
+	while (values.length < 2) {
+		values = values.concat(macros.shift().values)
+	}
+	return values
+}
+
 function readEventText (text, map_name) {
 	var lines = asmAtLabel(text, map_name + '_MapEventHeader')
 	var macros = read_macros(lines)
 	
-	var filler = macros.shift().values
+	var filler = read_filler(macros)
 	var warps = read_warps(macros)
 	var traps = read_traps(macros)
 	var signs = read_signs(macros)
@@ -264,7 +348,7 @@ function readEventText (text, map_name) {
 	warps.forEach(function (warp) {
 		// We're stuck with the map constant, so we can only approximate the corresponding label.
 		// This seems to work for the majority of maps.
-		var map_name = warp.map_num.substr('MAP_'.length).title().replace(/_/g, '')
+		var map_name = warp.map.title().replace(/_/g, '')
 		map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
 
 		// Right click on a warp to go to the destination map.
@@ -284,10 +368,10 @@ function readEventText (text, map_name) {
 		addHoverInfo(warp.element, info, update)
 	})
 
-	return getMapConstants().then(function(map_constants) {
+	return getSpriteConstants().then(function(constants) {
 		for (var i = 0; i < npcs.length; i++) {
 			var npc = npcs[i]
-			npc.sprite_id = map_constants[npc.sprite] - 1
+			npc.sprite_id = constants[npc.sprite] - 1
 			var sprite_id = npc.sprite_id >= 0 && npc.sprite_id <= 102 ? npc.sprite_id : 0
 			npc.image_path = root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
 		}
@@ -309,11 +393,24 @@ config.readEvents = function (map_name) {
 	})
 }
 
+function getSpriteConstants() {
+	return getSpriteConstantsText().then(read_constants)
+}
+
+function getSpriteConstantsText() {
+	return request(root + 'constants/sprite_constants.asm')
+}
+
 function getMapConstants() {
 	return getMapConstantsText().then(read_constants)
 }
 
+function getMapConstantsText() {
+	return request(config.map_constants_path)
+}
+
 function rgbasm_parse(value) {
+	value = value.trim()
 	rgbasm_value = parseInt(value.replace('$', '0x'))
 	if (!isNaN(rgbasm_value)) {
 		value = rgbasm_value

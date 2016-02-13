@@ -682,7 +682,8 @@ function readMapHeader(text, name) {
 		'permission',
 		'location',
 		'music',
-		'lighting',
+		'lighting1',
+		'lighting2',
 		'fish'
 	]
 
@@ -741,7 +742,6 @@ function readMapHeader2 (text, name) {
 	]
 	var header = getMacroAttributes(line, '\tmap_header_2 ', attributes)
 
-
 	/* then read connections */
 
 	i++
@@ -751,7 +751,7 @@ function readMapHeader2 (text, name) {
 	var direction
 	for (var d = 0; d < directions.length; d++) {
 		direction = directions[d]
-		if (header.which_connections.indexOf(direction.toUpperCase()) > -1) {
+		if (header.which_connections.toString().indexOf(direction.toUpperCase()) > -1) {
 			line = lines[i]
 			if (line.indexOf(direction) > -1) {
 				i++
@@ -1737,10 +1737,6 @@ function loadMapDimensions (name) {
 	})
 }
 
-function getMapConstantsText () {
-	return request(config.map_constants_path)
-}
-
 function getMapDimensions (name) {
 
 	var map_constant = Data.maps[name].attributes.map
@@ -1925,6 +1921,11 @@ function loadPalmap(id) {
 	return request(config.getPalmapPath(id), { binary: true })
 	.then(function (data) {
 		Data.tilesets[id].palmap = serializePalmap(data)
+	}, function () {
+		Data.tilesets[id].palmap = [].concat(
+			new Array(0x60).fill(0),
+			new Array(0x80).fill(8)
+		)
 	})
 }
 
