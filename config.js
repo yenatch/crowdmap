@@ -95,7 +95,7 @@ var config = {
 	getTilesetImagePath: function (id) { return root + 'gfx/tilesets/' + zfill(this.getTilesetId(id), 2) + '.png' },
 	getBlockdataPath: function (name) { return root + 'maps/' + name + '.blk' },
 	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_metatiles.bin' },
-	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_palette_map.bin' },
+	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_palette_map.asm' },
 	getPalettePath: function () { return root + 'tilesets/bg.pal' },
 	getRoofPalettePath: function () { return root + 'tilesets/roof.pal' },
 

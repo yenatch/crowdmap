@@ -1918,7 +1918,7 @@ function loadMetatiles(id) {
 }
 
 function loadPalmap(id) {
-	return request(config.getPalmapPath(id), { binary: true })
+	return request(config.getPalmapPath(id))
 	.then(function (data) {
 		Data.tilesets[id].palmap = serializePalmap(data)
 	}, function () {
@@ -1968,7 +1968,58 @@ function serializeMetatiles (data) {
 }
 
 function serializePalmap (data) {
-	return getNybbles(data)
+	// The palmap used to be binary, and trivial to read.
+	// Now it needs all this crap.
+	function getColor(constant) {
+		// TODO don't hardcode these
+		var value = [
+			'PAL_BG_GRAY',
+			'PAL_BG_RED',
+			'PAL_BG_GREEN',
+			'PAL_BG_WATER',
+			'PAL_BG_YELLOW',
+			'PAL_BG_BROWN',
+			'PAL_BG_ROOF',
+			'PAL_BG_TEXT',
+		].indexOf('PAL_BG_' + constant)
+		if (value === -1) {
+			return constant
+		}
+		return value
+	}
+	var list = []
+	var lines = data.split('\n').map(separateComment)
+	var macros = read_macros(lines)
+	var repts = []
+	while (macros.length) {
+		var macro = macros.shift()
+		var values = macro.values.slice()
+		macro = macro.macro
+		if (macro === 'tilepal') {
+			var bank = values.shift()
+			while (values.length) {
+				list.push((bank << 3) | getColor(values.shift()))
+			}
+		} else if (macro === 'rept') {
+			repts.push({
+				num: values.shift(),
+				i: list.length,
+			})
+		} else if (macro === 'endr') {
+			var rept = repts.pop()
+			var l = list.slice(rept.i, list.length)
+			for (var i = 0; i < rept.num; i++) {
+				list = list.concat(l)
+			}
+		} else if (macro === 'db') {
+			while (values.length) {
+				var value = values.shift()
+				list.push((value >> 4) & 0xf)
+				list.push(value & 0xf)
+			}
+		}
+	}
+	return list
 }
 
 function readPalette (text, colors_per_pal) {
