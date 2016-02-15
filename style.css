@@ -12,6 +12,33 @@ html {
 	font-family: Segoe UI Symbol;
 }
 
+.errors {
+	position: fixed;
+	bottom: 0px;
+	left: 0px;
+	z-index: 100;
+}
+.error {
+	display: table;
+	background-color: rgba(20, 20, 20, .8);
+	padding: 5px 10px 5px 10px;
+}
+.error_message {
+	display: inline-block;
+}
+.close_button {
+	display: inline-block;
+	margin-left: 10px;
+	cursor: default;
+	color: #999;
+}
+.close_button:hover {
+	color: #ccb;
+}
+.close_button:after {
+	content: "x";
+}
+
 .loading-splash {
 	width: 100%;
 	height: 100%;

@@ -69,6 +69,8 @@ function main() {
 }
 
 function init() {
+	clear_nojs()
+	clear_errors()
 
 	toolbar = Object.create(Toolbar)
 	toolbar.init()
