@@ -1890,6 +1890,7 @@ function setMapBlock(map, x, y, block) {
 function imagePromise(image) {
 	return new Promise( function (resolve, reject) {
 		image.onload = resolve
+		image.onerror = reject
 	})
 }
 
