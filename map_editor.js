@@ -118,44 +118,6 @@ function getTilesetTiles(tileset, roof) {
 	return tileset.tiles
 }
 
-function getMapGroupNames () {
-	return request(config.map_header_path)
-	.then(readMapGroupNames)
-}
-
-function readMapGroupNames (text) {
-	var lines = text.split('\n')
-	var start = '\tdw '
-	lines = lines.filter(function (line) {
-		return line.substr(0, start.length) === start
-	})
-	var names = lines.map(function (line) {
-		return line.substr(start.length).split(',')[0]
-	})
-
-	return names
-}
-
-function getMapNames () {
-	return request(config.map_header_path)
-	.then(readMapNames)
-}
-
-function readMapNames (text) {
-	var lines = text.split('\n')
-	var start = '\tmap_header '
-	lines = lines.filter(function (line) {
-		return line.substr(0, start.length) === start
-	})
-	var names = lines.map(function (line) {
-		return line.substr(start.length).split(',')[0]
-	})
-	names.sort()
-
-	return names
-}
-
-
 print = console.log.bind(console)
 
 function clearDialogs () {
@@ -668,51 +630,6 @@ function loadMapHeader(name) {
 	})
 }
 
-function getMapHeader(name) {
-	return request(config.map_header_path)
-	.then( function (text) { return readMapHeader(text, name) } )
-}
-
-function readMapHeader(text, name) {
-	var lines = text.split('\n')
-	var start = '\tmap_header ' + name + ','
-	var line = findLineStart(lines, start)
-
-	var attributes = [
-		'label',
-		'tileset',
-		'permission',
-		'location',
-		'music',
-		'lighting1',
-		'lighting2',
-		'fish'
-	]
-
-	var header = getMacroAttributes(line, '\tmap_header ', attributes)
-
-	var header_i = indexLineStart(lines, start)
-	var group = 0
-	var groups = []
-	for (var i = 0; i < lines.length; i++) {
-		if (lines[i].contains('\tdw ')) {
-			groups.push(lines[i].split('\tdw ')[1])
-		} else {
-			var maybe_group = groups.indexOf(lines[i].split(':')[0])
-			if (maybe_group !== -1) {
-				if (i < header_i) {
-					group = maybe_group + 1
-				} else {
-					break
-				}
-			}
-		}
-	}
-	header.group = group
-
-	return header
-}
-
 function createMapHeader() {
 	return Object.create(config.default_map_header)
 }
@@ -725,83 +642,8 @@ function loadMapAttributes(name) {
 	})
 }
 
-function getMapHeader2(name) {
-	return request(config.map_header_2_path)
-	.then( function (text) { return readMapHeader2(text, name) } )
-}
-
-function readMapHeader2 (text, name) {
-	var lines = text.split('\n')
-	var start = '\tmap_header_2 ' + name + ','
-	var i = indexLineStart(lines, start)
-
-	var line = lines[i]
-	var attributes = [
-		'label',
-		'map',
-		'border_block',
-		'which_connections'
-	]
-	var header = getMacroAttributes(line, '\tmap_header_2 ', attributes)
-
-	/* then read connections */
-
-	i++
-	header.connections = {}
-
-	var directions = ['north', 'south', 'west', 'east']
-	var direction
-	for (var d = 0; d < directions.length; d++) {
-		direction = directions[d]
-		if (header.which_connections.toString().indexOf(direction.toUpperCase()) > -1) {
-			line = lines[i]
-			if (line.indexOf(direction) > -1) {
-				i++
-				var connection_attributes = [
-					'direction',
-					'map',
-					'name',
-					'align',
-					'offset',
-					'strip_length',
-					'current_map',
-				]
-				header.connections[direction] = getMacroAttributes(line, '\tconnection', connection_attributes)
-			}
-		}
-	}
-
-	return header
-}
-
 function createMapHeader2() {
 	return Object.create(config.default_map_header_2)
-}
-
-function getMacroAttributes(line, macro_name, attributes) {
-	var result = {}
-	var macros = line.substr(macro_name.length).split(',')
-	var value
-	for (var i = 0; i < attributes.length; i++) {
-		value = macros[i].trim().replace(/\$/g, '0x')
-		result[attributes[i]] = value
-		value = parseInt(value)
-		if (value !== undefined && !Number.isNaN(value)) { result[attributes[i]] = value }
-	}
-	return result
-}
-
-function findLineStart(lines, start) {
-	return lines[indexLineStart(lines, start)]
-}
-
-function indexLineStart(lines, start) {
-	for (var i = 0; i < lines.length; i++) {
-		if (lines[i].substr(0, start.length) === start) {
-			return i
-		}
-	}
-	return -1
 }
 
 
@@ -1914,7 +1756,9 @@ function loadTileset (id) {
 function loadMetatiles(id) {
 	return request(config.getMetatilePath(id), { binary: true })
 	.then(function (data) {
-		var metatiles = serializeMetatiles(data)
+		return serializeMetatiles(data)
+	})
+	.then(function (metatiles) {
 		Data.tilesets[id].metatiles = metatiles
 		Data.tilesets[id].blockdata = range(metatiles.length)
 	})
@@ -1923,12 +1767,15 @@ function loadMetatiles(id) {
 function loadPalmap(id) {
 	return request(config.getPalmapPath(id))
 	.then(function (data) {
-		Data.tilesets[id].palmap = serializePalmap(data)
+		return serializePalmap(data)
 	}, function () {
-		Data.tilesets[id].palmap = [].concat(
+		return [].concat(
 			new Array(0x60).fill(0),
 			new Array(0x80).fill(8)
 		)
+	})
+	.then(function (palmap) {
+		Data.tilesets[id].palmap = palmap
 	})
 }
 
@@ -1942,6 +1789,9 @@ function loadPalette(id) {
 			var index = i * 8
 			palettes[time] = all_palettes.slice(index, index + 8)
 		})
+		return palettes
+	})
+	.then(function (palettes) {
 		Data.tilesets[id].palettes = palettes
 	})
 }
@@ -2060,6 +1910,9 @@ function loadRoofPalette (roof) {
 			var index = roof * 2 + (i >> 1)
 			palettes[time] = all_palettes[index]
 		})
+		return palettes
+	})
+	.then(function (palettes) {
 		Data.roofs[roof].palettes = palettes
 	})
 }
