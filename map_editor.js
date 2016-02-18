@@ -1483,7 +1483,7 @@ var MapViewer = {
 		return this.getBlock(x, y) !== block
 	},
 
-	drawMetatile: function (map, x, y, block, config) {
+	drawMetatile: function (map, x, y, block, options) {
 		map = map || this.current_map
 
 		if (typeof block === 'undefined') {
@@ -1521,12 +1521,12 @@ var MapViewer = {
 			meta_h: meta_h,
 		})
 
-		if (config) {
+		if (options) {
 			var block_w = meta_w * tile_w
 			var block_h = meta_h * tile_h
 			var drawcontext = this.drawcanvas.getContext('2d')
 			drawcontext.save()
-			Object.update(drawcontext, config)
+			Object.update(drawcontext, options)
 			drawcontext.fillRect(x * block_w, y * block_h, block_w, block_h)
 			drawcontext.restore()
 		}
