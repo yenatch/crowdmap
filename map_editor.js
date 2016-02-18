@@ -43,6 +43,7 @@ function _gotoMap(name) {
 		view.run()
 	})
 
+
 	return promise
 }
 
@@ -1212,7 +1213,7 @@ var MapViewer = {
 		var all_npcs = this.getAllEvents()
 
 		all_npcs.forEach(function (npc) {
-			if (npc.image_path) {
+			if (npc.image_path && npc.element) {
 				var bg = 'url(' + npc.image_path + ')'
 				if (bg !== npc.element.style.background) {
 					npc.element.style.background = bg
@@ -1221,8 +1222,10 @@ var MapViewer = {
 		})
 
 		all_npcs.forEach(function (npc) {
-			npc.element.style.left = (parseInt(npc.x) + 6) * 16 + 'px'
-			npc.element.style.top = (parseInt(npc.y) + 6) * 16 + 'px'
+			if (npc.element) {
+				npc.element.style.left = (parseInt(npc.x) + 6) * 16 + 'px'
+				npc.element.style.top = (parseInt(npc.y) + 6) * 16 + 'px'
+			}
 		})
 
 		this.addNewEvents()
@@ -1253,7 +1256,13 @@ var MapViewer = {
 		var children = this.container.children
 
 		function is_npc (child) {
-			return (['npc', 'warp', 'sign', 'trap'].indexOf(child.className) !== -1)
+			var classes = ['npc', 'warp', 'sign', 'trap']
+			for (var i = 0; i < classes.length; i++) {
+				if (child.className.indexOf(classes[i]) !== -1) {
+					return true
+				}
+			}
+			return false
 		}
 
 		// Get a list of all the events.
@@ -1624,6 +1633,9 @@ function loadMap(name) {
 	})
 	var event_promise = header_promise.then(function () {
 		return loadMapEvents(name)
+	})
+	event_promise.then(function () {
+		parseEvents(Data.maps[name].events)
 	})
 	return Promise.all([
 		header_promise,

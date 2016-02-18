@@ -253,46 +253,53 @@ function read_filler(macros) {
 	return values
 }
 
-function readEventText (text, map_name) {
-	var lines = asmAtLabel(text, map_name + '_MapEventHeader')
-	var macros = read_macros(lines)
-	
-	var filler = read_filler(macros)
-	var warps = read_warps(macros)
-	var traps = read_traps(macros)
-	var signs = read_signs(macros)
-	var npcs = read_npcs(macros)
+function named_args(names, values) {
+	var object = {}
+	names.forEach(function (key) {
+		object[key] = values.shift()
+	})
+	return object
+}
 
-	var obj_groups = [[warps, 'warp'], [traps, 'trap'], [signs, 'sign'], [npcs, 'npc']]
-	obj_groups.forEach(
-		function (stuff) {
-			var objs = stuff[0]
-			var className = stuff[1]
-			objs.forEach(function (npc) {
-
-				if (typeof npc.element === 'undefined') {
-					npc.element = createElement('div')
-				}
-				npc.element.className = className
-
-				if (className !== 'npc') {
-					npc.element.style.opacity = '0.7'
-				}
-				if (npc.image_path) {
-					npc.element.style.background = 'url(' + npc.image_path + ')'
-				}
-
-				npc.element.style.width = '16px'
-				npc.element.style.height = '16px'
-				npc.element.style.position = 'absolute'
-			})
+function readEventText (text) {
+	var r = new rgbasm()
+	var objects = {}
+	function add_macro (name, real_name, arg_names) {
+		if (typeof objects[real_name] === 'undefined') {
+			objects[real_name] = []
 		}
-	)
+		r.macros[name] = function (values) {
+			objects[real_name].push(named_args(arg_names, values))
+		}
+	}
+	add_macro('warp_def', 'warp', ['y', 'x', 'map_warp', 'map'])
+	add_macro('xy_trigger', 'trap', ['trigger', 'y', 'x', 'unknown1', 'script', 'unknown2', 'unknown3'])
+	add_macro('signpost', 'sign', ['y', 'x', 'function', 'script'])
+	add_macro('person_event', 'npc', ['sprite', 'y', 'x', 'movement', 'radius_y', 'radius_x', 'clock_hour', 'clock_daytime', 'color', 'function', 'sight_range', 'script', 'event_flag'])
 
-	var all_obj = [].concat(npcs, warps, traps, signs)
+	r.read(text)
+	return {
+		warps: objects.warp,
+		traps: objects.trap,
+		signs: objects.sign,
+		npcs: objects.npc,
+	}
+}
+
+function parseEvents (objects) {
+	var all_obj = []
+	var obj_keys = ['warp', 'trap', 'sign', 'npc']
+	obj_keys.forEach(function (name) {
+		var npcs = objects[name + 's'] || []
+		npcs.forEach(function (npc) {
+			npc.element = createElement('div', { className: 'event ' + name })
+		})
+		all_obj.concat(npcs)
+	})
+
 	all_obj.forEach(function (npc) {
+		// Make events draggable.
 		var dragging = false
-
 		npc.element.addEventListener('mousedown', function (event) {
 			dragging = true
 		})
@@ -345,6 +352,7 @@ function readEventText (text, map_name) {
 		addDragInfo(npc.element, info, update)
 	})
 
+	var warps = objects.warps
 	warps.forEach(function (warp) {
 		// We're stuck with the map constant, so we can only approximate the corresponding label.
 		// This seems to work for the majority of maps.
@@ -368,7 +376,8 @@ function readEventText (text, map_name) {
 		addHoverInfo(warp.element, info, update)
 	})
 
-	return getSpriteConstants().then(function(constants) {
+	var npcs = objects.npcs
+	getSpriteConstants().then(function(constants) {
 		for (var i = 0; i < npcs.length; i++) {
 			var npc = npcs[i]
 			npc.sprite_id = constants[npc.sprite] - 1
@@ -376,14 +385,8 @@ function readEventText (text, map_name) {
 			npc.image_path = root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
 		}
 	})
-	.then(function () {
-		return {
-			warps: warps,
-			traps: traps,
-			signs: signs,
-			npcs: npcs,
-		}
-	})
+
+	return objects
 }
 
 config.readEvents = function (map_name) {
