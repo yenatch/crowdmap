@@ -1588,26 +1588,22 @@ function getMapDimensions (name) {
 	return getMapConstantsText().then(function (text) {
 		var group = 0
 		var num = 0
-		var lines = text.split('\n')
-		for (var i = 0; i < lines.length; i++) {
-			var line = lines[i]
-			if (has_macro(line, 'newgroup')) {
-				group += 1
-				num = 0
-			} else if (has_macro(line, 'mapgroup')) {
-				num += 1
-				var args = read_macro(line, 'mapgroup')
-				if (args[0].trim() == map_constant) {
-					return {
-						group: group,
-						num: num,
-						height: parseInt(args[1]),
-						width: parseInt(args[2]),
-					}
+		var r = new rgbasm()
+		r.macros.newgroup = function (values) {
+			group += 1
+			num = 0
+		}
+		r.macros.mapgroup = function (values) {
+			if (map_constant === values.shift()) {
+				return {
+					group: group,
+					num: num,
+					height: values.shift(),
+					width: values.shift()
 				}
 			}
 		}
-		return false
+		return r.read(text) || false
 	})
 }
 

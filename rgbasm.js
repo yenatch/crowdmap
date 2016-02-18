@@ -31,7 +31,10 @@ var rgbasm = function () {
 			var name = macro.macro
 			var macro_function = self.macros[name]
 			if (macro_function) {
-				macro_function(values)
+				var result = macro_function(values)
+				if (typeof result !== 'undefined') {
+					return result
+				}
 			}
 		}
 	}
