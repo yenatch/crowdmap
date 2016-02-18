@@ -420,41 +420,24 @@ function rgbasm_parse(value) {
 
 function read_constants(text) {
 	var constants = {}
-	var lines = text.split('\n')
-	for (var l = 0; l < lines.length; l++) {
-		var line = separateComment(lines[l])[0]
-
-		var index = line.search(/\bEQU\b/)
-		if (index !== -1) {
-			var key = line.substr(0, index).trim()
-			var value = line.substr(index + 'EQU'.length).trim()
-			constants[key] = rgbasm_parse(value)
-		}
-		var index = line.search(/=/)
-		if (index !== -1) {
-			var key = line.substr(0, index).trim()
-			var value = line.substr(index + '='.length).trim()
-			constants[key] = rgbasm_parse(value)
-		}
-		var index = line.search(/set/i)
-		if (index !== -1) {
-			var key = line.substr(0, index).trim()
-			var value = line.substr(index + 'set'.length).trim()
-			constants[key] = rgbasm_parse(value)
-		}
-
-		var index = line.search(/\bconst_def\b/)
-		if (index !== -1) {
-			constants.const_value = 0
-		}
-		var index = line.search(/\bconst\b/)
-		if (index !== -1) {
-			var key = line.substr(index + 'const'.length).trim()
-			var value = constants.const_value
-			constants.const_value += 1
-			constants[key] = value
-		}
+	var r = new rgbasm()
+	set = function(values) {
+		var key = values.shift()
+		var value = values.shift()
+		constants[key] = value
 	}
+	r.macros['='] = set
+	r.macros.SET = set
+	r.macros.EQU = set
+	r.macros.const_def = function (values) {
+		constants.const_value = values.shift() || 0
+	}
+	r.macros.const = function (values) {
+		values.push(constants.const_value)
+		set(values)
+		constants.const_value += 1
+	}
+	r.read(text)
 	return constants
 }
 

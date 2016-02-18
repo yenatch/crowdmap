@@ -30,6 +30,11 @@ var rgbasm = function () {
 			var values = macro.values.slice()
 			var name = macro.macro
 			var macro_function = self.macros[name]
+			if (!macro_function) {
+				// Infix keywords (EQU, SET, =)
+				macro_function = self.macros[values[0]]
+				values[0] = name
+			}
 			if (macro_function) {
 				var result = macro_function(values)
 				if (typeof result !== 'undefined') {
