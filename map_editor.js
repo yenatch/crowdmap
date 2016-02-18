@@ -1821,57 +1821,25 @@ function serializeMetatiles (data) {
 }
 
 function serializePalmap (data) {
-	// The palmap used to be binary, and trivial to read.
-	// Now it needs all this crap.
-	function getColor(constant) {
-		// TODO don't hardcode these
-		var value = [
-			'PAL_BG_GRAY',
-			'PAL_BG_RED',
-			'PAL_BG_GREEN',
-			'PAL_BG_WATER',
-			'PAL_BG_YELLOW',
-			'PAL_BG_BROWN',
-			'PAL_BG_ROOF',
-			'PAL_BG_TEXT',
-		].indexOf('PAL_BG_' + constant)
-		if (value === -1) {
-			return constant
-		}
-		return value
-	}
+	var colors = ['gray', 'red', 'green', 'water', 'yellow', 'brown', 'roof', 'text']
+	var getColor = function (color) { return colors.indexOf(color.toLowerCase()) }
+
 	var list = []
-	var lines = data.split('\n').map(separateComment)
-	var macros = read_macros(lines)
-	var repts = []
-	while (macros.length) {
-		var macro = macros.shift()
-		var values = macro.values.slice()
-		macro = macro.macro
-		if (macro === 'tilepal') {
-			var bank = values.shift()
-			while (values.length) {
-				list.push((bank << 3) | getColor(values.shift()))
-			}
-		} else if (macro === 'rept') {
-			repts.push({
-				num: values.shift(),
-				i: list.length,
-			})
-		} else if (macro === 'endr') {
-			var rept = repts.pop()
-			var l = list.slice(rept.i, list.length)
-			for (var i = 0; i < rept.num; i++) {
-				list = list.concat(l)
-			}
-		} else if (macro === 'db') {
-			while (values.length) {
-				var value = values.shift()
-				list.push((value >> 4) & 0xf)
-				list.push(value & 0xf)
-			}
+	var r = new rgbasm()
+	r.macros.tilepal = function (values) {
+		var bank = values.shift()
+		while (values.length) {
+			list.push((bank << 3) | getColor(values.shift()))
 		}
 	}
+	r.macros.db = function (values) {
+		while (values.length) {
+			var value = values.shift()
+			list.push((value >> 4) & 0xf)
+			list.push(value & 0xf)
+		}
+	}
+	r.read(data)
 	return list
 }
 
@@ -1998,18 +1966,11 @@ function getPalettes(url) {
 
 function serializeRGB(text) {
 	var colors = []
-	var lines = text.split('\n')
-	lines.forEach(function (line) {
-		line = line.split(';')[0]
-		if (line) {
-			var color = macroValues(line, 'RGB')
-			if (color) {
-				colors.push(color.map(function (x) {
-					return x * 8
-				}))
-			}
-		}
-	})
+	var r = new rgbasm()
+	r.macros.RGB = function (values) {
+		colors.push(values.map(function (x) { return x * 8.25 }))
+	}
+	r.read(text)
 	return colors
 }
 
