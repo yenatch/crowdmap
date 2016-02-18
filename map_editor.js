@@ -1933,33 +1933,6 @@ function mergeRoofTiles(tiles, roof_tiles) {
 }
 
 
-
-function getPalettes(url) {
-	var palettes = [];
-	var pals = loadTextFile(url);
-	var colors_per_pal = 4;
-	/* asm.js stuff here*/
-	var lines = pals.split('\n');
-	var line;
-	var palette = [];
-	for (var i = 0; i < lines.length; i++) {
-		line  = lines[i];
-		if (line !== '') {
-			color = macroValues(line, 'RGB');
-			if (palette.length >= colors_per_pal) {
-				palettes.push(palette);
-				palette = [];
-			}
-			palette.push(color);
-		}
-	}
-	if (palette.length) {
-		palettes.push(palette);
-	}
-	return palettes;
-}
-
-
 function serializeRGB(text) {
 	var colors = []
 	var r = new rgbasm()
