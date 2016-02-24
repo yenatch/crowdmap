@@ -1,7 +1,13 @@
 # crowdmap
 
-A multiplayer map editor for [pokecrystal].
+A map editor for [pokecrystal].
 
-Clone inside your pokecrystal repo. Then run `python crowdmap/server.py 8000` and go to [http://localhost:8000/crowdmap](http://localhost:8000/crowdmap).
+Clone inside your pokecrystal repo. 
+Then:
+```bash
+python gfx.py png gfx/tilesets/*.2bpp.lz gfx/tilesets/roofs/*.2bpp gfx/overworld/*.2bpp
+```
+
+Then run `python crowdmap/server.py 8000` and go to [http://localhost:8000/crowdmap](http://localhost:8000/crowdmap).
 
 [pokecrystal]: https://github.com/pret/pokecrystal
