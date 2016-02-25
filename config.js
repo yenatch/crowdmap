@@ -133,29 +133,6 @@ function has_macro (line, macro) {
 	return (line.trim().search(re) !== -1)
 }
 
-function read_macro (line, macro) {
-	var index = line.indexOf(macro) + macro.length
-	var values = line.substr(index).split(',')
-	values = values.map(rgbasm_parse)
-	if (values.filter(function (value) { return value !== '' }).length === 0) {
-		return []
-	}
-	return values
-}
-
-function read_macros (lines) {
-	var macros = []
-	for (var l = 0; l < lines.length; l += 1) {
-		var line = lines[l][0].trim();
-		if (line) {
-			var macro_name = line.split(/\s+/)[0]
-			var values = read_macro(line, macro_name)
-			macros.push({macro: macro_name, values: values})
-		}
-	}
-	return macros
-}
-
 function read_list (macros) {
 	var values = []
 	while (values.length === 0) {
@@ -262,7 +239,7 @@ function named_args(names, values) {
 }
 
 function readEventText (text) {
-	var r = new rgbasm()
+	var r = rgbasm.instance()
 	var objects = {}
 	function add_macro (name, real_name, arg_names) {
 		if (typeof objects[real_name] === 'undefined') {
@@ -412,26 +389,17 @@ function getMapConstantsText() {
 	return request(config.map_constants_path)
 }
 
-function rgbasm_parse(value) {
-	value = value.trim()
-	rgbasm_value = parseInt(value.replace('$', '0x'))
-	if (!isNaN(rgbasm_value)) {
-		value = rgbasm_value
-	}
-	return value
-}
-
 function read_constants(text) {
 	var constants = {}
-	var r = new rgbasm()
+	var r = rgbasm.instance()
 	set = function(values) {
 		var key = values.shift()
 		var value = values.shift()
 		constants[key] = value
 	}
-	r.macros['='] = set
-	r.macros.SET = set
-	r.macros.EQU = set
+	r.infix['='] = set
+	r.infix.SET = set
+	r.infix.EQU = set
 	r.macros.const_def = function (values) {
 		constants.const_value = values.shift() || 0
 	}

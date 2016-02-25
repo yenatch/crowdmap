@@ -1597,7 +1597,7 @@ function getMapDimensions (name) {
 	return getMapConstantsText().then(function (text) {
 		var group = 0
 		var num = 0
-		var r = new rgbasm()
+		var r = rgbasm.instance()
 		r.macros.newgroup = function (values) {
 			group += 1
 			num = 0
@@ -1833,7 +1833,7 @@ function serializePalmap (data) {
 	var getColor = function (color) { return colors.indexOf(color.toLowerCase()) }
 
 	var list = []
-	var r = new rgbasm()
+	var r = rgbasm.instance()
 	r.macros.tilepal = function (values) {
 		var bank = values.shift()
 		while (values.length) {
@@ -1947,7 +1947,7 @@ function mergeRoofTiles(tiles, roof_tiles) {
 
 function serializeRGB(text) {
 	var colors = []
-	var r = new rgbasm()
+	var r = rgbasm.instance()
 	r.macros.RGB = function (values) {
 		colors.push(values.map(function (x) { return x * 8.25 }))
 	}

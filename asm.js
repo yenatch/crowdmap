@@ -9,19 +9,6 @@ var secondMapHeaders = loadTextFile(asm_dir + 'second_map_headers.asm');
 var spriteHeaders = loadTextFile(ow_dir + 'sprite_headers.asm');
 */
 
-function separateComment(line) {
-	var in_quote = false;
-	for (var i = 0; i < line.length; i++) {
-		if (!in_quote) {
-			if (line[i] === ';') {
-				return [line.substr(0,i), line.substr(i)];
-			}
-		}
-		if (line[i] === '"') in_quote = !in_quote;
-	}
-	return [line, undefined];
-}
-
 function asmAtLabel(asm, label) {
 	var start = asm.indexOf(label + ':') + (label+':').length;
 	var lines = asm.substr(start).split('\n');
@@ -33,7 +20,7 @@ function asmAtLabel(asm, label) {
 				break;
 			}
 		}
-		content.push(separateComment(line));
+		content.push(rgbasm.separate_comment(line));
 	}
 	return content;
 }
@@ -61,7 +48,7 @@ function constants(asm) {
 	var consts = {};
 	var lines = asm.split('\n');
 	for (var l = 0; l < lines.length; l++) {
-		var line = separateComment(lines[l])[0];
+		var line = rgbasm.separate_comment(lines[l]);
 		if (line.indexOf('EQU') !== -1) {
 			var con = line.split('EQU')[0].trim();
 			var val = line.split('EQU')[1].trim();
@@ -97,8 +84,7 @@ function secondMapHeader(asm, mapName) {
 	];
 	var i = 0;
 	for (var l = 0; l < header.length; l++) {
-		var asm     = header[l][0];
-		var comment = header[l][1];
+		var asm = header[l];
 
 		if (asm.trim() !== '') {
 			items = items.concat(macroValues(asm, macros[i]));
@@ -137,8 +123,7 @@ function connections(conns, header) {
 			var i = 0;
 			var items = [];
 			for (var l = 0; l < header.length; l++) {
-				var asm     = header[l][0];
-				var comment = header[l][1];
+				var asm = header[l];
 
 				if (asm.trim() !== '') {
 					items = items.concat(macroValues(asm, macros[i]));
@@ -172,8 +157,7 @@ function mapHeader(asm, mapName) {
 	];
 	var i = 0;
 	for (var l = 0; l < header.length; l++) {
-		var asm     = header[l][0];
-		var comment = header[l][1];
+		var asm = header[l];
 
 		if (asm.trim() !== '') {
 			items = items.concat(macroValues(asm, macros[i]));
@@ -194,8 +178,7 @@ function readHeader(header, classes) {
 		objects[i] = [];
 		var count = -1;
 		while (l < header.length) {
-			var asm     = header[l][0];
-			var comment = header[l][1];
+			var asm = header[l];
 
 			if (asm.trim() !== '') {
 				if (count === -1) {
@@ -316,7 +299,7 @@ function parseScriptAt(oasm, label) {
 	var asm = asmAtLabel(oasm, label);
 	var lines = [];
 	for (var l = 0; l < asm.length; l++) {
-		var line = asm[l][0].trim();
+		var line = asm[l].trim();
 		if (line !== '') {
 			var cmd = line.split(' ')[0];
 			if (pksv[cmd]) {
@@ -333,7 +316,7 @@ function readTextAt(asm, label) {
 	var text = ''
 	var line;
 	for (var l = 0; l < asm.length; l++) {
-		line = asm[l][0].trim();
+		line = asm[l].trim();
 		line = line;
 		text += line + '\n';
 	}
@@ -376,18 +359,18 @@ function readSpriteHeaders(){
 	l, values = read_line(lines, l, 'db');
 	for (var l = 0; l < lines.length; l++) {
 		console.log(l, lines.length);
-		line = separateComment(lines[l])[0];
+		line = rgbasm.separate_comment(lines[l]);
 		if (line.indexOf(':') !== -1) {
 			if (header) headers.push(header);
 			l++;
-			line = separateComment(lines[l])[0];
+			line = rgbasm.separate_comment(lines[l]);
 		}
 		values_1 = macroValues(line, 'dw');
 		l++;
-		line = separateComment(lines[l])[0];
+		line = rgbasm.separate_comment(lines[l]);
 		values_2 = macroValues(line, 'db');
 		l++;
-		line = separateComment(lines[l])[0];
+		line = rgbasm.separate_comment(lines[l]);
 		values_3 = macroValues(line, 'db');
 		l++;
 		header = {
