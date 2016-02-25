@@ -1,3 +1,5 @@
+// js helper functions
+
 var Promise = Promise || ES6Promise.Promise
 
 var addQuery = function (url, query) {
@@ -140,4 +142,14 @@ String.prototype.zfill = String.prototype.zfill || function(length) {
 function zfill(number, length) {
 	// <number> can already be a string, obviously
 	return number.toString().zfill(length)
+}
+
+function dictzip (keys, values) {
+	var object = {}
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i]
+		var value = values[i]
+		object[key] = value
+	}
+	return object
 }

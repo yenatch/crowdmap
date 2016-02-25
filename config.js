@@ -345,15 +345,12 @@ function getMapGroupNames () {
 }
 
 function readMapGroupNames (text) {
-	var lines = text.split('\n')
-	var start = '\tdw '
-	lines = lines.filter(function (line) {
-		return line.substr(0, start.length) === start
-	})
-	var names = lines.map(function (line) {
-		return line.substr(start.length).split(',')[0]
-	})
-
+	var names = []
+	var r = rgbasm.instance()
+	r.macros.dw = function (values) {
+		names.push(values[0])
+	}
+	r.read(text)
 	return names
 }
 
@@ -363,19 +360,15 @@ function getMapNames () {
 }
 
 function readMapNames (text) {
-	var lines = text.split('\n')
-	var start = '\tmap_header '
-	lines = lines.filter(function (line) {
-		return line.substr(0, start.length) === start
-	})
-	var names = lines.map(function (line) {
-		return line.substr(start.length).split(',')[0]
-	})
+	var names = []
+	var r = rgbasm.instance()
+	r.macros.map_header = function (values) {
+		names.push(values[0])
+	}
+	r.read(text)
 	names.sort()
-
 	return names
 }
-
 
 function getMapHeader(name) {
 	return request(config.map_header_path)
@@ -383,42 +376,35 @@ function getMapHeader(name) {
 }
 
 function readMapHeader(text, name) {
-	var lines = text.split('\n')
-	var start = '\tmap_header ' + name + ','
-	var line = findLineStart(lines, start)
 
-	var attributes = [
-		'label',
-		'tileset',
-		'permission',
-		'location',
-		'music',
-		'lighting1',
-		'lighting2',
-		'fish'
-	]
-
-	var header = getMacroAttributes(line, '\tmap_header ', attributes)
-
-	var header_i = indexLineStart(lines, start)
-	var group = 0
+	// Find all the group names.
+	var r = rgbasm.instance()
 	var groups = []
-	for (var i = 0; i < lines.length; i++) {
-		if (lines[i].contains('\tdw ')) {
-			groups.push(lines[i].split('\tdw ')[1])
-		} else {
-			var maybe_group = groups.indexOf(lines[i].split(':')[0])
-			if (maybe_group !== -1) {
-				if (i < header_i) {
-					group = maybe_group + 1
-				} else {
-					break
-				}
-			}
+	r.macros.dw = function (values) {
+		groups.push(values[0])
+	}
+	r.read(text)
+
+	// Find the map header definition, and its group.
+	var r = rgbasm.instance()
+	var group = 0
+	var num = 0
+	r.callbacks.label = function (line) {
+		group = groups.indexOf(line.label)
+		num = 0
+	}
+	r.macros.map_header = function (values) {
+		num += 1
+		var map_name = values[0]
+		if (map_name === name) {
+			return values
 		}
 	}
-	header.group = group
+	var values = r.read(text)
 
+	var names = ['label', 'tileset', 'permission', 'location', 'music', 'lighting1', 'lighting2', 'fish']
+	var header = dictzip(names, values)
+	header.group = group
 	return header
 }
 
@@ -429,72 +415,37 @@ function getMapHeader2(name) {
 }
 
 function readMapHeader2 (text, name) {
-	var lines = text.split('\n')
-	var start = '\tmap_header_2 ' + name + ','
-	var i = indexLineStart(lines, start)
 
-	var line = lines[i]
-	var attributes = [
-		'label',
-		'map',
-		'border_block',
-		'which_connections'
-	]
-	var header = getMacroAttributes(line, '\tmap_header_2 ', attributes)
-
-	/* then read connections */
-
-	i++
-	header.connections = {}
-
-	var directions = ['north', 'south', 'west', 'east']
-	var direction
-	for (var d = 0; d < directions.length; d++) {
-		direction = directions[d]
-		if (header.which_connections.toString().indexOf(direction.toUpperCase()) > -1) {
-			line = lines[i]
-			if (line.indexOf(direction) > -1) {
-				i++
-				var connection_attributes = [
-					'direction',
-					'map',
-					'name',
-					'align',
-					'offset',
-					'strip_length',
-					'current_map',
-				]
-				header.connections[direction] = getMacroAttributes(line, '\tconnection', connection_attributes)
-			}
+	var r = rgbasm.instance()
+	var parse_connections = false
+	var header_values = []
+	var connections = []
+	r.macros.map_header_2 = function (values) {
+		var map_name = values[0]
+		if (map_name === name) {
+			parse_connections = true
+			header_values = values
+		} else {
+			parse_connections = false
 		}
 	}
+	r.macros.connection = function (values) {
+		if (parse_connections) {
+			connections.push(values)
+		}
+	}
+	r.read(text)
+
+	var values = header_values
+	var names = ['label', 'map', 'border_block', 'which_connections']
+	var header = dictzip(names, values)
+
+	header.connections = {}
+	connections.forEach(function (values) {
+		var names = ['direction', 'map', 'name', 'align', 'offset', 'strip_length', 'current_map']
+		var connection = dictzip(names, values)
+		header.connections[connection.direction] = connection
+	})
 
 	return header
-}
-
-
-function getMacroAttributes(line, macro_name, attributes) {
-	var result = {}
-	var macros = line.substr(macro_name.length).split(',')
-	var value
-	for (var i = 0; i < attributes.length; i++) {
-		value = macros[i].trim().replace(/\$/g, '0x')
-		result[attributes[i]] = value
-		value = parseInt(value)
-		if (value !== undefined && !Number.isNaN(value)) { result[attributes[i]] = value }
-	}
-	return result
-}
-
-function findLineStart(lines, start) {
-	return lines[indexLineStart(lines, start)]
-}
-
-function indexLineStart(lines, start) {
-	for (var i = 0; i < lines.length; i++) {
-		if (lines[i].substr(0, start.length) === start) {
-			return i
-		}
-	}
-	return -1
 }
