@@ -404,8 +404,7 @@ function read_constants(text) {
 		constants.const_value = values.shift() || 0
 	}
 	r.macros.const = function (values) {
-		values.push(constants.const_value)
-		set(values)
+		set(values.concat(constants.const_value))
 		constants.const_value += 1
 	}
 	r.read(text)
