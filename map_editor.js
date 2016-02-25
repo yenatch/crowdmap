@@ -1743,6 +1743,8 @@ function imagePromise(image) {
 	return new Promise( function (resolve, reject) {
 		image.onload = resolve
 		image.onerror = reject
+		// image.onerror doesn't catch 404 in most browsers
+		request(image.src).catch(reject)
 	})
 }
 
@@ -1806,11 +1808,17 @@ function loadPalette(id) {
 
 function loadTilesetImage(id) {
 	var image = new Image()
-	image.src = config.getTilesetImagePath(id)
+	var path = config.getTilesetImagePath(id)
+	image.src = path
 	image.setAttribute('validate', 'always')
 	return imagePromise(image)
 	.then(function () {
 		Data.tilesets[id].image = image
+	}, function (event) {
+		error(
+			'Tileset image "' + path + '" doesn\'t exist.\n'
+			+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp.lz') + '</div>'
+		)
 	})
 }
 
