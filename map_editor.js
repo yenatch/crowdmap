@@ -1903,11 +1903,17 @@ function loadRoofPalette (roof) {
 
 function loadRoofImage(roof) {
 	var image = new Image()
-	image.src = config.getRoofImagePath(roof)
+	var path = config.getRoofImagePath(roof)
+	image.src = path
 	image.setAttribute('validate', 'always')
 	return imagePromise(image)
 	.then(function () {
 		Data.roofs[roof].image = image
+	}, function (event) {
+		error(
+			'Roof image "' + path + '" doesn\'t exist.\n'
+			+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp') + '</div>'
+		)
 	})
 }
 
