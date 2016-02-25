@@ -6,6 +6,7 @@ var rgbasm = {
 		this.history = []
 		this.queue = []
 		this.infix = {}
+		this.callbacks = {}
 		this.macros = {
 			rept: function (values) {
 				self.repts.push({
@@ -45,6 +46,12 @@ var rgbasm = {
 	read_line: function () {
 		var line = this.queue.shift()
 		this.history.push(line)
+		if (line.label) {
+			var callback = this.callbacks.label
+			if (callback) {
+				callback(line)
+			}
+		}
 		var values = line.values.slice()
 		var macro = this.macros[line.macro]
 		if (!macro) {
@@ -57,6 +64,7 @@ var rgbasm = {
 	},
 
 	eval: function (value) {
+		value = value.toString()
 		value = value.trim()
 		var int_value = parseInt(value.replace('$', '0x'))
 		if (!isNaN(int_value)) {
@@ -67,11 +75,17 @@ var rgbasm = {
 
 	read_macro: function (line) {
 		line = this.separate_comment(line)
-		var macro = line.trim().split(/\s+/)[0]
-		var index = line.indexOf(macro) + macro.length
-		var values = line.substr(index).split(/,/)
+		var label = (line.match(/^[a-zA-Z\.][a-zA-Z0-9#@\.]*:*/) || [])[0]
+		var macro = (line.substr(label ? label.length : 0).match(/\S+/) || [])[0]
+		var values = []
+		if (macro) {
+			var index = line.indexOf(macro) + macro.length
+			values = line.substr(index).split(/,/)
+		}
+
 		values = values.map(this.eval.bind(this))
 		return {
+			label: label,
 			macro: macro,
 			values: values,
 			line: line,
