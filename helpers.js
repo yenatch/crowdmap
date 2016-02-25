@@ -136,7 +136,7 @@ String.prototype.repeat = String.prototype.repeat || function(length) {
 }
 
 String.prototype.zfill = String.prototype.zfill || function(length) {
-	return '0'.repeat(length - this.length) + this;
+	return '0'.repeat(Math.max(length - this.length, 0)) + this;
 }
 
 function zfill(number, length) {
