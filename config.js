@@ -169,7 +169,7 @@ function parseEvents (objects) {
 		npcs.forEach(function (npc) {
 			npc.element = createElement('div', { className: 'event ' + name })
 		})
-		all_obj.concat(npcs)
+		all_obj = all_obj.concat(npcs)
 	})
 
 	all_obj.forEach(function (npc) {
