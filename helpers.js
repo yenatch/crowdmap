@@ -123,6 +123,20 @@ function ajax(url, resolve, reject, options) {
 	xhr.send(options.data)
 }
 
+function imagePromise(image) {
+	return new Promise( function (resolve, reject) {
+		image.onload = resolve
+		image.onerror = reject
+		// image.onerror doesn't catch 404 in most browsers
+		request(image.src).catch(reject)
+	})
+}
+
+
+Array.prototype.contains = Array.prototype.contains || function (item) {
+	return this.indexOf(item) !== -1
+}
+
 String.prototype.contains = String.prototype.contains || function (term) {
 	return this.indexOf(term) !== -1
 }

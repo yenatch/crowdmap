@@ -104,7 +104,7 @@ function getTileset(map_name) {
 }
 
 function getTilesetTiles(tileset, roof) {
-	if (config.roof_tilesets.indexOf(tileset.id) !== -1) {
+	if (config.roof_tilesets.contains(tileset.id)) {
 		if (typeof roof !== 'undefined') {
 			var tilesets = tileset.with_roofs[roof]
 			if (typeof tileset !== 'undefined') {
@@ -803,13 +803,12 @@ var BlockViewer = {
 	run: function () {
 		var self = this
 		function draw () {
-			self.running = false
-			self.draw()
+			try { self.draw() } catch (e) {}
 			window.requestAnimationFrame(draw)
-			self.running = true
 		}
 		self.redraw = true
 		if (!self.running) {
+			self.running = true
 			window.requestAnimationFrame(draw)
 		}
 	},
@@ -1152,13 +1151,12 @@ var MapViewer = {
 	run: function () {
 		var self = this
 		function draw () {
-			self.running = false
-			self.draw()
+			try { self.draw() } catch (e) {}
 			window.requestAnimationFrame(draw)
-			self.running = true
 		}
 		self.redraw = true
 		if (!self.running) {
+			self.running = true
 			window.requestAnimationFrame(draw)
 		}
 	},
@@ -1258,7 +1256,7 @@ var MapViewer = {
 		function is_npc (child) {
 			var classes = ['npc', 'warp', 'sign', 'trap']
 			for (var i = 0; i < classes.length; i++) {
-				if (child.className.indexOf(classes[i]) !== -1) {
+				if (child.className.contains(classes[i])) {
 					return true
 				}
 			}
@@ -1738,15 +1736,6 @@ function setMapBlock(map, x, y, block) {
 	}
 }
 
-
-function imagePromise(image) {
-	return new Promise( function (resolve, reject) {
-		image.onload = resolve
-		image.onerror = reject
-		// image.onerror doesn't catch 404 in most browsers
-		request(image.src).catch(reject)
-	})
-}
 
 function loadTileset (id) {
 	if (!Data.tilesets[id]) {
