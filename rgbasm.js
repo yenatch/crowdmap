@@ -52,7 +52,7 @@ var rgbasm = {
 				callback(line)
 			}
 		}
-		var values = line.values.slice()
+		var values = line.values.map(this.eval.bind(this))
 		var macro = this.macros[line.macro]
 		if (!macro) {
 			macro = this.infix[values.shift()]
@@ -83,7 +83,6 @@ var rgbasm = {
 			values = line.substr(index).split(/,/)
 		}
 
-		values = values.map(this.eval.bind(this))
 		return {
 			label: label,
 			macro: macro,
