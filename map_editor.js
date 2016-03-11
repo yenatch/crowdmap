@@ -522,8 +522,7 @@ var Toolbar = {
 		hider.style.width = '100%'
 		hider.style.height = '100%'
 		var self = this
-		var hidden = true
-		self.hide_description()
+		var hidden = false
 		hider.addEventListener('click', function (event) {
 			if (hidden) {
 				self.unhide_description()
@@ -531,16 +530,6 @@ var Toolbar = {
 				self.hide_description()
 			}
 			hidden = !hidden
-		})
-		this.element.addEventListener('mouseover', function (event) {
-			if (hidden) {
-				self.unhide_description()
-			}
-		})
-		this.element.addEventListener('mouseout', function (event) {
-			if (hidden) {
-				self.hide_description()
-			}
 		})
 		this.element.appendChild(hider)
 

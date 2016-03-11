@@ -108,7 +108,7 @@ html {
 	margin: 0px;
 	top: 0px;
 	left: 0px;
-	width: 228px;
+	width: 52px;
 	height: 100%;
 	z-index: 30;
 	user-select: none;
@@ -120,6 +120,9 @@ html {
 
 	transition: width 0.15s;
 	-webkit-transition: width 0.15s;
+}
+.toolbar:hover {
+	width: 228px;
 }
 
 .toolbar_extended {
