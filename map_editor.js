@@ -522,18 +522,37 @@ var Toolbar = {
 		hider.style.width = '100%'
 		hider.style.height = '100%'
 		var self = this
-		var hidden = false
+		var hidden = true
+		self.hide_description()
 		hider.addEventListener('click', function (event) {
 			if (hidden) {
-				self.element.style.width = '228px'
+				self.unhide_description()
 			} else {
-				self.element.style.width = '52px'
+				self.hide_description()
 			}
 			hidden = !hidden
+		})
+		this.element.addEventListener('mouseover', function (event) {
+			if (hidden) {
+				self.unhide_description()
+			}
+		})
+		this.element.addEventListener('mouseout', function (event) {
+			if (hidden) {
+				self.hide_description()
+			}
 		})
 		this.element.appendChild(hider)
 
 		document.body.appendChild(this.element)
+	},
+
+	hide_description: function () {
+		this.element.style.width = '52px'
+	},
+
+	unhide_description: function () {
+		this.element.style.width = ''
 	},
 
 	createElement: createElement,
