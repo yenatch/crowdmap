@@ -1446,8 +1446,10 @@ var MapViewer = {
 		context.fillStyle = 'rgba(255, 80, 80, 20)'
 		fillRect(x - x % block_w, y - y % block_h, block_w, block_h)
 
+		var coll_w = tile_w * 2
+		var coll_h = tile_h * 2
 		context.fillStyle = 'rgba(255, 170, 170, 20)'
-		fillRect(x - x % tile_w,  y - y % tile_h,  tile_w,  tile_h)
+		fillRect(x - x % coll_w,  y - y % coll_h,  coll_w,  coll_h)
 
 		context.fillStyle = 'rgba(255, 80, 80, 20)'
 		var connections = Data.maps[this.current_map].attributes.connections
