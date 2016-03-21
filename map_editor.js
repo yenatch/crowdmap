@@ -1765,7 +1765,7 @@ function loadTileset (id) {
 function loadMetatiles(id) {
 	return request(config.getMetatilePath(id), { binary: true })
 	.then(function (data) {
-		return serializeMetatiles(data)
+		return deserializeMetatiles(data)
 	})
 	.then(function (metatiles) {
 		Data.tilesets[id].metatiles = metatiles
@@ -1776,7 +1776,7 @@ function loadMetatiles(id) {
 function loadPalmap(id) {
 	return request(config.getPalmapPath(id))
 	.then(function (data) {
-		return serializePalmap(data)
+		return deserializePalmap(data)
 	}, function () {
 		return [].concat(
 			new Array(0x60).fill(0),
@@ -1828,14 +1828,14 @@ function readTiles(id) {
 	Data.tilesets[id].tiles = tiles
 }
 
-function serializeMetatiles (data) {
+function deserializeMetatiles (data) {
 	var meta_w = 4
 	var meta_h = 4
 	var metatiles = subdivide(data, meta_w * meta_h)
 	return metatiles
 }
 
-function serializePalmap (data) {
+function deserializePalmap (data) {
 	var colors = ['gray', 'red', 'green', 'water', 'yellow', 'brown', 'roof', 'text']
 	var getColor = function (color) { return colors.indexOf(color.toLowerCase()) }
 
@@ -1860,7 +1860,7 @@ function serializePalmap (data) {
 
 function readPalette (text, colors_per_pal) {
 	if (typeof colors_per_pal === 'undefined') colors_per_pal = 4
-	var palettes = subdivide(serializeRGB(text), colors_per_pal)
+	var palettes = subdivide(deserializeRGB(text), colors_per_pal)
 	return palettes
 }
 
@@ -1958,7 +1958,7 @@ function mergeRoofTiles(tiles, roof_tiles) {
 }
 
 
-function serializeRGB(text) {
+function deserializeRGB(text) {
 	var colors = []
 	var r = rgbasm.instance()
 	r.macros.RGB = function (values) {
