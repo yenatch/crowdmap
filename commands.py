@@ -5,15 +5,18 @@ def save(data):
 	filename = os.path.join(os.path.dirname(__file__), filename)
 
 	extension = os.path.splitext(filename)[1]
-	if extension == '.blk':
-		content = data.get('data')
-		if content:
-			if type(content) is list:
-				content = bytearray(content)
+	content = data.get('data')
+	if content:
+		if type(content) is list:
+			content = bytearray(content)
+		if type(content) is bytearray:
 			with open(filename, 'wb') as out:
 				out.write(content)
+		else:
+			with open(filename, 'w') as out:
+				out.write(content.encode('utf-8'))
 	else:
-		raise NotImplementedError
+		raise Exception("Unable to save '{}'".format(filename))
 
 def add_map(data):
 	label = data['label']
