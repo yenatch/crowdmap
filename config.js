@@ -264,8 +264,12 @@ function parseEvents (objects) {
 	return objects
 }
 
+config.getMapEventPath = function (map_name) {
+	return root + 'maps/' + map_name + '.asm'
+}
+
 config.readEvents = function (map_name) {
-	return request(root + 'maps/' + map_name + '.asm')
+	return request(this.getMapEventPath(map_name))
 	.then(function (text) {
 		return readEventText(text, map_name)
 	})

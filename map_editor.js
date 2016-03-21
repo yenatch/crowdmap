@@ -394,17 +394,66 @@ function send_command(content) {
 	})
 }
 
-function saveMap (event) {
-	var filename = config.getBlockdataPath(view.current_map)
-
-	send_command({
+function save(filename, data) {
+	return send_command({
 		command: 'save',
 		filename: filename,
-		data: Data.maps[view.current_map].blockdata,
+		data: data,
 	})
+}
+
+function saveMap (event) {
+	var map_name = view.current_map
+	var filename = config.getBlockdataPath(map_name)
+	var data = Data.maps[map_name].blockdata
+	save(filename, data)
 	.then(function () {
 		print( 'saved', filename )
 	})
+	var filename2 = config.getMapEventPath(map_name)
+	request(filename2)
+	.then(function (text) {
+		var r = rgbasm.instance()
+		var seen = false
+		var start = text.length, end = text.length
+		r.callbacks.label = function (line) {
+			if (line.label.contains(map_name + '_MapEventHeader')) {
+				start = text.indexOf(line.line)
+				seen = true
+			} else if (line.label.search(/\./) !== 0) {
+				if (seen) {
+					end = text.indexOf(line.line)
+					return
+				}
+			}
+		}
+		r.read(text)
+
+		text = text.substring(0, start) + map_name + serializeMapEvents(Data.maps[map_name].events) + (end !== -1 ? text.substring(end) : '')
+		return save(filename2, text)
+	})
+}
+
+function serializeMapEvents (events) {
+	var text = ''
+	text += '_MapEventHeader:: db 0, 0\n'
+	text += '\n.Warps: db ' + events.warps.length + '\n'
+	events.warps.forEach(function (warp) {
+		text += '\twarp_def ' + [warp.y, warp.x, warp.map_warp, warp.map].join(', ') + '\n'
+	})
+	text += '\n.CoordEvents: db ' + events.traps.length + '\n'
+	events.traps.forEach(function (trap) {
+		text += '\txy_trigger ' + [trap.trigger, trap.y, trap.x, trap.unknown1, trap.script, trap.unknown2, trap.unknown3].join(', ') + '\n'
+	})
+	text += '\n.BGEvents: db ' + events.signs.length + '\n'
+	events.signs.forEach(function (sign) {
+		text += '\tsignpost ' + [sign.y, sign.x, sign.function, sign.script].join(', ') + '\n'
+	})
+	text += '\n.ObjectEvents: db ' + events.npcs.length + '\n'
+	events.npcs.forEach(function (npc) {
+		text += '\tperson_event ' + [npc.sprite, npc.y, npc.x, npc.movement, npc.radius_y, npc.radius_x, npc.clock_hour, npc.clock_daytime, npc.color, npc.function, npc.sight_range, npc.script, npc.event_flag].join(', ') + '\n'
+	})
+	return text
 }
 
 function reloadMap (event) {
