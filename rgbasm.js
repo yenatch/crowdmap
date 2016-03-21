@@ -75,7 +75,7 @@ var rgbasm = {
 
 	read_macro: function (line) {
 		line = this.separate_comment(line)
-		var label = (line.match(/^[a-zA-Z\.][a-zA-Z0-9#@\.]*:*/) || [])[0]
+		var label = (line.match(/^[a-zA-Z\._][a-zA-Z0-9#@\._]*:*/) || [])[0]
 		var macro = (line.substr(label ? label.length : 0).match(/\S+/) || [])[0]
 		var values = []
 		if (macro) {
