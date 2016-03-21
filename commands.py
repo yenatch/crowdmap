@@ -105,39 +105,17 @@ def add_map(data):
 
 	new_constants = '\n'.join(constants_lines)
 
-	script = ''
-	script += '{}_MapScriptHeader:\n'.format(label)
-	script += '\t; triggers\n'
-	script += '\tdb 0\n'
-	script += '\n'
-	script += '\t; callbacks\n'
-	script += '\tdb 0\n'
-	script += '\n; <scripts go here>\n'
-	script += '\n; <text goes here>\n'
-	script += '\n'
-	script += '{}_MapEventHeader:\n'.format(label)
-	script += '\t; filler\n'
-	script += '\tdb 0, 0\n'
-	script += '\n'
-	script += '\t; warps\n'
-	script += '\tdb 0\n'
-	script += '\n'
-	script += '\t; coord events\n'
-	script += '\tdb 0\n'
-	script += '\n'
-	script += '\t; bg events\n'
-	script += '\tdb 0\n'
-	script += '\n'
-	script += '\t; object events\n'
-	script += '\tdb 0\n'
-	script += '\n'
+	script = open('map_event_template.asm').read()
+	script = script.format(label=label)
 
 	include = open(include_path).read()
-	include += '\n'
-	include += 'SECTION "{}", ROMX\n'.format(label)
-	include += 'INCLUDE "maps/{}.asm"\n'.format(label)
-	include += 'SECTION "{} Blockdata", ROMX\n'.format(label)
-	include += '{0}_BlockData: INCBIN "maps/{0}.blk"\n'.format(label)
+	include += '\n\n'
+	include += (''
+		+ 'SECTION "{label}", ROMX\n'
+		+ 'INCLUDE "maps/{label}.asm"\n'
+		+ 'SECTION "{label} Blockdata", ROMX\n'
+		+ '{label}_BlockData: INCBIN "maps/{label}.blk"\n'
+	).format(label=label)
 
 	with open(path, 'w') as out:
 		out.write(new_text)
