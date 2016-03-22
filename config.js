@@ -136,22 +136,30 @@ function named_args(names, values) {
 	return object
 }
 
+config.macros = {
+	warp: ['warp_def', 'y', 'x', 'map_warp', 'map'],
+	trap: ['xy_trigger', 'trigger', 'y', 'x', 'unknown1', 'script', 'unknown2', 'unknown3'],
+	sign: ['signpost', 'y', 'x', 'function', 'script'],
+	npc: ['person_event', 'sprite', 'y', 'x', 'movement', 'radius_y', 'radius_x', 'clock_hour', 'clock_daytime', 'color', 'function', 'sight_range', 'script', 'event_flag'],
+}
+
 function readEventText (text) {
 	var r = rgbasm.instance()
 	var objects = {}
-	function add_macro (name, real_name, arg_names) {
-		if (typeof objects[real_name] === 'undefined') {
-			objects[real_name] = []
+	function add_macro (name) {
+		var arg_names = config.macros[name].slice()
+		var macro_name = arg_names.shift()
+		if (typeof objects[name] === 'undefined') {
+			objects[name] = []
 		}
-		r.macros[name] = function (values) {
-			objects[real_name].push(named_args(arg_names, values))
+		r.macros[macro_name] = function (values) {
+			objects[name].push(named_args(arg_names, values))
 		}
 	}
-	add_macro('warp_def', 'warp', ['y', 'x', 'map_warp', 'map'])
-	add_macro('xy_trigger', 'trap', ['trigger', 'y', 'x', 'unknown1', 'script', 'unknown2', 'unknown3'])
-	add_macro('signpost', 'sign', ['y', 'x', 'function', 'script'])
-	add_macro('person_event', 'npc', ['sprite', 'y', 'x', 'movement', 'radius_y', 'radius_x', 'clock_hour', 'clock_daytime', 'color', 'function', 'sight_range', 'script', 'event_flag'])
-
+	add_macro('warp')
+	add_macro('trap')
+	add_macro('sign')
+	add_macro('npc')
 	r.read(text)
 	return {
 		warps: objects.warp,
@@ -452,4 +460,25 @@ function readMapHeader2 (text, name) {
 	})
 
 	return header
+}
+
+function serializeMapEvents (events) {
+	var text = ''
+	function serialize (name) {
+		return function (npc) {
+			var arg_names = config.macros[name].slice()
+			var macro_name = arg_names.shift()
+			text += '\t' + macro_name + ' ' + arg_names.map(function (key) { return npc[key] }).join(', ') + '\n'
+		}
+	}
+	text += '_MapEventHeader:: db 0, 0\n'
+	text += '\n.Warps: db ' + events.warps.length + '\n'
+	events.warps.forEach(serialize('warp'));
+	text += '\n.CoordEvents: db ' + events.traps.length + '\n'
+	events.traps.forEach(serialize('trap'));
+	text += '\n.BGEvents: db ' + events.signs.length + '\n'
+	events.signs.forEach(serialize('sign'));
+	text += '\n.ObjectEvents: db ' + events.npcs.length + '\n'
+	events.npcs.forEach(serialize('npc'));
+	return text
 }

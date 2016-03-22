@@ -434,28 +434,6 @@ function saveMap (event) {
 	})
 }
 
-function serializeMapEvents (events) {
-	var text = ''
-	text += '_MapEventHeader:: db 0, 0\n'
-	text += '\n.Warps: db ' + events.warps.length + '\n'
-	events.warps.forEach(function (warp) {
-		text += '\twarp_def ' + [warp.y, warp.x, warp.map_warp, warp.map].join(', ') + '\n'
-	})
-	text += '\n.CoordEvents: db ' + events.traps.length + '\n'
-	events.traps.forEach(function (trap) {
-		text += '\txy_trigger ' + [trap.trigger, trap.y, trap.x, trap.unknown1, trap.script, trap.unknown2, trap.unknown3].join(', ') + '\n'
-	})
-	text += '\n.BGEvents: db ' + events.signs.length + '\n'
-	events.signs.forEach(function (sign) {
-		text += '\tsignpost ' + [sign.y, sign.x, sign.function, sign.script].join(', ') + '\n'
-	})
-	text += '\n.ObjectEvents: db ' + events.npcs.length + '\n'
-	events.npcs.forEach(function (npc) {
-		text += '\tperson_event ' + [npc.sprite, npc.y, npc.x, npc.movement, npc.radius_y, npc.radius_x, npc.clock_hour, npc.clock_daytime, npc.color, npc.function, npc.sight_range, npc.script, npc.event_flag].join(', ') + '\n'
-	})
-	return text
-}
-
 function reloadMap (event) {
 	return loadMap(view.current_map)
 	.then(function () {
