@@ -91,7 +91,12 @@ function ajax(url, resolve, reject, options) {
 	var xhr = new XMLHttpRequest()
 	xhr.open(options.method, url, true)
 	if (options.cache === false && options.method !== 'POST') {
-		xhr.setRequestHeader('Cache-Control', 'max-age=0, must-revalidate')
+		// Firefox is evil and ignores spec.
+		if (navigator.userAgent.toLowerCase().contains('firefox')) {
+			xhr.setRequestHeader('Cache-Control', 'no-cache no-store')
+		} else {
+			xhr.setRequestHeader('Cache-Control', 'max-age=0, must-revalidate')
+		}
 	}
 	if (options.binary) {
 		xhr.overrideMimeType('text/plain; charset=x-user-defined');
@@ -166,4 +171,19 @@ function dictzip (keys, values) {
 		object[key] = value
 	}
 	return object
+}
+
+Array.prototype.equals = Array.prototype.equals || function (that) {
+	if (typeof that === 'undefined') {
+		return false
+	}
+	if (this.length !== that.length) {
+		return false
+	}
+	for (var i = 0; i < this.length; i++) {
+		if (this[i] !== that[i]) {
+			return false
+		}
+	}
+	return true
 }
