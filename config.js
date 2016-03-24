@@ -402,7 +402,7 @@ function readMapHeader(text, name) {
 	var group = 0
 	var num = 0
 	r.callbacks.label = function (line) {
-		group = groups.indexOf(line.label)
+		group = groups.indexOf(line.label) + 1
 		num = 0
 	}
 	r.macros.map_header = function (values) {
@@ -417,6 +417,7 @@ function readMapHeader(text, name) {
 	var names = ['label', 'tileset', 'permission', 'location', 'music', 'lighting1', 'lighting2', 'fish']
 	var header = dictzip(names, values)
 	header.group = group
+	header.num = num
 	return header
 }
 

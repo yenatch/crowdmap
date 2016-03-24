@@ -82,6 +82,9 @@ var rgbasm = {
 			var index = line.indexOf(macro) + macro.length
 			values = line.substr(index).split(/,/)
 		}
+		if (label) {
+			label = label.replace(/:+/, '')
+		}
 
 		return {
 			label: label,

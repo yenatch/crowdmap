@@ -1638,6 +1638,7 @@ function getMapDimensions (name) {
 			num = 0
 		}
 		r.macros.mapgroup = function (values) {
+			num += 1
 			if (map_constant === values.shift()) {
 				return {
 					group: group,
