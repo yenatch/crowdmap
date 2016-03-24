@@ -15,6 +15,7 @@ def save(data):
 		else:
 			with open(filename, 'w') as out:
 				out.write(content.encode('utf-8'))
+		print 'save {}'.format(filename)
 	else:
 		raise Exception("Unable to save '{}'".format(filename))
 
