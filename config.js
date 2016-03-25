@@ -277,7 +277,7 @@ config.getMapEventPath = function (map_name) {
 }
 
 config.readEvents = function (map_name) {
-	return request(this.getMapEventPath(map_name))
+	return Data.loadFile(this.getMapEventPath(map_name))
 	.then(function (text) {
 		return readEventText(text, map_name)
 	})
@@ -482,4 +482,37 @@ function serializeMapEvents (events) {
 	text += '\n.ObjectEvents: db ' + events.npcs.length + '\n'
 	events.npcs.forEach(serialize('npc'));
 	return text
+}
+
+config.serializeMapHeader = function (header) {
+	var arg_names = ['label', 'tileset', 'permission', 'location', 'music', 'lighting1', 'lighting2', 'fish']
+	return '\t' + 'map_header' + ' ' + arg_names.map(function (key) { return header[key] }).join(', ') + '\n'
+}
+
+config.serializeMapHeader2 = function (header) {
+	var arg_names = ['label', 'map', 'border_block', 'which_connections']
+	var text = ''
+	text += '\t' + 'map_header_2' + ' ' + arg_names.map(function (key) { return header[key] }).join(', ') + '\n'
+	text += config.serializeConnections(header.connections)
+	return text
+}
+
+config.serializeConnections = function (connections) {
+	var text = ''
+	var directions = ['north', 'south', 'west', 'east']
+	directions.forEach(function (direction) {
+		if (connections[direction]) {
+			text += config.serializeConnection(connections[direction])
+		}
+	})
+	return text
+}
+
+config.serializeConnection = function (connection) {
+	var arg_names = ['direction', 'map', 'name', 'align', 'offset', 'strip_length', 'current_map']
+	return '\t' + 'connection' + ' ' + arg_names.map(function (key) { return connection[key] }).join(', ') + '\n'
+}
+
+config.serializeMapDimensions = function (map) {
+	return '\t' + 'mapgroup' + ' ' + [map.attributes.map, map.height, map.width].join(', ') + '\n'
 }

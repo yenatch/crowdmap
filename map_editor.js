@@ -404,33 +404,117 @@ function save(filename, data) {
 
 function saveMap (event) {
 	var map_name = view.current_map
+	Promise.all([
+		saveBlockdata(map_name),
+		saveMapEvents(map_name),
+		saveMapHeader(map_name),
+		saveMapHeader2(map_name),
+		saveMapDimensions(map_name),
+	]).then(function () {
+		error('saved ' + map_name)
+	})
+}
+
+function saveBlockdata(map_name) {
 	var filename = config.getBlockdataPath(map_name)
 	var data = Data.maps[map_name].blockdata
-	save(filename, data)
-	.then(function () {
-		print( 'saved', filename )
-	})
-	var filename2 = config.getMapEventPath(map_name)
-	request(filename2)
+	return Data.saveFile(filename, data, { binary: true })
+}
+
+function saveMapEvents(map_name) {
+	var filename = config.getMapEventPath(map_name)
+	return request(filename)
 	.then(function (text) {
 		var r = rgbasm.instance()
 		var seen = false
 		var start = text.length, end = text.length
 		r.callbacks.label = function (line) {
 			if (line.label.contains(map_name + '_MapEventHeader')) {
-				start = text.indexOf(line.line)
+				start = text.indexOf(line.original_line)
 				seen = true
 			} else if (line.label.search(/\./) !== 0) {
 				if (seen) {
-					end = text.indexOf(line.line)
-					return
+					end = text.indexOf(line.original_line)
+					return true
 				}
 			}
 		}
 		r.read(text)
 
 		text = text.substring(0, start) + map_name + serializeMapEvents(Data.maps[map_name].events) + (end !== -1 ? text.substring(end) : '')
-		return save(filename2, text)
+		return Data.saveFile(filename, text)
+	})
+}
+
+function saveMapHeader(map_name) {
+	var header = Data.maps[map_name].header
+	header = config.serializeMapHeader(header)
+	var filename = config.map_header_path
+	return request(filename)
+	.then(function (text) {
+		var r = rgbasm.instance()
+		var start = text.length, end = text.length
+		r.macros.map_header = function (values, line) {
+			if (values[0] === map_name) {
+				start = text.indexOf(line.original_line)
+				end = start + line.original_line.length
+				return true
+			}
+		}
+		r.read(text)
+		text = text.substring(0, start) + header + text.substring(end)
+		return Data.saveFile(filename, text)
+	})
+}
+
+function saveMapHeader2(map_name) {
+	var header = Data.maps[map_name].attributes
+	header = config.serializeMapHeader2(header)
+	var filename = config.map_header_2_path
+	return request(filename)
+	.then(function (text) {
+		var r = rgbasm.instance()
+		var start = text.length, end = text.length
+		var seen = false
+		r.macros.map_header_2 = function (values, line) {
+			if (seen) {
+				return true
+			}
+			if (values[0] === map_name) {
+				start = text.indexOf(line.original_line)
+				end = start + line.original_line.length
+				seen = true
+			}
+		}
+		r.macros.connection = function (values, line) {
+			if (seen) {
+				end = text.indexOf(line.original_line) + line.original_line.length
+			}
+		}
+		r.read(text)
+		text = text.substring(0, start) + header + text.substring(end)
+		return Data.saveFile(filename, text)
+	})
+}
+
+function saveMapDimensions(map_name) {
+	var filename = config.map_constants_path
+	var map = Data.maps[map_name]
+	return request(filename)
+	.then(function (text) {
+		var r = rgbasm.instance()
+		var start = text.length, end = text.length
+		r.macros.mapgroup = function (values, line) {
+			if (values[0] === map.attributes.map) {
+				start = text.indexOf(line.original_line)
+				end = start + line.original_line.length
+				return true
+			}
+		}
+		r.read(text)
+		var new_line = config.serializeMapDimensions(map)
+		text = text.substring(0, start) + new_line + text.substring(end)
+		return Data.saveFile(filename, text)
 	})
 }
 
@@ -691,16 +775,51 @@ var Data = {
 	changed_files: [],
 
 	loadFile: function (uri, options) {
+		// todo complain when the client has changed the file, not the server
 		var self = this
 		return request(uri, options)
 		.then(function (data) {
-			if (data !== self.files[uri]) {
-				if (!self.changed_files.contains(uri)) {
-					self.changed_files.push(uri)
+			if (typeof self.files[uri] === 'undefined') {
+				self.files[uri] = []
+			}
+			var last_data = self.files[uri][self.files[uri].length - 1]
+			var ok = true
+			if (!equals(data, last_data)) {
+				if (typeof last_data !== 'undefined') {
+					ok = confirm(uri + " has changed! Are you sure you want to reload it?")
+					if (ok) {
+						if (!self.changed_files.contains(uri)) {
+							self.changed_files.push(uri)
+						}
+					} else {
+						data = last_data.slice()
+					}
+				}
+				if (ok) {
+					self.files[uri].push(data.slice())
 				}
 			}
-			self.files[uri] = data
-			return data
+			return data.slice()
+		})
+	},
+	saveFile: function (uri, data, options) {
+		var self = this
+		return request(uri, options)
+		.then(function (other_data) {
+			if (typeof self.files[uri] === 'undefined') {
+				self.files[uri] = []
+			}
+			var last_data = self.files[uri][self.files[uri].length - 1]
+			var ok = true
+			if (typeof last_data !== 'undefined') {
+				if (!equals(other_data, last_data)) {
+					ok = confirm(uri + " was changed by another program! Are you sure you want to overwrite it?")
+				}
+			}
+			if (ok) {
+				self.files[uri].push(data.slice())
+				save(uri, data.slice())
+			}
 		})
 	},
 }
@@ -1684,7 +1803,7 @@ function loadMap(name) {
 }
 
 function loadBlockdata (name) {
-	return request(config.getBlockdataPath(name), { binary: true, cache: false })
+	return Data.loadFile(config.getBlockdataPath(name), { binary: true })
 	.then(function (blockdata) {
 		Data.maps[name].blockdata = blockdata
 	})

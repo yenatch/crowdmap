@@ -187,3 +187,10 @@ Array.prototype.equals = Array.prototype.equals || function (that) {
 	}
 	return true
 }
+
+function equals(one, two) {
+	if (one.equals) {
+		return one.equals(two)
+	}
+	return one === two
+}
