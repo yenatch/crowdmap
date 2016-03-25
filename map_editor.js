@@ -859,6 +859,15 @@ var getEventCoord = function (event) {
 
 function getCanvasSelection (event, canvas, drawcanvas) {
 	var selection = getEventCoord(event)
+
+	// event.target is not necessarily canvas.
+	var rect = {
+		canvas: canvas.getBoundingClientRect(),
+		target: event.target.getBoundingClientRect(),
+	}
+	selection.x += rect.target.left - rect.canvas.left
+	selection.y += rect.target.top - rect.canvas.top
+
 	selection.x *= drawcanvas.width / canvas.width
 	selection.y *= drawcanvas.height / canvas.height
 	return selection
@@ -1105,8 +1114,14 @@ var Painter = {
 		})
 		this.viewer.canvas.addEventListener('mousedown', function (event) {
 			event.preventDefault()
-			self.mousedown = true
-			self.update(event)
+			self.viewer.getSelection(event)
+			var position = self.getPosition()
+			var x = position.x, y = position.y
+			var map = Data.maps[self.viewer.current_map]
+			if (x >= 0 && y >= 0 && x < map.width && y < map.height) {
+				self.mousedown = true
+				self.update(event)
+			}
 		})
 		this.viewer.canvas.addEventListener('mouseup', function (event) {
 			//self.viewer.commit()
@@ -1116,6 +1131,17 @@ var Painter = {
 		})
 
 		this.attachResize()
+	},
+
+	getPosition: function () {
+		var self = this
+		var x = self.viewer.selection.x
+		var y = self.viewer.selection.y
+		x = (x - (x % 32)) / 32
+		y = (y - (y % 32)) / 32
+		x -= self.viewer.origin.x
+		y -= self.viewer.origin.y
+		return { x: x, y: y }
 	},
 
 	attachResize: function () {
@@ -1146,12 +1172,8 @@ var Painter = {
 	update: function (event) {
 		this.viewer.getSelection(event)
 		if (this.mousedown) {
-			var x = this.viewer.selection.x
-			var y = this.viewer.selection.y
-			x = (x - (x % 32)) / 32
-			y = (y - (y % 32)) / 32
-			x -= this.viewer.origin.x
-			y -= this.viewer.origin.y
+			var position = this.getPosition()
+			var x = position.x, y = position.y
 			if (isRightClick(event)) {
 				this.pick(getBlock(this.viewer.current_map, x, y))
 			} else {
@@ -1273,6 +1295,10 @@ var MapViewer = {
 			y: 3,
 		}
 
+		this.addConnectionListeners()
+	},
+
+	addConnectionListeners: function () {
 		var self = this
 		this.canvas.addEventListener('contextmenu', function (event) {
 			self.getSelection(event)
@@ -1297,6 +1323,66 @@ var MapViewer = {
 			}
 			event.preventDefault()
 		})
+
+		var dragging = false
+		var origin = {}
+		var start = function (event) {
+			self.getSelection(event)
+			var x = (self.selection.x - (self.selection.x % 32)) / 32
+			var y = (self.selection.y - (self.selection.y % 32)) / 32
+			var connections = Data.maps[self.current_map].attributes.connections
+			for (var direction in connections) {
+				var connection = connections[direction]
+				var info = getConnectionInfo(connection, Data.maps[self.current_map], Data.maps[connection.name])
+				if (info)
+				if (x >= info.x1 && x < info.x2)
+				if (y >= info.y1 && y < info.y2) {
+					dragging = connection
+					origin.x = x
+					origin.y = y
+					origin.align = connection.align
+					break
+				}
+			}
+		}
+		var drag = function (event) {
+			if (dragging) {
+				self.getSelection(event)
+				var x = (self.selection.x - (self.selection.x % 32)) / 32
+				var y = (self.selection.y - (self.selection.y % 32)) / 32
+				var dx = x - origin.x
+				var dy = y - origin.y
+				var direction = dragging.direction
+				var map = Data.maps[self.current_map]
+				var min_x = 0
+				var min_y = 0
+				var max_x = map.width + 6
+				var max_y = map.height + 6
+				if (direction === 'north' || direction === 'south') {
+					dragging.align = origin.align + dx
+					var info = getConnectionInfo(dragging, map, Data.maps[dragging.name])
+					if (info.x1 < min_x) {
+						dragging.align -= info.x1 - min_x
+					} else if (info.x2 >= max_x) {
+						dragging.align -= info.x2 - max_x
+					}
+				} else if (direction === 'east' || direction === 'west') {
+					dragging.align = origin.align + dy
+					var info = getConnectionInfo(dragging, map, Data.maps[dragging.name])
+					if (info.y1 < min_y) {
+						dragging.align -= info.y1 - min_y
+					} else if (info.y2 >= max_y) {
+						dragging.align -= info.y2 - max_y
+					}
+				}
+			}
+		}
+		var stop = function (event) {
+			dragging = false
+		}
+		this.canvas.addEventListener('mousedown', start)
+		window.addEventListener('mousemove', drag)
+		window.addEventListener('mouseup', stop)
 	},
 
 	attach: function (container) {
