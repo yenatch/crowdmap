@@ -52,28 +52,40 @@ var rgbasm = {
 				callback(line)
 			}
 		}
-		var values = line.values.map(this.eval.bind(this))
 		var macro = this.macros[line.macro]
 		if (!macro) {
-			macro = this.infix[values.shift()]
-			values.unshift(line.macro)
+			macro = this.infix[line.macro]
+			if (macro) {
+				if (line.label) {
+					line.values.unshift(line.label)
+					line.label = undefined
+				}
+			}
 		}
+		if (!macro) {
+			macro = this.infix[line.values.shift()]
+			line.values.unshift(line.macro)
+		}
+		var values = line.values.map(this.eval.bind(this))
 		if (macro) {
-			return macro(values)
+			return macro(values, line)
 		}
 	},
 
 	eval: function (value) {
-		value = value.toString()
-		value = value.trim()
-		var int_value = parseInt(value.replace('$', '0x'))
-		if (!isNaN(int_value)) {
-			value = int_value
+		if (value) {
+			value = value.toString()
+			value = value.trim()
+			var int_value = parseInt(value.replace('$', '0x'))
+			if (!isNaN(int_value)) {
+				value = int_value
+			}
 		}
 		return value
 	},
 
 	read_macro: function (line) {
+		var original_line = line.replace(/\n$/, '') + '\n'
 		line = this.separate_comment(line)
 		var label = (line.match(/^[a-zA-Z\._][a-zA-Z0-9#@\._]*:*/) || [])[0]
 		var macro = (line.substr(label ? label.length : 0).match(/\S+/) || [])[0]
@@ -92,6 +104,7 @@ var rgbasm = {
 			values: values,
 			line: line,
 			comment: line.comment,
+			original_line: original_line,
 		}
 	},
 
@@ -113,7 +126,7 @@ var rgbasm = {
 			}
 		}
 		line.comment = comment
-		return line
+		return line.replace(/\n$/, '') + '\n'
 	},
 
 }
