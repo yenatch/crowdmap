@@ -1160,8 +1160,10 @@ var Painter = {
 		}
 	},
 
+	paint_block: 0,
+
 	pick: function (block) {
-		this.paint_block = block
+		this.paint_block = block || 0
 	},
 
 	paint: function (x, y, block) {
