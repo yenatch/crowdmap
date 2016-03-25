@@ -1327,21 +1327,23 @@ var MapViewer = {
 		var dragging = false
 		var origin = {}
 		var start = function (event) {
-			self.getSelection(event)
-			var x = (self.selection.x - (self.selection.x % 32)) / 32
-			var y = (self.selection.y - (self.selection.y % 32)) / 32
-			var connections = Data.maps[self.current_map].attributes.connections
-			for (var direction in connections) {
-				var connection = connections[direction]
-				var info = getConnectionInfo(connection, Data.maps[self.current_map], Data.maps[connection.name])
-				if (info)
-				if (x >= info.x1 && x < info.x2)
-				if (y >= info.y1 && y < info.y2) {
-					dragging = connection
-					origin.x = x
-					origin.y = y
-					origin.align = connection.align
-					break
+			if (!isRightClick(event)) {
+				self.getSelection(event)
+				var x = (self.selection.x - (self.selection.x % 32)) / 32
+				var y = (self.selection.y - (self.selection.y % 32)) / 32
+				var connections = Data.maps[self.current_map].attributes.connections
+				for (var direction in connections) {
+					var connection = connections[direction]
+					var info = getConnectionInfo(connection, Data.maps[self.current_map], Data.maps[connection.name])
+					if (info)
+					if (x >= info.x1 && x < info.x2)
+					if (y >= info.y1 && y < info.y2) {
+						dragging = connection
+						origin.x = x
+						origin.y = y
+						origin.align = connection.align
+						break
+					}
 				}
 			}
 		}
