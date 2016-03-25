@@ -130,11 +130,7 @@ function clearDialogs () {
 
 function newDialog (parent, id) {
 	var div = createElement('div', {id: id, className: 'dialog'})
-
-	var rect = parent.getBoundingClientRect()
-	var left = rect.right
-	div.style.left = left + 'px'
-
+	parent.appendChild(div)
 	return div
 }
 
@@ -146,8 +142,7 @@ function newMap (event) {
 
 	if (existing) return
 
-	var dialog = newDialog(event.currentTarget, new_id)
-	document.body.appendChild(dialog)
+	var dialog = newDialog(toolbar.container, new_id)
 	var content = createElement('div', {className: 'map_attributes'})
 
 	var div = createElement('div', {className: 'map_header_item'})
@@ -208,8 +203,7 @@ function editMapHeader (event) {
 	if (!map) return
 	if (!map.loaded) return
 
-	var dialog = newDialog(event.currentTarget, edit_id)
-	document.body.appendChild(dialog)
+	var dialog = newDialog(toolbar.container, edit_id)
 	var content = createElement('div', {className: 'map_attributes'})
 
 	var header = map.header
@@ -345,9 +339,8 @@ function openMap (event) {
 
 	if (existing) { return }
 
-	var dialog = newDialog(event.currentTarget, open_id)
+	var dialog = newDialog(toolbar.container, open_id)
 	dialog.style.width = '0px'
-	document.body.appendChild(dialog)
 
 	var list = createElement('div', {className: 'map_list'})
 	dialog.appendChild(list)
@@ -593,6 +586,10 @@ function createElement(type, properties) {
 var Toolbar = {
 
 	init: function () {
+		this.container = this.createElement('div', {
+			id: 'toolbar-container',
+			className: 'toolbar-container',
+		})
 		this.element = this.createElement('div', {
 			id: 'toolbar',
 			className: 'toolbar',
@@ -644,7 +641,8 @@ var Toolbar = {
 		})
 		this.element.appendChild(hider)
 
-		document.body.appendChild(this.element)
+		this.container.appendChild(this.element)
+		document.body.appendChild(this.container)
 	},
 
 	hide_description: function () {

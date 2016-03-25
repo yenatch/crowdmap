@@ -8,6 +8,10 @@ html {
 	image-rendering: pixelated;
 }
 
+body {
+	margin: 0px;
+}
+
 * {
 	font-family: Segoe UI Symbol;
 }
@@ -100,14 +104,20 @@ html {
 	border-radius: 3px;
 }
 
+.toolbar-container {
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	margin: 0px;
+	height: 100%;
+	z-index: 30;
+}
 .toolbar {
 	overflow: hidden;
 	background-color: #222;
 	background: -webkit-linear-gradient(bottom, #2c2c2c, #343434);
-	position: fixed;
-	margin: 0px;
-	top: 0px;
-	left: 0px;
+	position: relative;
+	float: left;
 	width: 52px;
 	height: 100%;
 	z-index: 30;
@@ -185,7 +195,8 @@ html {
 }
 
 .dialog {
-	position: fixed;
+	position: relative;
+	float: left;
 	top: 0;
 	max-height: 100%;
 	background-color: #222;
