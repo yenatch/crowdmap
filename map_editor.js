@@ -1274,7 +1274,7 @@ var MapViewer = {
 		}
 
 		var self = this
-		this.canvas.addEventListener('click', function (event) {
+		this.canvas.addEventListener('contextmenu', function (event) {
 			self.getSelection(event)
 			var x = self.selection.x / 32
 			var y = self.selection.y / 32
