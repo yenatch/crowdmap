@@ -94,14 +94,18 @@ body {
 	opacity: 1;
 }
 
+.cursor_info {
+	position: absolute;
+	pointer-events: none;
+	z-index: 1000;
+}
 .coordinates, .warp_info {
 	color: white;
 	background: rgba(100, 100, 100, 0.7);
-	position: absolute;
-	z-index: 1000;
-	pointer-events: none;
-	padding: 0px 2px 0px 2px;
-	border-radius: 3px;
+	display: table;
+	padding: 0px 4px 2px 4px;
+	margin-bottom: 1px;
+	border-radius: 2px;
 }
 
 .toolbar-container {

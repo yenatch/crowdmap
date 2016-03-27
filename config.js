@@ -209,15 +209,16 @@ function parseEvents (objects) {
 		npc.element.style.webkitUserSelect = 'none'
 		npc.element.style.mozUserSelect = 'none'
 		npc.element.style.cursor = '-webkit-grab'
-		var last_cursor
+		var last_cursors = []
 		npc.element.addEventListener('mousedown', function (event) {
 			npc.element.style.cursor = '-webkit-grabbing'
-			last_cursor = document.body.style.cursor
+			last_cursors.push(document.body.style.cursor)
 			document.body.style.cursor = '-webkit-grabbing'
-		})
-		document.addEventListener('mouseup', function (event) {
-			npc.element.style.cursor = '-webkit-grab'
-			document.body.style.cursor = last_cursor
+			window.addEventListener('mouseup', function remove (event) {
+				npc.element.style.cursor = '-webkit-grab'
+				document.body.style.cursor = last_cursors.pop()
+				window.removeEventListener('mouseup', remove)
+			})
 		})
 		npc.element.addEventListener('drag', function (event) {
 			event.preventDefault()
@@ -229,8 +230,6 @@ function parseEvents (objects) {
 		var info = createElement('div', { className: 'coordinates', })
 		var update = function (event) {
 			info.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
-			info.style.left = event.pageX + 'px'
-			info.style.top = event.pageY + 'px'
 		}
 		addDragInfo(npc.element, info, update)
 	})
@@ -250,13 +249,9 @@ function parseEvents (objects) {
 		})
 
 		// Hover over a warp to show the destination map.
-		var info = createElement('div', { className: 'warp_info', })
+		var info = createElement('div', { className: 'warp_info' })
 		info.innerHTML = map_name
-		var update = function (event) {
-			info.style.left = event.pageX + 'px'
-			info.style.top = event.pageY + 'px'
-		}
-		addHoverInfo(warp.element, info, update)
+		addHoverInfo(warp.element, info)
 	})
 
 	var npcs = objects.npcs
@@ -265,7 +260,7 @@ function parseEvents (objects) {
 			var npc = npcs[i]
 			npc.sprite_id = constants[npc.sprite] - 1
 			var sprite_id = npc.sprite_id >= 0 && npc.sprite_id <= 102 ? npc.sprite_id : 0
-			npc.image_path = root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
+			npc.image_paths = [root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png', 'npc.png']
 		}
 	})
 
@@ -321,31 +316,60 @@ function read_constants(text) {
 	return constants
 }
 
-function addHoverInfo(target, div, update) {
-	target.addEventListener('mouseenter', function (event) {
-		update(event)
-		document.body.appendChild(div)
-		document.body.addEventListener('mousemove', update)
-		function self (event) {
-			document.body.removeChild(div)
-			document.body.removeEventListener('mousemove', update)
-			document.body.removeEventListener('mouseenter', self)
-			target.removeEventListener('mouseout', self)
+function updateCursorInfo (event) {
+	var info = document.getElementById('cursor_info')
+	if (info.children.length) {
+		info.style.left = event.pageX + 'px'
+		info.style.top = event.pageY + 'px'
+	}
+}
+
+function addHoverInfo(target, div, callback) {
+	var update = function (event) {
+		updateCursorInfo(event)
+		if (callback) {
+			callback(event)
 		}
-		document.body.addEventListener('mouseenter', self)
-		target.addEventListener('mouseout', self)
+	}
+	var dragging = false
+	target.addEventListener('mousedown', function () { dragging = true })
+	window.addEventListener('mouseup', function () { dragging = false })
+	target.addEventListener('mouseenter', function self (event) {
+		document.getElementById('cursor_info').appendChild(div)
+		update(event)
+		window.addEventListener('mousemove', update)
+		var remove = function remove (event) {
+			if (!dragging) {
+				window.removeEventListener('mousemove', update)
+				target.removeEventListener('mouseout', remove)
+				document.body.removeEventListener('mouseover', remove)
+				if (div.parentNode) div.parentNode.removeChild(div)
+				target.addEventListener('mouseenter', self)
+			}
+		}
+		target.addEventListener('mouseout', remove)
+		document.body.addEventListener('mouseover', remove)
+		target.removeEventListener('mouseenter', self)
 	})
 }
 
-function addDragInfo(target, div, update) {
+function addDragInfo(target, div, callback) {
+	var update = function (event) {
+		updateCursorInfo(event)
+		if (callback) {
+			callback(event)
+		}
+	}
 	target.addEventListener('mousedown', function (event) {
+		document.getElementById('cursor_info').appendChild(div)
 		update(event)
-		document.body.appendChild(div)
-		document.body.addEventListener('mousemove', update)
-		document.body.addEventListener('mouseup', function self (event) {
-			document.body.removeChild(div)
-			document.body.removeEventListener('mousemove', update)
-			document.body.removeEventListener('mouseup', self)
+		window.addEventListener('mousemove', update)
+		window.addEventListener('mouseup', function remove (event) {
+			window.removeEventListener('mousemove', update)
+			window.removeEventListener('mouseup', remove)
+			if (div.parentNode) {
+				div.parentNode.removeChild(div)
+			}
 		})
 	})
 }

@@ -964,7 +964,7 @@ var BlockViewer = {
 	run: function () {
 		var self = this
 		function draw () {
-			try { self.draw() } catch (e) {}
+			self.draw()
 			window.requestAnimationFrame(draw)
 		}
 		self.redraw = true
@@ -1206,7 +1206,7 @@ var makeResizable = (function () {
 		sw: { bottom: -1, left:  -1, width:  1,  height: 1, },
 	}
 
-	return function (element, directions, callback) {
+	return function (element, directions, callback, stop_callback) {
 		directions = directions || ['n','s','e','w','ne','nw','se','sw']
 		directions.map(function (direction) {
 			var elem = createElement('div', {
@@ -1246,6 +1246,9 @@ var makeResizable = (function () {
 				}
 			}
 			function stop (event) {
+				if (stop_callback) {
+					stop_callback({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
+				}
 				document.removeEventListener('mousemove', drag, false)
 				document.removeEventListener('mouseup', stop, false)
 			}
@@ -1393,7 +1396,7 @@ var MapViewer = {
 	run: function () {
 		var self = this
 		function draw () {
-			try { self.draw() } catch (e) {}
+			self.draw()
 			window.requestAnimationFrame(draw)
 		}
 		self.redraw = true
@@ -1450,21 +1453,27 @@ var MapViewer = {
 	},
 
 	renderEvents: function () {
-		var all_npcs = this.getAllEvents()
+		var all_events = this.getAllEvents()
 
-		all_npcs.forEach(function (npc) {
-			if (npc.image_path && npc.element) {
-				var bg = 'url(' + npc.image_path + ')'
-				if (bg !== npc.element.style.background) {
+		all_events.forEach(function (npc) {
+			if (npc.image_paths && npc.element) {
+				var bg = 'url("' + npc.image_paths.join('"), url("') + '")'
+				if (npc.element.style.background !== bg) {
 					npc.element.style.background = bg
 				}
 			}
 		})
 
-		all_npcs.forEach(function (npc) {
+		all_events.forEach(function (npc) {
 			if (npc.element) {
-				npc.element.style.left = (parseInt(npc.x) + 6) * 16 + 'px'
-				npc.element.style.top = (parseInt(npc.y) + 6) * 16 + 'px'
+				var left = (parseInt(npc.x) + 6) * 16 + 'px'
+				if (left !== npc.element.style.left) {
+					npc.element.style.left = left
+				}
+				var top = (parseInt(npc.y) + 6) * 16 + 'px'
+				if (top !== npc.element.style.top) {
+					npc.element.style.top = top
+				}
 			}
 		})
 
@@ -1478,19 +1487,19 @@ var MapViewer = {
 
 	getAllEvents: function () {
 		var events = this.getEvents()
-		var all_npcs = [].concat(
+		var all_events = [].concat(
 			events.npcs || [],
 			events.warps || [],
 			events.traps || [],
 			events.signs || []
 		)
-		return all_npcs
+		return all_events
 	},
 
 	addNewEvents: function () {
 		// Remove any unused events, without re-adding existing ones.
 
-		var all_npcs = this.getAllEvents()
+		var all_events = this.getAllEvents()
 
 		var container = this.container
 		var children = this.container.children
@@ -1515,7 +1524,7 @@ var MapViewer = {
 		}
 
 		// Remove existing events from the list, and add events who don't exist yet.
-		all_npcs.forEach(function (npc) {
+		all_events.forEach(function (npc) {
 			var index = remove.indexOf(npc.element)
 			if (index !== -1) {
 				remove.splice(index, 1)
@@ -1524,8 +1533,11 @@ var MapViewer = {
 			}
 		})
 
+		// Removing an element doesn't fire any events, so we'll just hijack mouseout.
+		var event = new MouseEvent('mouseout')
 		remove.forEach(function (child) {
 			container.removeChild(child)
+			child.dispatchEvent(event)
 		})
 
 	},
@@ -2079,7 +2091,8 @@ function deserializePalmap (data) {
 	r.macros.tilepal = function (values) {
 		var bank = values.shift()
 		while (values.length) {
-			list.push((bank << 3) | getColor(values.shift()))
+			var value = values.shift()
+			list.push((bank << 3) | getColor(value))
 		}
 	}
 	r.macros.db = function (values) {
