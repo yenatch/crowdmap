@@ -80,6 +80,7 @@ body {
 	width: 16px;
 	height: 16px;
 	position: absolute;
+	transition: left 0.1s, top 0.1s;
 }
 .warp {
 	background: url('warp.png');

@@ -182,25 +182,23 @@ function parseEvents (objects) {
 
 	all_obj.forEach(function (npc) {
 		// Make events draggable.
-		var dragging = false
 		npc.element.addEventListener('mousedown', function (event) {
-			dragging = true
-		})
-		document.addEventListener('mousemove', function (event) {
-			if (dragging) {
-				var rect = npc.element.getBoundingClientRect()
+			var drag = function (event) {
+				var rect = view.canvas.getBoundingClientRect()
 				var x = event.clientX - rect.left
 				if (x < 0) x -= 16
 				x = (x - (x % 16)) / 16
 				var y = event.clientY - rect.top
 				if (y < 0) y -= 16
 				y = (y - (y % 16)) / 16
-				npc.x += x
-				npc.y += y
+				npc.x = Math.floor(x) - 6
+				npc.y = Math.floor(y) - 6
 			}
-		})
-		document.addEventListener('mouseup', function (event) {
-			dragging = false
+			window.addEventListener('mousemove', drag)
+			window.addEventListener('mouseup', function stop (event) {
+				window.removeEventListener('mousemove', drag)
+				window.removeEventListener('mouseup', stop)
+			})
 		})
 	})
 
