@@ -53,18 +53,23 @@ var rgbasm = {
 			}
 		}
 		var macro = this.macros[line.macro]
+
+		// Labels are mutually exclusive to infix, so we don't need to check if there's both. I think.
 		if (!macro) {
-			macro = this.infix[line.macro]
+			macro = this.infix[line.values[0]]
 			if (macro) {
-				if (line.label) {
-					line.values.unshift(line.label)
-					line.label = undefined
-				}
+				var m = line.values.shift()
+				line.values.unshift(line.macro)
+				line.macro = m
 			}
 		}
 		if (!macro) {
-			macro = this.infix[line.values.shift()]
-			line.values.unshift(line.macro)
+			macro = this.macros[line.label]
+			if (macro) {
+				line.values.unshift(line.macro)
+				line.macro = line.label
+				line.label = ''
+			}
 		}
 		var values = line.values.map(this.eval.bind(this))
 		if (macro) {
@@ -86,14 +91,17 @@ var rgbasm = {
 
 	read_macro: function (line) {
 		var original_line = line.replace(/\n$/, '') + '\n'
+
 		line = this.separate_comment(line)
-		var label = (line.match(/^[a-zA-Z\._][a-zA-Z0-9#@\._]*:*/) || [])[0]
-		var macro = (line.substr(label ? label.length : 0).match(/\S+/) || [])[0]
-		var values = []
-		if (macro) {
-			var index = line.indexOf(macro) + macro.length
-			values = line.substr(index).split(/,/)
-		}
+		var comment = line.comment
+		line = line.line
+
+		var tokens = line.match(/^([a-zA-Z\._]*[a-zA-Z0-9\._#@]*:*)\s*([\S^:]*)\s*(.*)/) || []
+		var label = tokens[1] || ''
+		var macro = tokens[2] || ''
+		var values = tokens[3] || ''
+		values = values.split(/,/)
+
 		if (label) {
 			label = label.replace(/:+/, '')
 		}
@@ -103,7 +111,7 @@ var rgbasm = {
 			macro: macro,
 			values: values,
 			line: line,
-			comment: line.comment,
+			comment: comment,
 			original_line: original_line,
 		}
 	},
@@ -120,13 +128,15 @@ var rgbasm = {
 				in_quote = !in_quote
 			}
 			if (!in_quote && line[i] === ';') {
-				comment = line.substr(i)
-				line = line.substr(0, i)
+				comment = line.substring(i)
+				line = line.substring(0, i)
 				break
 			}
 		}
-		line.comment = comment
-		return line.replace(/\n$/, '') + '\n'
+		return {
+			line: line,
+			comment: comment,
+		}
 	},
 
 }
