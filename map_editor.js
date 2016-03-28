@@ -343,10 +343,10 @@ function openMap (event) {
 	dialog.style.width = '0px'
 
 	var options = createElement('div', { className: 'map_list_options' })
-	var alpha = createElement('div', { className: 'map_list_button', innerHTML: 'ABC' })
 	var internal = createElement('div', { className: 'map_list_button', innerHTML: '123' })
-	options.appendChild(alpha)
+	var alpha = createElement('div', { className: 'map_list_button', innerHTML: 'ABC' })
 	options.appendChild(internal)
+	options.appendChild(alpha)
 
 	dialog.appendChild(options)
 
@@ -367,26 +367,70 @@ function openMap (event) {
 
 	var createNames = function (names) {
 		var list = []
+		var last_letter
 		names.forEach(function (name) {
+			var letter = name[0].toUpperCase()
+			if (letter !== last_letter) {
+				list.push(createElement('div', {className: 'map_group_name', innerHTML: letter}))
+				last_letter = letter
+			}
+
+			var container = createElement('div', {className: 'map_group_item'})
+
 			var div = createElement('div', {className: 'map_name'})
 			div.innerHTML = name
-			div.onclick = function (event) {
+			container.appendChild(div)
+
+			container.onclick = function (event) {
 				deselect()
-				select(div)
+				select(container)
 				gotoMap(name)
 			}
-			list.push(div)
+
+			list.push(container)
 			if (name === view.current_map) {
-				select(div)
+				select(container)
 			}
 		})
 		return list
 	}
 
-	var populateNames = function (names) {
-		var divs = createNames(names)
+	var createGroups = function (groups) {
+		var list = []
+		groups.forEach(function (group) {
+			var div = createElement('div', {className: 'map_group_name'})
+			div.innerHTML = group.name
+			list.push(div)
+			group.maps.forEach(function (name, i) {
+				var container = createElement('div', {className: 'map_group_item'})
+
+				var num_div = createElement('div', {className: 'map_group_num'})
+				num_div.innerHTML = (groups.indexOf(group) + 1) + '.' + (i + 1)
+				container.appendChild(num_div)
+
+				var div = createElement('div', {className: 'map_name'})
+				div.innerHTML = name
+				container.appendChild(div)
+
+				if (name === view.current_map) {
+					select(container)
+				}
+
+				container.onclick = function (event) {
+					deselect()
+					select(container)
+					gotoMap(name)
+				}
+
+				list.push(container)
+			})
+		})
+		return list
+	}
+
+	var populate = function (divs) {
 		map_list.innerHTML = ''
-		dialog.style.width = '380px'
+		dialog.style.width = '400px'
 		divs.forEach(function (div) {
 			map_list.appendChild(div)
 		})
@@ -398,12 +442,14 @@ function openMap (event) {
 		}
 	}
 
-	getMapNames()
-	.then(populateNames)
+	getMapGroups()
+	.then(createGroups)
+	.then(populate)
 
 	internal.onclick = function () {
-		getMapNames()
-		.then(populateNames)
+		getMapGroups()
+		.then(createGroups)
+		.then(populate)
 	}
 
 	alpha.onclick = function () {
@@ -412,7 +458,8 @@ function openMap (event) {
 			names.sort()
 			return names
 		})
-		.then(populateNames)
+		.then(createNames)
+		.then(populate)
 	}
 
 }

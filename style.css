@@ -285,7 +285,36 @@ body {
 	padding-left: 18px;
 	padding-right: 18px;
 }
+.map_group_name {
+	color: #999;
+	font-size: 0.7em;
+	padding: 1px 4px;
+	margin-top: 1em;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	cursor: default;
+}
+.map_group_num {
+	color: #999;
+	font-size: 0.7em;
+	padding: 1px 4px;
+	width: 2em;
+	text-align: center;
+	display: inline-block;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	cursor: default;
+}
 .map_name {
+	display: inline-block;
 	padding: 1px 4px;
 	user-select: none;
 	-webkit-touch-callout: none;
@@ -295,13 +324,15 @@ body {
 	-ms-user-select: none;
 	cursor: default;
 }
-.map_name:hover {
+.map_group_item {
+}
+.map_group_item:hover {
 	background-color: #333;
 }
-.map_name:active {
+.map_group_item:active {
 	background-color: #444;
 }
-.map_name.selected {
+.map_group_item.selected {
 	background-color: #444;
 }
 

@@ -384,6 +384,39 @@ function addDragInfo(target, div, callback) {
 	})
 }
 
+function getMapGroups () {
+	return request(config.map_header_path)
+	.then(readMapGroups)
+}
+
+function readMapGroups (text) {
+	var group_names = []
+	var groups = []
+
+	var r = rgbasm.instance()
+	var group
+	r.macros.dw = function (values) {
+		group_names.push(values[0])
+	}
+	r.callbacks.label = function (line) {
+		group = {
+			name: line.label,
+			maps: [],
+		}
+		groups.push(group)
+	}
+	r.macros.map_header = function (values) {
+		group.maps.push(values[0])
+	}
+	r.read(text)
+
+	groups = groups.filter(function (group) { return group_names.contains(group.name) })
+	groups.sort(function (a, b) {
+		return group_names.indexOf(a.name) - group_names.indexOf(b.name)
+	})
+
+	return groups
+}
 
 function getMapGroupNames () {
 	return request(config.map_header_path)
