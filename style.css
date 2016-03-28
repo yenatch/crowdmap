@@ -244,12 +244,46 @@ body {
 }
 
 .dialog#dialog_open {
-	overflow-y: scroll;
-	overflow-x: hidden;
 	min-height: 100%;
+	overflow-x: hidden;
+}
+.map_list_options {
+	padding-left: 18px;
+	padding-right: 18px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	width: 400px;
+}
+.map_list_button {
+	display: inline-block;
+	width: 3em;
+	height: 2em;
+	background-color: #555;
+	border-radius: 2px;
+	margin: 2px;
+	text-align: center;
+	padding-top: 0.5em;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	cursor: default;
+}
+.map_list_button:hover {
+	background-color: #444;
+}
+.map_list_button:active {
+	background-color: #333;
 }
 .map_list {
-	margin: 18px;
+	position: absolute;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	max-height: calc(100% - 64px);
+	padding-left: 18px;
+	padding-right: 18px;
 }
 .map_name {
 	padding: 1px 4px;

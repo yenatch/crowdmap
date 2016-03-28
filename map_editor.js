@@ -342,39 +342,79 @@ function openMap (event) {
 	var dialog = newDialog(toolbar.container, open_id)
 	dialog.style.width = '0px'
 
-	var list = createElement('div', {className: 'map_list'})
-	dialog.appendChild(list)
+	var options = createElement('div', { className: 'map_list_options' })
+	var alpha = createElement('div', { className: 'map_list_button', innerHTML: 'ABC' })
+	var internal = createElement('div', { className: 'map_list_button', innerHTML: '123' })
+	options.appendChild(alpha)
+	options.appendChild(internal)
 
-	getMapNames()
-	.then(function (names) {
-		var selected
-		var select = function (div) {
-			selected = div
-			div.className += ' selected'
-		}
-		var deselect = function (div) {
-			selected = undefined
-			if (div) div.className = div.className.replace(/\bselected\b/g, '')
-		}
+	dialog.appendChild(options)
 
-		// populate the list with names
-		names.map(function (name) {
-			var name_div = createElement('div', {className: 'map_name'})
-			name_div.innerHTML = name
-			name_div.onclick = function (event_) {
-				deselect(selected)
-				select(name_div)
+	var map_list = createElement('div', {className: 'map_list'})
+	dialog.appendChild(map_list)
+
+	var selected
+	var select = function (div) {
+		selected = div
+		div.className += ' selected'
+	}
+	var deselect = function () {
+		if (selected) {
+			selected.className = selected.className.replace(/\bselected\b/g, '')
+		}
+		selected = undefined
+	}
+
+	var createNames = function (names) {
+		var list = []
+		names.forEach(function (name) {
+			var div = createElement('div', {className: 'map_name'})
+			div.innerHTML = name
+			div.onclick = function (event) {
+				deselect()
+				select(div)
 				gotoMap(name)
 			}
-			if (view) {
-				if (name === view.current_map) {
-					select(name_div)
-				}
+			list.push(div)
+			if (name === view.current_map) {
+				select(div)
 			}
-			list.appendChild(name_div)
 		})
-		dialog.style.width = '400px'
-	})
+		return list
+	}
+
+	var populateNames = function (names) {
+		var divs = createNames(names)
+		map_list.innerHTML = ''
+		dialog.style.width = '380px'
+		divs.forEach(function (div) {
+			map_list.appendChild(div)
+		})
+		if (selected) {
+			//selected.scrollIntoView({ behavior: 'smooth' })
+			var rect = map_list.getBoundingClientRect()
+			var height = rect.bottom - rect.top
+			map_list.scrollTop = selected.offsetTop - height * 0.5
+		}
+	}
+
+	getMapNames()
+	.then(populateNames)
+
+	internal.onclick = function () {
+		getMapNames()
+		.then(populateNames)
+	}
+
+	alpha.onclick = function () {
+		getMapNames()
+		.then(function (names) {
+			names.sort()
+			return names
+		})
+		.then(populateNames)
+	}
+
 }
 
 function send_command(content) {

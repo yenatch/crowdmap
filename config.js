@@ -412,7 +412,6 @@ function readMapNames (text) {
 		names.push(values[0])
 	}
 	r.read(text)
-	names.sort()
 	return names
 }
 
