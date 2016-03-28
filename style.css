@@ -100,7 +100,7 @@ body {
 	pointer-events: none;
 	z-index: 1000;
 }
-.coordinates, .warp_info {
+.tooltip {
 	color: white;
 	background: rgba(100, 100, 100, 0.7);
 	display: table;

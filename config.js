@@ -225,7 +225,7 @@ function parseEvents (objects) {
 
 	all_obj.forEach(function (npc) {
 		// Show the coordinates of the npc you're moving around.
-		var info = createElement('div', { className: 'coordinates', })
+		var info = createElement('div', { className: 'tooltip', })
 		var update = function (event) {
 			info.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
 		}
@@ -247,9 +247,21 @@ function parseEvents (objects) {
 		})
 
 		// Hover over a warp to show the destination map.
-		var info = createElement('div', { className: 'warp_info' })
+		var info = createElement('div', { className: 'tooltip' })
 		info.innerHTML = map_name
 		addHoverInfo(warp.element, info)
+	})
+
+	all_obj.forEach(function (npc) {
+		var info = createElement('div', { className: 'tooltip' })
+		addHoverInfo(npc.element, info, function () {
+			if (npc.script) {
+				info.innerHTML = npc.script
+				info.style.display = undefined
+			} else {
+				info.style.display = 'none'
+			}
+		})
 	})
 
 	var npcs = objects.npcs
