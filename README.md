@@ -8,6 +8,6 @@ Then:
 python gfx.py png gfx/tilesets/*.2bpp.lz gfx/tilesets/roofs/*.2bpp gfx/overworld/*.2bpp
 ```
 
-Then run `python crowdmap/server.py 8000` and go to [http://localhost:8000/crowdmap](http://localhost:8000/crowdmap).
+Then run `python crowdmap/server.py 8000` and go to [http://127.0.0.1:8000/crowdmap](http://127.0.0.1:8000/crowdmap).
 
 [pokecrystal]: https://github.com/pret/pokecrystal

@@ -13,6 +13,10 @@ def import_module(module_name):
 
 class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
+	# yuge speedup
+	def address_string(self):
+		return self.client_address[0]
+
 	def do_POST(self):
 		"""
 		Receives json and runs a command if applicable.
