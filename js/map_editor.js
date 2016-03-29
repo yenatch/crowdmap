@@ -107,7 +107,7 @@ function getTilesetTiles(tileset, roof) {
 	if (config.roof_tilesets.contains(tileset.id)) {
 		if (typeof roof !== 'undefined') {
 			var tilesets = tileset.with_roofs[roof]
-			if (typeof tileset !== 'undefined') {
+			if (typeof tilesets !== 'undefined') {
 				if (config.roofs[roof] !== -1) {
 					return tilesets.tiles
 				} else {
