@@ -60,6 +60,25 @@ function crop(x1, y1, x2, y2, etc) {
 	map.blockdata = blk
 	map.width = width
 	map.height = height
+
+	for (var type in map.events) {
+		var events = map.events[type]
+		for (var i = 0; i < events.length; i++) {
+			var event = events[i]
+			event.x -= x1 * 2
+			event.y -= y1 * 2
+		}
+	}
+
+	for (var direction in map.attributes.connections) {
+		var connection = map.attributes.connections[direction]
+		if (direction === 'north' || direction === 'south') {
+			connection.align -= x1
+		} else {
+			connection.align -= y1
+		}
+	}
+
 }
 
 function resize(width, height, filler, map) {
