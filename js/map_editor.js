@@ -1232,25 +1232,39 @@ var Painter = {
 	attachResize: function () {
 		var self = this
 		var round = Math.round
-		makeResizable(self.viewer.container, undefined /* all directions */, function (props) {
-			var event = props.event
-			var x = event.clientX, y = event.clientY
+		var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
+		var h = self.viewer.meta_h * self.viewer.tile_h * self.viewer.scale
+		var x1, y1, x2, y2
+		var map
+		makeResizable(self.viewer.container, undefined /* all directions */, {
+			start: function (props) {
+				map = Data.maps[self.viewer.current_map]
+				x1 = 0
+				y1 = 0
+				x2 = map.width
+				y2 = map.height
+			},
+			drag: function (props) {
+				var event = props.event
+				var x = event.clientX, y = event.clientY
 
-			var map = Data.maps[self.viewer.current_map]
-			var x1 = 0, y1 = 0, x2 = map.width, y2 = map.height
-			var xd = props.xd, yd = props.yd
+				var rect = self.viewer.container.getBoundingClientRect()
+				var xd = props.xd, yd = props.yd
+				if (xd < 0) x1 += round(round(x - rect.left)   / w)
+				if (xd > 0) x2 += round(round(x - rect.right)  / w)
+				if (yd < 0) y1 += round(round(y - rect.top)    / h)
+				if (yd > 0) y2 += round(round(y - rect.bottom) / h)
 
-			var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
-			var h = self.viewer.meta_h * self.viewer.tile_h * self.viewer.scale
-
-			var rect = self.viewer.container.getBoundingClientRect()
-			if (xd < 0) x1 += round((x - rect.left)   / w)
-			if (xd > 0) x2 += round((x - rect.right)  / w)
-			if (yd < 0) y1 += round((y - rect.top)    / h)
-			if (yd > 0) y2 += round((y - rect.bottom) / h)
-
-			crop(x1, y1, x2, y2)
-			self.viewer.redraw = true
+				self.viewer.canvas.style.marginTop = -(y1) * h + 'px'
+				self.viewer.canvas.style.marginLeft = -(x1) * w + 'px'
+				self.viewer.canvas.style.marginBottom = (y2 - map.height) * h + 'px'
+				self.viewer.canvas.style.marginRight = (x2 - map.width) * w + 'px'
+			},
+			stop: function (props) {
+				crop(x1, y1, x2, y2)
+				self.viewer.canvas.style.margin = ''
+				self.viewer.redraw = true
+			},
 		})
 	},
 
@@ -1293,7 +1307,7 @@ var makeResizable = (function () {
 		sw: { bottom: -1, left:  -1, width:  1,  height: 1, },
 	}
 
-	return function (element, directions, callback, stop_callback) {
+	return function (element, directions, callbacks) {
 		directions = directions || ['n','s','e','w','ne','nw','se','sw']
 		directions.map(function (direction) {
 			var elem = createElement('div', {
@@ -1310,7 +1324,7 @@ var makeResizable = (function () {
 			elem.addEventListener('mousedown', start)
 			element.appendChild(elem)
 
-			var x, y, w, h
+			var x, y, w, h, xd, yd
 			function start (event) {
 				event.preventDefault()
 				var style = window.getComputedStyle(element)
@@ -1320,21 +1334,24 @@ var makeResizable = (function () {
 				h = parseInt(style.height)
 				document.addEventListener('mousemove', drag, false)
 				document.addEventListener('mouseup', stop, false)
+				if (callbacks && callbacks.start) {
+					callbacks.start({ event: event, x:x, y:y, w:w, h:h })
+				}
 			}
 			function drag (event) {
-				var yd = direction.contains('n') ? -1 : direction.contains('s') ? 1 : 0
-				var xd = direction.contains('w') ? -1 : direction.contains('e') ? 1 : 0
+				yd = direction.contains('n') ? -1 : direction.contains('s') ? 1 : 0
+				xd = direction.contains('w') ? -1 : direction.contains('e') ? 1 : 0
 
-				if (callback) {
-					callback({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
+				if (callbacks && callbacks.drag) {
+					callbacks.drag({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
 				} else {
 					if (xd) element.style.width = (w - x + event.clientX * xd) + 'px'
 					if (yd) element.style.height = (h - y + event.clientY * yd) + 'px'
 				}
 			}
 			function stop (event) {
-				if (stop_callback) {
-					stop_callback({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
+				if (callbacks && callbacks.stop) {
+					callbacks.stop({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
 				}
 				document.removeEventListener('mousemove', drag, false)
 				document.removeEventListener('mouseup', stop, false)
