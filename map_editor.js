@@ -1658,6 +1658,7 @@ var MapViewer = {
 			i += 1
 		}
 
+		var maps = []
 		var connections = Data.maps[map].attributes.connections
 		for (var c in connections) {
 			var connection = connections[c]
@@ -1675,6 +1676,7 @@ var MapViewer = {
 						+ (y - info.strip_y) * other_map.width
 					]
 					var i = (width + 6) * (y + 3) + (x + 3)
+					maps[i] = connection.name
 					blocks[i] = block
 				}
 			}
@@ -1683,7 +1685,7 @@ var MapViewer = {
 		var i = 0
 		for (var y = -3; y < height + 3; y++)
 		for (var x = -3; x < width + 3; x++) {
-			this.drawMetatile(map, x, y, blocks[i])
+			this.drawMetatile(maps[i] || map, x, y, blocks[i])
 			i += 1
 		}
 	},
