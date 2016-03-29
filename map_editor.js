@@ -1521,7 +1521,6 @@ var MapViewer = {
 
 		this.drawMap(map)
 		this.drawMapBorder(map)
-		this.drawConnections(map)
 
 		var context = this.canvas.getContext('2d')
 		context.drawImage(
@@ -1638,63 +1637,54 @@ var MapViewer = {
 		}
 	},
 
-	drawConnections: function (map) {
+	drawMapBorder: function (map) {
+		// Draw both the border and surrounding connections.
+
+		var blocks = []
+
+		var border_block = Data.maps[map].attributes.border_block
+		var width = Data.maps[map].width
+		var height = Data.maps[map].height
+		var real_width = width + 6
+		var i = 0
+		for (var y = -3; y < height + 3; y++)
+		for (var x = -3; x < width + 3; x++) {
+			if (y >= 0 && y < height)
+			if (x >= 0 && x < width) {
+				i += width
+				x = width
+			}
+			blocks[i] = border_block
+			i += 1
+		}
 
 		var connections = Data.maps[map].attributes.connections
 		for (var c in connections) {
 			var connection = connections[c]
-			if (!Data.maps[connection.name]) {
-				continue
-			}
-			if (!Data.maps[connection.name].loaded) {
-				continue
-			}
 			var info = getConnectionInfo(connection, Data.maps[map], Data.maps[connection.name])
-			if (!info) {
-				continue
-			}
-
-			var strip_x = info.strip_x
-			var strip_y = info.strip_y
-			var strip_width = info.strip_width
-			var strip_height = info.strip_height
-			var other_start = info.other_start
-
-			var direction = connection.direction
+			if (!info) continue
 			var other_map = Data.maps[connection.name]
+			if (!other_map.blockdata) continue
 
-			if (other_map.blockdata) {
-				for (var y = strip_y; y < strip_y + strip_height; y++)
-				for (var x = strip_x; x < strip_x + strip_width; x++) {
-					if (other_map.blockdata) {
-
-						var block = other_map.blockdata[
-							other_start
-							+ (x - strip_x)
-							+ (y - strip_y) * other_map.width
-						]
-
-						/* connections compete with border, so maybe force for now */
-						//this.setBlock(x, y, -1) // force
-						this.drawMetatile(connection.name, x, y, block)
-					}
+			var width = Data.maps[map].width
+			for (var y = info.strip_y; y < info.strip_y + info.strip_height; y++) {
+				for (var x = info.strip_x; x < info.strip_x + info.strip_width; x++) {
+					var block = other_map.blockdata[
+						info.other_start
+						+ (x - info.strip_x)
+						+ (y - info.strip_y) * other_map.width
+					]
+					var i = (width + 6) * (y + 3) + (x + 3)
+					blocks[i] = block
 				}
 			}
 		}
-	},
 
-	drawMapBorder: function (map) {
-		var border_block = Data.maps[map].attributes.border_block
-		var width = Data.maps[map].width
-		var height = Data.maps[map].height
+		var i = 0
 		for (var y = -3; y < height + 3; y++)
 		for (var x = -3; x < width + 3; x++) {
-			if (y >= 0 && y < height) {
-				if (x >= 0 && x < width) {
-					x = width
-				}
-			}
-			this.drawMetatile(map, x, y, border_block)
+			this.drawMetatile(map, x, y, blocks[i])
+			i += 1
 		}
 	},
 
