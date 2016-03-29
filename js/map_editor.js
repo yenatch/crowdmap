@@ -1543,8 +1543,9 @@ var MapViewer = {
 
 		all_events.forEach(function (npc) {
 			if (npc.image_paths && npc.element) {
-				var bg = 'url("' + npc.image_paths.join('"), url("') + '")'
-				if (npc.element.style.background !== bg) {
+				// firefox mangles the style.background string, so we have to test each path individually
+				if (!containsAll(npc.element.style.background, npc.image_paths)) {
+					var bg = 'url("' + npc.image_paths.join('"), url("') + '")'
 					npc.element.style.background = bg
 				}
 			}

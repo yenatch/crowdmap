@@ -146,6 +146,15 @@ String.prototype.contains = String.prototype.contains || function (term) {
 	return this.indexOf(term) !== -1
 }
 
+function containsAll(object, things) {
+	for (var i = 0; i < things.length; i++) {
+		if (!object.contains(things[i])) {
+			return false
+		}
+	}
+	return true
+}
+
 String.prototype.title = String.prototype.title || function () {
 	return this.replace(/[a-zA-Z]*/g, function (word) { return word.substr(0, 1).toUpperCase() + word.substr(1).toLowerCase() })
 }
