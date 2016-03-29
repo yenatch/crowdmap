@@ -270,7 +270,7 @@ function parseEvents (objects) {
 			var npc = npcs[i]
 			npc.sprite_id = constants[npc.sprite] - 1
 			var sprite_id = npc.sprite_id >= 0 && npc.sprite_id <= 102 ? npc.sprite_id : 0
-			npc.image_paths = [root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png', 'npc.png']
+			npc.image_paths = [root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png', 'res/npc.png']
 		}
 	})
 
