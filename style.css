@@ -94,6 +94,10 @@ body {
 .npc {
 	opacity: 1;
 }
+.npc_canvas {
+	pointer-events: none;
+	display: block;
+}
 
 .cursor_info {
 	position: absolute;
@@ -107,6 +111,7 @@ body {
 	padding: 0px 4px 2px 4px;
 	margin-bottom: 1px;
 	border-radius: 2px;
+	pointer-events: none;
 }
 
 .toolbar-container {

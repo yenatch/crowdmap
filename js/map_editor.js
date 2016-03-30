@@ -824,7 +824,9 @@ function loadMapProperty(map_name, property) {
 function loadMapEvents(name) {
 	return config.readEvents(name)
 	.then(function (events) {
+		parseEvents(events)
 		Data.maps[name].events = events
+		return events
 	})
 }
 
@@ -856,6 +858,9 @@ var Data = {
 	maps: {},
 	tilesets: {},
 	roofs: {},
+	sprites: {},
+	facings: [],
+	constants: {},
 	files: {},
 	changed_files: [],
 
@@ -1557,12 +1562,29 @@ var MapViewer = {
 	renderEvents: function () {
 		var all_events = this.getAllEvents()
 
-		all_events.forEach(function (npc) {
-			if (npc.image_paths && npc.element) {
-				// firefox mangles the style.background string, so we have to test each path individually
-				if (!containsAll(npc.element.style.background, npc.image_paths)) {
-					var bg = 'url("' + npc.image_paths.join('"), url("') + '")'
-					npc.element.style.background = bg
+		var npcs = this.getEvents().npcs
+		if (npcs) npcs.forEach(function (npc) {
+			var facing = config.getFacing(npc)
+			if (facing && facing.tiles) {
+				npc.element.style.width = facing.width + 'px'
+				npc.element.style.height = facing.height + 'px'
+				npc.canvas.width = facing.width
+				npc.canvas.height = facing.height
+				var ctx = npc.canvas.getContext('2d')
+				if (npc.tiles) {
+					facing.tiles.forEach(function (props) {
+						var tile = npc.tiles[props.tile]
+						if (typeof tile !== 'undefined') {
+							if (typeof props.attr === 'string' && props.attr.contains('X_FLIP')) {
+								ctx.save()
+								ctx.scale(-1,1)
+								ctx.drawImage(tile, -(props.x + 8), props.y)
+								ctx.restore()
+							} else {
+								ctx.drawImage(tile, props.x, props.y)
+							}
+						}
+					})
 				}
 			}
 		})
@@ -1986,13 +2008,12 @@ function loadMap(name) {
 	var event_promise = header_promise.then(function () {
 		return loadMapEvents(name)
 	})
-	event_promise.then(function () {
-		parseEvents(Data.maps[name].events)
-	})
+
+	loadFacings()
+
 	return Promise.all([
 		header_promise,
 		map_promise,
-		event_promise,
 	])
 	.then(function () {
 		Data.maps[name].loaded = true
@@ -2361,17 +2382,20 @@ function colorize(image, palette, x1, y1, x2, y2) {
 	if (x2 === undefined) x2 = width
 	if (y2 === undefined) y2 = height
 	var template = getImageTemplate(x2 - x1, y2 - y1)
-	var px, pi, color
 	for (var y = y1; y < y2; y++)
 	for (var x = x1; x < x2; x++) {
-		px = (x + y * width) * 4
-		tx = ((x - x1) + (y - y1) * (x2 - x1)) * 4
-		pi = 3 - data[px+0] / 85
-		color = palette[pi]
+		var px = (x + y * width) * 4
+		var tx = ((x - x1) + (y - y1) * (x2 - x1)) * 4
+		var pi = 3 - data[px+0] / 85
+		var color = palette[pi]
+		var alpha = color[3]
+		if (typeof alpha === 'undefined') {
+			alpha = data[px+3]
+		}
 		template.data[tx+0] = color[0]|0
 		template.data[tx+1] = color[1]|0
 		template.data[tx+2] = color[2]|0
-		template.data[tx+3] = data[px+3]
+		template.data[tx+3] = alpha
 	}
 	return template
 }

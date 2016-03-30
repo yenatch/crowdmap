@@ -97,6 +97,7 @@ var config = {
 	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_metatiles.bin' },
 	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_palette_map.asm' },
 	getPalettePath: function () { return root + 'tilesets/bg.pal' },
+	getObjectPalettePath: function () { return root + 'tilesets/ob.pal' },
 	getRoofPalettePath: function () { return root + 'tilesets/roof.pal' },
 
 	getRoofImagePath: function (group) {
@@ -125,6 +126,55 @@ var config = {
 		connections: {},
 	},
 
+	// not hardcoding these means reading code
+	movement_facings: [
+		0,
+		0, // standing
+		0, // random_walk_xy
+		0, // slow random spin
+		0, // random walk y
+		0, // random walk x
+		0, // standing down
+		4, // standing up
+		8, // standing left
+		12, // standing right
+		0, // fast random spin
+		0, // obey dpad (player)
+		0, // 8 unknown
+		0, // 9 unknown
+		0, // a unknown
+		0, // b unknown
+		0, // c unknown
+		0, // d unknown
+		0, // e unknown
+		0, // follow
+		0, // scripted?
+		23, // snorlax
+		0, // bounce?
+		0, // standing
+		0, // standing
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+	],
+
+}
+
+config.getFacing = function (npc) {
+	var constant = Data.constants[npc.movement]
+	var i = config.movement_facings[constant]
+	var facing = Data.facings[i]
+	return facing
 }
 
 
@@ -265,17 +315,141 @@ function parseEvents (objects) {
 		})
 	})
 
-	var npcs = objects.npcs
-	getSpriteConstants().then(function(constants) {
-		for (var i = 0; i < npcs.length; i++) {
-			var npc = npcs[i]
-			npc.sprite_id = constants[npc.sprite] - 1
-			var sprite_id = npc.sprite_id >= 0 && npc.sprite_id <= 102 ? npc.sprite_id : 0
-			npc.image_paths = [root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png', 'res/npc.png']
-		}
+	objects.npcs.forEach(function (npc) {
+		var pal_promise = request(config.getObjectPalettePath())
+		.then(function (text) {
+			var palettes = readPalette(text)
+			var color = npc.color
+			if (typeof color === 'string') {
+				color = npc.color.match(/PAL_OW_([A-Z]*)/)[1]
+				color = ['red', 'blue', 'green', 'brown', 'pink', 'silver', 'tree', 'rock'].indexOf(color.toLowerCase())
+				if (color === -1) {
+					color = 0
+				}
+			} else {
+				// TODO default color
+			}
+			var palette = [palettes[color]]
+			palette[0][0][3] = 0
+			return palette
+		})
+
+		var image_promise = config.getSpritePath(npc.sprite)
+		.then(function(path) {
+			var image = newImage(path)
+			return imagePromise(image)
+			.then(function () { return image })
+		})
+
+		Promise.all([image_promise, pal_promise])
+		.then(function (results) {
+			npc.tiles = colorizeTiles(results.shift(), results.shift())
+		})
+
+		npc.canvas = createElement('canvas', { className: 'npc_canvas' })
+		npc.element.appendChild(npc.canvas)
 	})
 
 	return objects
+}
+
+function newImage (path) {
+	var image = new Image()
+	image.src = path
+	image.setAttribute('validate', 'always')
+	return image
+}
+
+function loadFacings() {
+	return request(root + 'engine/facings.asm')
+	.then(parseFacings)
+	.then(function (facings) {
+		Object.update(Data.facings, facings)
+		return request(root + 'constants/sprite_constants.asm')
+		.then(read_constants)
+	})
+	.then(function (constants) {
+		for (constant in constants) {
+			Data.constants[constant] = constants[constant]
+		}
+	})
+}
+
+function parseFacings(text) {
+
+	var facings = []
+
+	var labels = []
+	var facing = {}
+	var tile = []
+	var r = rgbasm.instance()
+	r.callbacks.label = function (line) {
+		// Labels can stack, so assign the same facing to stacked labels
+		if (facing.count) {
+			facing = {}
+		}
+		facings[line.label] = facing
+	}
+	r.macros.dw = function (values) {
+		labels.push(values[0])
+	}
+	r.macros.db = function (values, line) {
+		if (!facing.count) {
+			facing.count = line.values.shift()
+		}
+		if (!facing.tiles) {
+			facing.tiles = []
+		}
+		line.values.forEach(function (value) {
+			if (facing.tiles.length >= facing.count) {
+				return
+			}
+			tile.push(value)
+			if (tile.length >= 4) {
+				facing.tiles.push({
+					y: r.eval(tile[0]),
+					x: r.eval(tile[1]),
+					attr: tile[2],
+					tile: r.eval(tile[3]),
+				})
+				tile = []
+			}
+		})
+	}
+	r.read(text)
+
+	labels.forEach(function (label) {
+		facings.push(facings[label])
+	})
+
+	facings.forEach(function (facing) {
+		var max = function (a, b) { return Math.max(a, b) }
+		var min = function (a, b) { return Math.min(a, b) }
+		var xs = facing.tiles.map(function (tile) { return tile.x })
+		var ys = facing.tiles.map(function (tile) { return tile.y })
+		var left = xs.reduce(min)
+		var right = xs.reduce(max) + 8
+		var top = ys.reduce(min)
+		var bottom = ys.reduce(max) + 8
+		facing.width = right - left
+		facing.height = bottom - top
+	})
+
+	return facings
+}
+
+config.getSpritePath = function (constant) {
+	return getSpriteConstants()
+	.then(function (constants) {
+		var sprite_id = constants[constant] - 1
+		if (sprite_id < 0) {
+			sprite_id = 0
+		}
+		if (sprite_id > 102) {
+			sprite_id = 0
+		}
+		return root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
+	})
 }
 
 config.getMapEventPath = function (map_name) {
