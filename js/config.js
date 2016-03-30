@@ -200,6 +200,7 @@ function parseEvents (objects) {
 				window.removeEventListener('mouseup', stop)
 			})
 		})
+		npc.element.ondragstart = function () { return false }
 	})
 
 	all_obj.forEach(function (npc) {
