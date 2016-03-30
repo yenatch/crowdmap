@@ -1200,13 +1200,8 @@ var Painter = {
 		this.viewer.canvas.addEventListener('mousedown', function (event) {
 			event.preventDefault()
 			self.viewer.getSelection(event)
-			var position = self.getPosition()
-			var x = position.x, y = position.y
-			var map = Data.maps[self.viewer.current_map]
-			if (x >= 0 && y >= 0 && x < map.width && y < map.height) {
-				self.mousedown = true
-				self.update(event)
-			}
+			self.mousedown = true
+			self.update(event)
 		})
 		this.viewer.canvas.addEventListener('mouseup', function (event) {
 			//self.viewer.commit()
@@ -1281,14 +1276,15 @@ var Painter = {
 		}
 	},
 
-	paint_block: 0,
+	paint_block: 1,
 
 	pick: function (block) {
-		this.paint_block = block || 0
+		this.paint_block = block
 	},
 
 	paint: function (x, y, block) {
 		if (typeof block === 'undefined') block = this.paint_block
+		if (typeof block === 'undefined') block = this.viewer.getCurrentMap().attributes.border_block
 		setBlock(this.viewer.current_map, x, y, block)
 	},
 
@@ -1370,6 +1366,9 @@ function setBlock (name, x, y, block) {
 
 function getBlock (name, x, y) {
 	var map = Data.maps[name]
+	if (x < 0 || y < 0 || x >= map.width || y >= map.height) {
+		return undefined
+	}
 	return map.blockdata[x + y * map.width]
 }
 
@@ -1850,14 +1849,15 @@ var MapViewer = {
 			block = getBlock(map, x, y)
 		}
 
+		if (typeof block === 'undefined') {
+			block = Data.maps[map].attributes.border_block
+		}
+
 		if (!this.blockChanged(x, y, block)) {
 			return false
 		} else {
 			this.setBlock(x, y, block)
 		}
-
-		var border_block = Data.maps[map].attributes.border_block
-		block = block || border_block
 
 		x += this.origin.x
 		y += this.origin.y
