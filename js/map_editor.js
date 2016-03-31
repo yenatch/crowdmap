@@ -105,7 +105,7 @@ function getTileset(map_name) {
 
 function getTilesetTiles(tileset, roof) {
 	if (config.roof_tilesets.contains(tileset.id)) {
-		if (typeof roof !== 'undefined') {
+		if (typeof roof !== 'undefined' && tileset.with_roofs) {
 			var tilesets = tileset.with_roofs[roof]
 			if (typeof tilesets !== 'undefined') {
 				if (config.roofs[roof] !== -1) {
@@ -1190,32 +1190,60 @@ var Painter = {
 
 	run: function () {
 		var self = this
+		self.actions = {}
 
 		this.viewer.canvas.addEventListener('mouseup', function (event) {
-			self.mousedown = false
 			event.preventDefault()
+			self.onmouseup(event)
 		})
 		this.viewer.canvas.addEventListener('mouseout', function (event) {
 			self.viewer.selection = undefined
 		})
 		this.viewer.canvas.addEventListener('mousemove', function (event) {
 			event.preventDefault()
-			self.update(event)
+			self.viewer.getSelection(event)
+			self.onmousemove(event)
 		})
 		this.viewer.canvas.addEventListener('mousedown', function (event) {
 			event.preventDefault()
 			self.viewer.getSelection(event)
-			self.mousedown = true
-			self.update(event)
-		})
-		this.viewer.canvas.addEventListener('mouseup', function (event) {
-			//self.viewer.commit()
+			self.onmousedown(event)
 		})
 		this.viewer.canvas.addEventListener('contextmenu', function (event) {
 			event.preventDefault()
 		})
 
 		this.attachResize()
+	},
+
+	onmousedown: function (event) {
+		if (isRightClick(event)) {
+			this.actions.picking = true
+		} else {
+			if (this.inMapBoundary()) {
+				this.actions.painting = true
+			}
+		}
+		this.update(event)
+	},
+
+	onmousemove: function (event) {
+		this.update(event)
+	},
+
+	onmouseup: function (event) {
+		this.actions = {}
+	},
+
+	inMapBoundary: function () {
+		var position = this.getPosition()
+		var x = position.x, y = position.y
+		var map = this.viewer.getCurrentMap()
+		if (x >= 0 && x < map.width)
+		if (y >= 0 && y < map.height) {
+			return true
+		}
+		return false
 	},
 
 	getPosition: function () {
@@ -1269,15 +1297,13 @@ var Painter = {
 	},
 
 	update: function (event) {
-		this.viewer.getSelection(event)
-		if (this.mousedown) {
-			var position = this.getPosition()
-			var x = position.x, y = position.y
-			if (isRightClick(event)) {
-				this.pick(getBlock(this.viewer.current_map, x, y))
-			} else {
-				this.paint(x, y)
-			}
+		var position = this.getPosition()
+		var x = position.x, y = position.y
+		if (this.actions.picking) {
+			this.pick(getBlock(this.viewer.current_map, x, y))
+		}
+		if (this.actions.painting) {
+			this.paint(x, y)
 		}
 	},
 
