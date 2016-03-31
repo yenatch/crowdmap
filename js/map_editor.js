@@ -968,6 +968,7 @@ var BlockPicker = {
 	init: function (blockViewer) {
 		this.viewer = blockViewer
 		this.attachPickerMouseEvents()
+		this.attachResize()
 	},
 
 	getSelection: function (event) {
@@ -995,6 +996,30 @@ var BlockPicker = {
 			var block = y * self.viewer.width + x
 			painter.paint_block = block
 			event.preventDefault()
+		})
+	},
+
+	attachResize: function () {
+		var self = this
+		var round = Math.round
+		var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
+		makeResizable(self.viewer.container, ['w'], {
+			drag: function (props) {
+				var event = props.event
+				var x = event.clientX, y = event.clientY
+				var rect = self.viewer.container.getBoundingClientRect()
+				var xd = props.xd, yd = props.yd
+				var x1 = 0
+				if (xd < 0) x1 = round((x - rect.right) / w) + self.viewer.width
+				var width = self.viewer.width - x1
+				if (width < 1) {
+					width = 1
+				}
+				if (self.viewer.width !== width) {
+					self.viewer.width = width
+					self.viewer.redraw = true
+				}
+			},
 		})
 	},
 
@@ -1333,19 +1358,23 @@ var makeResizable = (function () {
 		se: { bottom: -1, right: -1, width:  1,  height: 1, },
 		sw: { bottom: -1, left:  -1, width:  1,  height: 1, },
 	}
+	var all_directions = ['n','s','e','w','ne','nw','se','sw']
+
+	all_directions.forEach(function (direction) {
+		var style = styles[direction]
+		for (var attribute in style) {
+			style[attribute] *= 5
+			style[attribute] += 'px'
+		}
+	})
 
 	return function (element, directions, callbacks) {
-		directions = directions || ['n','s','e','w','ne','nw','se','sw']
-		directions.map(function (direction) {
+		directions = directions || all_directions
+		directions.forEach(function (direction) {
 			var elem = createElement('div', {
-				id: direction,
 				className: 'resize-bar',
 			})
 			var style = styles[direction]
-			for (var attribute in style) {
-				style[attribute] *= 5
-				style[attribute] += 'px'
-			}
 			Object.update(elem.style, style)
 			elem.style.cursor = direction + '-resize'
 			elem.addEventListener('mousedown', start)
