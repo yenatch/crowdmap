@@ -1303,10 +1303,30 @@ var Painter = {
 
 				var rect = self.viewer.container.getBoundingClientRect()
 				var xd = props.xd, yd = props.yd
-				if (xd < 0) x1 += round(round(x - rect.left)   / w)
-				if (xd > 0) x2 += round(round(x - rect.right)  / w)
-				if (yd < 0) y1 += round(round(y - rect.top)    / h)
-				if (yd > 0) y2 += round(round(y - rect.bottom) / h)
+				if (xd < 0) {
+					x1 += round(round(x - rect.left)   / w)
+					if (x1 >= x2) {
+						x1 = x2 - 1
+					}
+				}
+				if (xd > 0) {
+					x2 += round(round(x - rect.right)  / w)
+					if (x2 <= x1) {
+						x2 = x1 + 1
+					}
+				}
+				if (yd < 0) {
+					y1 += round(round(y - rect.top)    / h)
+					if (y1 >= y2) {
+						y1 = y2 - 1
+					}
+				}
+				if (yd > 0) {
+					y2 += round(round(y - rect.bottom) / h)
+					if (y2 <= y1) {
+						y2 = y1 + 1
+					}
+				}
 
 				self.viewer.canvas.style.marginTop = -(y1) * h + 'px'
 				self.viewer.canvas.style.marginLeft = -(x1) * w + 'px'
