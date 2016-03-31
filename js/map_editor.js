@@ -1664,15 +1664,24 @@ var MapViewer = {
 			}
 		})
 
+		var self = this
 		all_events.forEach(function (npc) {
 			if (npc.element) {
 				var left = (parseInt(npc.x) + 6) * 16 + 'px'
 				if (left !== npc.element.style.left) {
 					npc.element.style.left = left
 				}
+				var ml = self.canvas.style.marginLeft
+				if (ml !== npc.element.style.marginLeft) {
+					npc.element.style.marginLeft = ml
+				}
 				var top = (parseInt(npc.y) + 6) * 16 + 'px'
 				if (top !== npc.element.style.top) {
 					npc.element.style.top = top
+				}
+				var mt = self.canvas.style.marginTop
+				if (mt !== npc.element.style.marginTop) {
+					npc.element.style.marginTop = mt
 				}
 			}
 		})
@@ -1702,7 +1711,7 @@ var MapViewer = {
 		var all_events = this.getAllEvents()
 
 		var container = this.container
-		var children = this.container.children
+		var children = container.children
 
 		function is_npc (child) {
 			var classes = ['npc', 'warp', 'sign', 'trap']
