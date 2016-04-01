@@ -151,20 +151,24 @@ var config = {
 		0, // scripted?
 		23, // snorlax
 		0, // bounce?
-		0, // standing
-		0, // standing
+		0, // standing // sudowoodo
+		0, // standing // rock
+		0, // boulder
+		0, // follownotexact
+		0, // shadow
+		0, // emote
 		0,
 		0,
 		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
+		22,
+		function (npc) {
+			if (npc.sprite === 'SPRITE_BIG_SNORLAX') return 23
+			if (npc.sprite === 'SPRITE_BIG_LAPRAS') return 23
+			return 22
+		}, // big doll
+		0, // boulder dust
+		0, // grass
+		0, // lapras
 		0,
 	],
 
@@ -173,8 +177,50 @@ var config = {
 config.getFacing = function (npc) {
 	var constant = Data.constants[npc.movement]
 	var i = config.movement_facings[constant]
+	if (typeof i === 'function') i = i(npc)
 	var facing = Data.facings[i]
 	return facing
+}
+
+config.getNpcTiles = function (npc) {
+	if (npc.last_sprite !== npc.sprite || npc.last_color !== npc.color) {
+		config.loadNpcGraphics(npc)
+		npc.last_sprite = npc.sprite
+		npc.last_color = npc.color
+	}
+	return npc.tiles
+}
+
+config.loadNpcGraphics = function (npc) {
+	var pal_promise = request(config.getObjectPalettePath())
+	.then(function (text) {
+		var palettes = readPalette(text)
+		var color = npc.color
+		if (typeof color === 'string') {
+			color = npc.color.match(/PAL_OW_([A-Z]*)/)[1]
+			color = ['red', 'blue', 'green', 'brown', 'pink', 'silver', 'tree', 'rock'].indexOf(color.toLowerCase())
+			if (color === -1) {
+				color = 0
+			}
+		} else {
+			// TODO default color
+		}
+		var palette = [palettes[color]]
+		palette[0][0][3] = 0
+		return palette
+	})
+
+	var image_promise = config.getSpritePath(npc.sprite)
+	.then(function(path) {
+		var image = newImage(path)
+		return imagePromise(image)
+		.then(function () { return image })
+	})
+
+	return Promise.all([image_promise, pal_promise])
+	.then(function (results) {
+		npc.tiles = colorizeTiles(results.shift(), results.shift())
+	})
 }
 
 
@@ -316,36 +362,6 @@ function parseEvents (objects) {
 	})
 
 	objects.npcs.forEach(function (npc) {
-		var pal_promise = request(config.getObjectPalettePath())
-		.then(function (text) {
-			var palettes = readPalette(text)
-			var color = npc.color
-			if (typeof color === 'string') {
-				color = npc.color.match(/PAL_OW_([A-Z]*)/)[1]
-				color = ['red', 'blue', 'green', 'brown', 'pink', 'silver', 'tree', 'rock'].indexOf(color.toLowerCase())
-				if (color === -1) {
-					color = 0
-				}
-			} else {
-				// TODO default color
-			}
-			var palette = [palettes[color]]
-			palette[0][0][3] = 0
-			return palette
-		})
-
-		var image_promise = config.getSpritePath(npc.sprite)
-		.then(function(path) {
-			var image = newImage(path)
-			return imagePromise(image)
-			.then(function () { return image })
-		})
-
-		Promise.all([image_promise, pal_promise])
-		.then(function (results) {
-			npc.tiles = colorizeTiles(results.shift(), results.shift())
-		})
-
 		npc.canvas = createElement('canvas', { className: 'npc_canvas' })
 		npc.element.appendChild(npc.canvas)
 	})

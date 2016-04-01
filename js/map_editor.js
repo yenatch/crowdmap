@@ -1631,9 +1631,10 @@ var MapViewer = {
 				npc.canvas.width = facing.width
 				npc.canvas.height = facing.height
 				var ctx = npc.canvas.getContext('2d')
-				if (npc.tiles) {
+				var tiles = config.getNpcTiles(npc)
+				if (tiles) {
 					facing.tiles.forEach(function (props) {
-						var tile = npc.tiles[props.tile]
+						var tile = tiles[props.tile]
 						if (typeof tile !== 'undefined') {
 							if (typeof props.attr === 'string' && props.attr.contains('X_FLIP')) {
 								ctx.save()
@@ -1645,6 +1646,15 @@ var MapViewer = {
 							}
 						}
 					})
+					if (npc.element.style.backgroundImage !== 'none') {
+						npc.element.style.backgroundImage = 'none'
+						npc.element.style.opacity = '1'
+					}
+				} else {
+					if (npc.element.style.backgroundImage) {
+						npc.element.style.backgroundImage = undefined
+						npc.element.style.opacity = undefined
+					}
 				}
 			}
 		})

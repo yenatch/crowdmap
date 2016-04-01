@@ -83,16 +83,18 @@ body {
 	transition: left 0.1s, top 0.1s;
 }
 .warp {
-	background: url('res/warp.png');
+	background-image: url('res/warp.png');
 }
 .sign {
-	background: url('res/sign.png');
+	background-image: url('res/sign.png');
 }
 .trap {
-	background: url('res/trap.png');
+	background-image: url('res/trap.png');
 }
 .npc {
-	opacity: 1;
+	background-image: url('res/npc.png');
+	background-size: cover;
+	opacity: 0.5;
 }
 .npc_canvas {
 	pointer-events: none;
