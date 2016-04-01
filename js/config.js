@@ -22,6 +22,8 @@ var config = {
 	],
 	roof_start: 0xa,
 
+	max_blocks: 1300,
+
 	tilesets: [
 		undefined,
 		'TILESET_JOHTO_1',

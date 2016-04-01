@@ -32,9 +32,9 @@ function crop(x1, y1, x2, y2, etc) {
 	var height = y2 - y1
 
 	if (last_w === width && last_h === height) return
-	if ((width + 6) * (height + 6) > 1300) {
+	if ((width + 6) * (height + 6) > config.max_blocks) {
 		if (!etc.override) {
-			console.log("map can't be more than 1300 blocks!")
+			console.log("map can't be more than " + config.max_blocks + " blocks! (including border)")
 			return
 		}
 	}
