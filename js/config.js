@@ -188,7 +188,7 @@ config.getNpcTiles = function (npc) {
 		npc.last_sprite = npc.sprite
 		npc.last_color = npc.color
 	}
-	return npc.tiles
+	return (Data.sprites[npc.sprite] || {})[npc.color]
 }
 
 config.loadNpcGraphics = function (npc) {
@@ -219,7 +219,9 @@ config.loadNpcGraphics = function (npc) {
 
 	return Promise.all([image_promise, pal_promise])
 	.then(function (results) {
-		npc.tiles = colorizeTiles(results.shift(), results.shift())
+		var tiles = colorizeTiles(results.shift(), results.shift())
+		Data.sprites[npc.sprite] = Data.sprites[npc.sprite] || {}
+		Data.sprites[npc.sprite][npc.color] = tiles
 	})
 }
 
