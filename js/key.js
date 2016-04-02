@@ -1,4 +1,9 @@
 var Shortcuts = {
+	[['ctrl', 'o']]: function (event) {
+		openMap(event)
+		event.preventDefault()
+		return false
+	},
 	[['ctrl', 's']]: function (event) {
 		saveMap(event)
 		event.preventDefault()
