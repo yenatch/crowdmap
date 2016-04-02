@@ -122,7 +122,7 @@ body {
 	left: 0px;
 	margin: 0px;
 	height: 100%;
-	z-index: 30;
+	z-index: 200;
 }
 .toolbar {
 	overflow: hidden;
@@ -132,7 +132,7 @@ body {
 	float: left;
 	width: 52px;
 	height: 100%;
-	z-index: 30;
+	z-index: 200;
 	user-select: none;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -214,7 +214,8 @@ body {
 	background-color: #222;
 	transition: width 0.15s;
 	-webkit-transition: width 0.15s;
-	z-index: 20;
+	z-index: 200;
+	outline: none;
 }
 .dialog:not(#dialog_open) {
 	padding: 10px;
