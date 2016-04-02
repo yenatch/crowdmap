@@ -2002,6 +2002,9 @@ var drawMetatile = function (props) {
 	*/
 
 	var tiles = getTilesetTiles(props.tileset, props.roof)
+	if (!tiles) {
+		return false
+	}
 
 	var block_w = props.tile_w * props.meta_w
 	var block_h = props.tile_h * props.meta_h
