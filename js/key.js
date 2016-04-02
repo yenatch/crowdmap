@@ -20,12 +20,22 @@ var Shortcuts = {
 	},
 }
 
+var Keys = {
+	enter: 13,
+	esc: 27,
+	left: 37,
+	up: 38,
+	right: 39,
+	down: 40,
+	delete: 46,
+}
+
 function getKeyChar (event) {
-	var c = event.charCode || event.keyCode
-	console.log(c)
-	if (c > 0 && c <= 26) {
+	var c = event.which || event.charCode || event.keyCode
+	if (!event.ctrlKey && c > 0 && c <= 26) {
 		c += 'a'.charCodeAt() - 1
-	} else if (c >= 'A'.charCodeAt() && c <= 'Z'.charCodeAt()) {
+	}
+	if (c >= 'A'.charCodeAt() && c <= 'Z'.charCodeAt()) {
 		c += 'a'.charCodeAt() - 'A'.charCodeAt()
 	}
 	c = String.fromCharCode(c)
@@ -36,7 +46,8 @@ function getShortcut (event) {
 	var keys = []
 	if (event.ctrlKey) keys.push('ctrl')
 	if (event.shiftKey) keys.push('shift')
-	keys.push(getKeyChar(event))
+	var c = getKeyChar(event)
+	if (c) keys.push(c)
 	return Shortcuts[keys]
 }
 

@@ -9,6 +9,13 @@ function gotoMap(name) {
 	document.location.hash = name
 }
 
+function scrollToMiddle(div) {
+	//div.scrollIntoView({ behavior: 'smooth' })
+	var rect = div.parentNode.getBoundingClientRect()
+	var height = rect.bottom - rect.top
+	div.parentNode.scrollTop = div.offsetTop - height * 0.5
+}
+
 function _gotoMap(name) {
 	var loaded = false
 	if (Data.maps[name]) {
@@ -128,8 +135,14 @@ function clearDialogs () {
 	})
 }
 
+document.addEventListener('keydown', function (event) {
+	if (event.which === Keys.esc) {
+		clearDialogs()
+	}
+})
+
 function newDialog (parent, id) {
-	var div = createElement('div', {id: id, className: 'dialog'})
+	var div = createElement('div', {id: id, className: 'dialog', tabIndex: '1',})
 	parent.appendChild(div)
 	return div
 }
@@ -355,6 +368,7 @@ function openMap (event) {
 
 	var selected
 	var select = function (div) {
+		deselect()
 		selected = div
 		div.className += ' selected'
 	}
@@ -364,6 +378,41 @@ function openMap (event) {
 		}
 		selected = undefined
 	}
+
+	dialog.addEventListener('keydown', function (event) {
+		var key = event.which
+		var indexOf = function (div) {
+			for (var i = 0; i < map_list.children.length; i++) {
+				if (div === map_list.children[i]) {
+					return i
+				}
+			}
+			return -1
+		}
+		if (key === Keys.enter) {
+			selected.onclick()
+		} else if (key === Keys.down) {
+			var div = map_list.children[indexOf(selected) + 1]
+			if (div && !div.className.contains('map_group_item')) {
+				div = map_list.children[indexOf(div) + 1]
+			}
+			if (div) {
+				select(div)
+				scrollToMiddle(div)
+				event.preventDefault()
+			}
+		} else if (key === Keys.up) {
+			var div = map_list.children[indexOf(selected) - 1]
+			if (div && !div.className.contains('map_group_item')) {
+				div = map_list.children[indexOf(div) - 1]
+			}
+			if (div) {
+				select(div)
+				scrollToMiddle(div)
+				event.preventDefault()
+			}
+		}
+	})
 
 	var createNames = function (names) {
 		var list = []
@@ -435,11 +484,9 @@ function openMap (event) {
 			map_list.appendChild(div)
 		})
 		if (selected) {
-			//selected.scrollIntoView({ behavior: 'smooth' })
-			var rect = map_list.getBoundingClientRect()
-			var height = rect.bottom - rect.top
-			map_list.scrollTop = selected.offsetTop - height * 0.5
+			scrollToMiddle(selected)
 		}
+		dialog.focus()
 	}
 
 	getMapGroups()
