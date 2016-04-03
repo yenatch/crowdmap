@@ -1059,7 +1059,7 @@ var BlockPicker = {
 				var rect = self.viewer.container.getBoundingClientRect()
 				var xd = props.xd, yd = props.yd
 				var x1 = 0
-				if (xd < 0) x1 = round((x - rect.right) / w) + self.viewer.width
+				if (xd < 0) x1 = round((x - rect.right) / w) + self.viewer.width + 1
 				var width = self.viewer.width - x1
 				if (width < 1) {
 					width = 1
