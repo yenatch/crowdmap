@@ -1188,11 +1188,13 @@ var BlockViewer = {
 		var i = 0
 		for (var y = 0; y < this.height; y++)
 		for (var x = 0; x < this.width; x++) {
-			var text_x = x * this.meta_w * this.tile_w
-			var text_y = y * this.meta_h * this.tile_h
-			var text = i.toString(16).toUpperCase()
-			drawcontext.strokeText(text, text_x, text_y)
-			drawcontext.fillText(text, text_x, text_y)
+			if (i < this.tileset.blockdata.length) {
+				var text_x = x * this.meta_w * this.tile_w
+				var text_y = y * this.meta_h * this.tile_h
+				var text = i.toString(16).toUpperCase()
+				drawcontext.strokeText(text, text_x, text_y)
+				drawcontext.fillText(text, text_x, text_y)
+			}
 			i += 1
 		}
 		drawcontext.restore()
