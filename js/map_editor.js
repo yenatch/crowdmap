@@ -1040,8 +1040,10 @@ var BlockPicker = {
 			var y = self.selection.y
 			x = (x - (x % 32)) / 32
 			y = (y - (y % 32)) / 32
-			var block = y * self.viewer.width + x
-			painter.paint_block = block
+			var block = self.viewer.tileset.blockdata[y * self.viewer.width + x]
+			if (typeof block !== 'undefined') {
+				painter.pick(block)
+			}
 			event.preventDefault()
 		})
 	},
@@ -1171,8 +1173,10 @@ var BlockViewer = {
 	render: function () {
 		for (var y = 0; y < this.height; y++)
 		for (var x = 0; x < this.width; x++) {
-			var block = y * this.width + x
-			this.drawMetatile(x, y, block)
+			var block = this.tileset.blockdata[y * this.width + x]
+			if (typeof block !== 'undefined') {
+				this.drawMetatile(x, y, block)
+			}
 		}
 		this.drawBlockNumbers()
 	},
@@ -1241,15 +1245,21 @@ var BlockViewer = {
 		var block_w = tile_w * this.meta_w
 		var block_h = tile_h * this.meta_h
 
+		var w = block_w
+		var h = block_h
+		x = x - x % w
+		y = y - y % h
+
+		var block = this.tileset.blockdata[y/h * this.width + x/w]
+		if (typeof block === 'undefined') {
+			return
+		}
+
 		context.save()
 		context.globalCompositeOperation = 'lighten'
 		context.fillStyle = 'rgba(255, 80, 80, 20)'
-		x = x - x % block_w
-		y = y - y % block_h
-		var w = block_w
-		var h = block_h
 		fillRect(x, y, w, h)
-		//context.fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
+		//fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
 		context.restore()
 
 	},
