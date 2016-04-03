@@ -1053,6 +1053,9 @@ var BlockPicker = {
 		var round = Math.round
 		var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
 		makeResizable(self.viewer.container, ['w'], {
+			start: function (props) {
+				props.element.style.max_height = '100%'
+			},
 			drag: function (props) {
 				var event = props.event
 				var x = event.clientX, y = event.clientY
@@ -1067,6 +1070,16 @@ var BlockPicker = {
 				if (self.viewer.width !== width) {
 					self.viewer.width = width
 					self.viewer.redraw = true
+				}
+				var bar_height = self.viewer.height * 32 + 'px'
+				if (props.element.style.height !== bar_height) {
+					props.element.style.height = bar_height
+				}
+			},
+			stop: function (props) {
+				var bar_height = self.viewer.height * 32 + 'px'
+				if (props.element.style.height !== bar_height) {
+					props.element.style.height = bar_height
 				}
 			},
 		})
@@ -1455,7 +1468,7 @@ var makeResizable = (function () {
 				document.addEventListener('mousemove', drag, false)
 				document.addEventListener('mouseup', stop, false)
 				if (callbacks && callbacks.start) {
-					callbacks.start({ event: event, x:x, y:y, w:w, h:h })
+					callbacks.start({ event: event, x:x, y:y, w:w, h:h, element:elem })
 				}
 			}
 			function drag (event) {
@@ -1463,7 +1476,7 @@ var makeResizable = (function () {
 				xd = direction.contains('w') ? -1 : direction.contains('e') ? 1 : 0
 
 				if (callbacks && callbacks.drag) {
-					callbacks.drag({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
+					callbacks.drag({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd, element:elem })
 				} else {
 					if (xd) element.style.width = (w - x + event.clientX * xd) + 'px'
 					if (yd) element.style.height = (h - y + event.clientY * yd) + 'px'
@@ -1471,7 +1484,7 @@ var makeResizable = (function () {
 			}
 			function stop (event) {
 				if (callbacks && callbacks.stop) {
-					callbacks.stop({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd })
+					callbacks.stop({ event: event, x:x, y:y, w:w, h:h, xd:xd, yd:yd, element:elem })
 				}
 				document.removeEventListener('mousemove', drag, false)
 				document.removeEventListener('mouseup', stop, false)
