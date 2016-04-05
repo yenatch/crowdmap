@@ -1052,9 +1052,22 @@ var BlockPicker = {
 		var self = this
 		var round = Math.round
 		var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
+
+		var elements
+		var align = function () {
+			var bar_height = self.viewer.height * 32 + 'px'
+			if (elements.w.style.height !== bar_height) {
+				elements.w.style.height = bar_height
+			}
+		}
+
 		makeResizable(self.viewer.container, ['w'], {
+			init: function (props) {
+				elements = props.elements
+				elements.w.style.max_height = '100%'
+			},
 			start: function (props) {
-				props.element.style.max_height = '100%'
+				align()
 			},
 			drag: function (props) {
 				var event = props.event
@@ -1071,16 +1084,10 @@ var BlockPicker = {
 					self.viewer.width = width
 					self.viewer.redraw = true
 				}
-				var bar_height = self.viewer.height * 32 + 'px'
-				if (props.element.style.height !== bar_height) {
-					props.element.style.height = bar_height
-				}
+				align()
 			},
 			stop: function (props) {
-				var bar_height = self.viewer.height * 32 + 'px'
-				if (props.element.style.height !== bar_height) {
-					props.element.style.height = bar_height
-				}
+				align()
 			},
 		})
 	},
@@ -1090,7 +1097,7 @@ var BlockPicker = {
 var BlockViewer = {
 
 	get size () {
-		return this.tileset.blockdata.length
+		return this.blockdata.length
 	},
 	get blockdata () {
 		return this.tileset.blockdata
@@ -1099,7 +1106,9 @@ var BlockViewer = {
 		return Math.ceil(this.size / this.width)
 	},
 	get tileset () {
-		return Data.tilesets[Data.maps[this.map].header.tileset]
+		if (Data.maps[this.map] && Data.maps[this.map].header) {
+			return Data.tilesets[Data.maps[this.map].header.tileset]
+		}
 	},
 
 	init: function () {
@@ -1186,7 +1195,7 @@ var BlockViewer = {
 	render: function () {
 		for (var y = 0; y < this.height; y++)
 		for (var x = 0; x < this.width; x++) {
-			var block = this.tileset.blockdata[y * this.width + x]
+			var block = this.blockdata[y * this.width + x]
 			if (typeof block !== 'undefined') {
 				this.drawMetatile(x, y, block)
 			}
@@ -1205,7 +1214,7 @@ var BlockViewer = {
 		var i = 0
 		for (var y = 0; y < this.height; y++)
 		for (var x = 0; x < this.width; x++) {
-			if (i < this.tileset.blockdata.length) {
+			if (i < this.blockdata.length) {
 				var text_x = x * this.meta_w * this.tile_w
 				var text_y = y * this.meta_h * this.tile_h
 				var text = i.toString(16).toUpperCase()
@@ -1263,7 +1272,7 @@ var BlockViewer = {
 		x = x - x % w
 		y = y - y % h
 
-		var block = this.tileset.blockdata[y/h * this.width + x/w]
+		var block = this.blockdata[y/h * this.width + x/w]
 		if (typeof block === 'undefined') {
 			return
 		}
@@ -1447,6 +1456,7 @@ var makeResizable = (function () {
 
 	return function (element, directions, callbacks) {
 		directions = directions || all_directions
+		var elements = {}
 		directions.forEach(function (direction) {
 			var elem = createElement('div', {
 				className: 'resize-bar',
@@ -1456,6 +1466,7 @@ var makeResizable = (function () {
 			elem.style.cursor = direction + '-resize'
 			elem.addEventListener('mousedown', start)
 			element.appendChild(elem)
+			elements[direction] = elem
 
 			var x, y, w, h, xd, yd
 			function start (event) {
@@ -1490,6 +1501,9 @@ var makeResizable = (function () {
 				document.removeEventListener('mouseup', stop, false)
 			}
 		})
+		if (callbacks.init) {
+			callbacks.init({ elements:elements })
+		}
 	}
 })()
 
