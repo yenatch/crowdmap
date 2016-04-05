@@ -1015,7 +1015,6 @@ var BlockPicker = {
 	init: function (blockViewer) {
 		this.viewer = blockViewer
 		this.attachPickerMouseEvents()
-		this.attachResize()
 	},
 
 	getSelection: function (event) {
@@ -1045,50 +1044,6 @@ var BlockPicker = {
 				painter.pick(block)
 			}
 			event.preventDefault()
-		})
-	},
-
-	attachResize: function () {
-		var self = this
-		var round = Math.round
-		var w = self.viewer.meta_w * self.viewer.tile_w * self.viewer.scale
-
-		var elements
-		var align = function () {
-			var bar_height = self.viewer.height * 32 + 'px'
-			if (elements.w.style.height !== bar_height) {
-				elements.w.style.height = bar_height
-			}
-		}
-
-		makeResizable(self.viewer.container, ['w'], {
-			init: function (props) {
-				elements = props.elements
-				elements.w.style.max_height = '100%'
-			},
-			start: function (props) {
-				align()
-			},
-			drag: function (props) {
-				var event = props.event
-				var x = event.clientX, y = event.clientY
-				var rect = self.viewer.container.getBoundingClientRect()
-				var xd = props.xd, yd = props.yd
-				var x1 = 0
-				if (xd < 0) x1 = round((x - rect.right) / w) + self.viewer.width + 1
-				var width = self.viewer.width - x1
-				if (width < 1) {
-					width = 1
-				}
-				if (self.viewer.width !== width) {
-					self.viewer.width = width
-					self.viewer.redraw = true
-				}
-				align()
-			},
-			stop: function (props) {
-				align()
-			},
 		})
 	},
 
@@ -1147,6 +1102,7 @@ var BlockViewer = {
 	attach: function (container) {
 		container = container || document.body
 		replaceChild(container, this.wrapper)
+		this.attachResize()
 	},
 
 	run: function () {
@@ -1284,6 +1240,51 @@ var BlockViewer = {
 		//fillRect(x - x % tile_w, y - y % tile_h, tile_w, tile_h)
 		context.restore()
 
+	},
+
+	attachResize: function () {
+		var self = this
+		var round = Math.round
+		var w = self.meta_w * self.tile_w * self.scale
+
+		var elements
+		var align = function () {
+			var bar_height = self.height * 32 + 'px'
+			if (elements.w.style.height !== bar_height) {
+				elements.w.style.height = bar_height
+			}
+		}
+
+		makeResizable(self.container, ['w'], {
+			init: function (props) {
+				elements = props.elements
+				elements.w.style.max_height = '100%'
+				align()
+			},
+			start: function (props) {
+				align()
+			},
+			drag: function (props) {
+				var event = props.event
+				var x = event.clientX, y = event.clientY
+				var rect = self.container.getBoundingClientRect()
+				var xd = props.xd, yd = props.yd
+				var x1 = 0
+				if (xd < 0) x1 = round((x - rect.right) / w) + self.width + 1
+				var width = self.width - x1
+				if (width < 1) {
+					width = 1
+				}
+				if (self.width !== width) {
+					self.width = width
+					self.redraw = true
+				}
+				align()
+			},
+			stop: function (props) {
+				align()
+			},
+		})
 	},
 
 }
