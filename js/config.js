@@ -297,6 +297,9 @@ function parseEvents (objects) {
 	all_obj.forEach(function (npc) {
 		// Make events draggable.
 		npc.element.addEventListener('mousedown', function (event) {
+			if (isRightClick(event)) {
+				return
+			}
 			var drag = function (event) {
 				var rect = view.canvas.getBoundingClientRect()
 				var x = event.clientX - rect.left
@@ -327,6 +330,9 @@ function parseEvents (objects) {
 		npc.element.style.cursor = '-webkit-grab'
 		var last_cursors = []
 		npc.element.addEventListener('mousedown', function (event) {
+			if (isRightClick(event)) {
+				return
+			}
 			npc.element.style.cursor = '-webkit-grabbing'
 			last_cursors.push(document.body.style.cursor)
 			document.body.style.cursor = '-webkit-grabbing'
@@ -586,6 +592,9 @@ function addDragInfo(target, div, callback) {
 		}
 	}
 	target.addEventListener('mousedown', function (event) {
+		if (isRightClick(event)) {
+			return
+		}
 		document.getElementById('cursor_info').appendChild(div)
 		update(event)
 		window.addEventListener('mousemove', update)
