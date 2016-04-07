@@ -95,7 +95,38 @@ var config = {
 	*/
 
 	getTilesetImagePath: function (id) { return root + 'gfx/tilesets/' + zfill(this.getTilesetId(id), 2) + '.png' },
-	getBlockdataPath: function (name) { return root + 'maps/' + name + '.blk' },
+
+	getBlockdataPath: function (name) {
+		var filenames = [
+			'maps/blockdata_1.asm',
+			'maps/blockdata_2.asm',
+			'maps/blockdata_3.asm',
+		]
+		return Promise.all(filenames.map(function (filename) {
+			return request(root + filename)
+		}))
+		.then(function (texts) {
+			var r = rgbasm.instance()
+			var ready = false
+			r.callbacks.label = function (line) {
+				if (line.label === name + '_BlockData') {
+					ready = true
+				}
+			}
+			r.macros.INCBIN = function (values) {
+				if (ready) {
+					var filename = values[0].split('"')[1]
+					return filename
+				}
+			}
+			for (var i = 0; i < texts.length; i++) {
+				var text = texts[i]
+				var result = r.read(text)
+				if (result) return root + result
+			}
+		})
+	},
+
 	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_metatiles.bin' },
 	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_palette_map.asm' },
 	getPalettePath: function () { return root + 'tilesets/bg.pal' },

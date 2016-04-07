@@ -569,9 +569,11 @@ function saveMap (event) {
 }
 
 function saveBlockdata(map_name) {
-	var filename = config.getBlockdataPath(map_name)
 	var data = Data.maps[map_name].blockdata
-	return Data.saveFile(filename, data, { binary: true })
+	return config.getBlockdataPath(name)
+	.then(function (path) {
+		return Data.saveFile(path, data, { binary: true })
+	})
 }
 
 function saveMapEvents(map_name) {
@@ -2250,7 +2252,10 @@ function loadMap(name) {
 }
 
 function loadBlockdata (name) {
-	return Data.loadFile(config.getBlockdataPath(name), { binary: true })
+	return config.getBlockdataPath(name)
+	.then(function (path) {
+		return Data.loadFile(path, { binary: true })
+	})
 	.then(function (blockdata) {
 		Data.maps[name].blockdata = blockdata
 	})
