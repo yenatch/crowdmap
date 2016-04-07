@@ -282,6 +282,12 @@ function parseEvents (objects) {
 		all_obj = all_obj.concat(npcs)
 	})
 
+	objects.npcs.forEach(function (npc) {
+		addStationaryClickListener(npc.element, function (event) {
+			npcEventDialog(npc)
+		})
+	})
+
 	objects.warps.forEach(function (warp) {
 		addStationaryClickListener(warp.element, function (event) {
 			warpEventDialog(warp)

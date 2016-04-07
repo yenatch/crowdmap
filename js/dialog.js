@@ -19,9 +19,11 @@ function titledElement (object, name) {
 }
 
 function warpEventDialog (warp) {
+
 	if (warp.dialog) {
 		removeElement(warp.dialog)
 		warp.dialog = undefined
+		warp.container.style.zIndex = ''
 		return
 	}
 
@@ -35,8 +37,9 @@ function warpEventDialog (warp) {
 	}
 
 	warp.container.appendChild(dialog)
+	warp.container.style.zIndex = '1000000'
 
-	var content = createElement('div', { className: 'warp_dialog_content' })
+	var content = createElement('div', { className: 'event_dialog_content' })
 	dialog.appendChild(content)
 
 	var x = titledElement(warp, 'x')
@@ -61,4 +64,51 @@ function warpEventDialog (warp) {
 	content.appendChild(map_container)
 
 	dialog.focus()
+}
+
+function npcEventDialog (npc) {
+	if (npc.dialog) {
+		removeElement(npc.dialog)
+		npc.dialog = undefined
+		npc.container.style.zIndex = ''
+		return
+	}
+
+	var dialog = createElement('div', { className: 'event_dialog' })
+	npc.dialog = dialog
+
+	var updaters = []
+	npc.dialog.update = function () {
+		updaters.forEach(function (updater) { updater() })
+	}
+
+	npc.container.appendChild(dialog)
+	npc.container.style.zIndex = '1000000'
+
+	var content = createElement('div', { className: 'event_dialog_content' })
+	dialog.appendChild(content)
+
+	function addRow() {
+		var row = createElement('div', { className: 'event_dialog_row' })
+		var args = arguments
+		for (var i = 0; i < args.length; i++) {
+			(function () {
+			var arg = args[i]
+			var prop = titledElement(npc, arg)
+			row.appendChild(prop.container)
+			updaters.push(function () { prop.input.value = npc[arg] })
+			})()
+		}
+		content.appendChild(row)
+	}
+
+	addRow('x', 'y')
+	addRow('sprite', 'movement')
+	addRow('radius_y', 'radius_x')
+	addRow('clock_hour', 'clock_daytime')
+	addRow('color', 'function')
+	addRow('sight_range', 'script')
+	addRow('event_flag')
+
+	npc.container.appendChild(dialog)
 }

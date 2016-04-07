@@ -475,7 +475,7 @@ input#ptilei {
 	border-radius: 6px;
 }
 
-.warp_dialog_content {
+.event_dialog_content {
 	box-shadow: 2px 2px 5px #111;
 	background: rgba(40, 40, 40, 0.75);
 	padding: 10px;
