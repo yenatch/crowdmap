@@ -276,8 +276,16 @@ function parseEvents (objects) {
 		var npcs = objects[name + 's'] || []
 		npcs.forEach(function (npc) {
 			npc.element = createElement('div', { className: 'event ' + name })
+			npc.container = createElement('div', { className: 'event_container ' + name })
+			npc.container.appendChild(npc.element)
 		})
 		all_obj = all_obj.concat(npcs)
+	})
+
+	objects.warps.forEach(function (warp) {
+		addStationaryClickListener(warp.element, function (event) {
+			warpEventDialog(warp)
+		})
 	})
 
 	all_obj.forEach(function (npc) {
@@ -293,6 +301,9 @@ function parseEvents (objects) {
 				y = (y - (y % 16)) / 16
 				npc.x = Math.floor(x) - 6
 				npc.y = Math.floor(y) - 6
+				if (npc.dialog && npc.dialog.update) {
+					npc.dialog.update()
+				}
 			}
 			window.addEventListener('mousemove', drag)
 			window.addEventListener('mouseup', function stop (event) {
@@ -328,29 +339,32 @@ function parseEvents (objects) {
 		// Show the coordinates of the npc you're moving around.
 		var info = createElement('div', { className: 'tooltip', })
 		var update = function (event) {
-			info.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
+			if (!npc.dialog) {
+				info.innerHTML = '(' + npc.x + ', ' + npc.y + ')'
+				info.style.display = ''
+			} else {
+				info.style.display = 'none'
+			}
 		}
 		addDragInfo(npc.element, info, update)
 	})
 
 	var warps = objects.warps
 	warps.forEach(function (warp) {
-		// We're stuck with the map constant, so we can only approximate the corresponding label.
-		// This seems to work for the majority of maps.
-		var map_name = warp.map.title().replace(/_/g, '')
-		map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
 
 		// Right click on a warp to go to the destination map.
 		warp.element.addEventListener('contextmenu', function (event) {
 			event.preventDefault()
+			var map_name = mapConstantToLabel(warp.map)
 			console.log('warp to ' + map_name)
 			gotoMap(map_name)
 		})
 
 		// Hover over a warp to show the destination map.
 		var info = createElement('div', { className: 'tooltip' })
-		info.innerHTML = map_name
-		addHoverInfo(warp.element, info)
+		addHoverInfo(warp.element, info, function () {
+			info.innerHTML = mapConstantToLabel(warp.map)
+		})
 	})
 
 	all_obj.forEach(function (npc) {
@@ -579,6 +593,27 @@ function addDragInfo(target, div, callback) {
 	})
 }
 
+function addStationaryClickListener(target, callback) {
+	function mousemove (event) {
+		if (event.movementX || event.movementY) {
+			window.removeEventListener('mousemove', mousemove)
+			window.removeEventListener('mouseup', mouseup)
+		}
+	}
+	function mouseup (event) {
+		window.removeEventListener('mousemove', mousemove)
+		window.removeEventListener('mouseup', mouseup)
+		callback(event)
+	}
+	target.addEventListener('mousedown', function (event) {
+		if (!isRightClick(event)) {
+			window.addEventListener('mousemove', mousemove)
+			window.addEventListener('mouseup', mouseup)
+		}
+	})
+}
+
+
 function getMapGroups () {
 	return request(config.map_header_path)
 	.then(readMapGroups)
@@ -776,4 +811,13 @@ config.serializeConnection = function (connection) {
 
 config.serializeMapDimensions = function (map) {
 	return '\t' + 'mapgroup' + ' ' + [map.attributes.map, map.height, map.width].join(', ') + '\n'
+}
+
+function mapConstantToLabel (map_name) {
+	// We're stuck with the map constant, so we can only approximate the corresponding label.
+	// This seems to work for the majority of maps.
+	map_name = map_name.title().replace(/_/g, '')
+	map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
+	map_name = map_name.replace(/[NS][ew]/g, function (match) { return match.toUpperCase() })
+	return map_name
 }

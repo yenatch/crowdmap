@@ -203,3 +203,28 @@ function equals(one, two) {
 	}
 	return one === two
 }
+
+
+function addClass(element, className) {
+	if (!element.className.contains(className)) {
+		element.className += ' ' + className
+	}
+}
+function removeClass(element, className) {
+	element.className = element.className.replace(new RegExp(' *\\b' + className + '\\b'), '')
+}
+
+function removeElement(element) {
+	var parent_ = element.parentElement || element.parentNode
+	parent_.removeChild(element)
+}
+
+function createElement(type, properties) {
+	type = type || 'div'
+	properties = properties || {}
+	var div = document.createElement(type)
+	for (var k in properties) {
+		div[k] = properties[k]
+	}
+	return div
+}

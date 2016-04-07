@@ -130,14 +130,26 @@ print = console.log.bind(console)
 
 function clearDialogs () {
 	var dialogs = document.getElementsByClassName('dialog')
-	Array.prototype.map.call(dialogs, function (elem) {
-		elem.parentElement.removeChild(elem)
+	var remove = []
+	for (var i = 0; i < dialogs.length; i++) {
+		var element = dialogs[i]
+		remove.push(element)
+	}
+	remove.forEach(function (element) {
+		removeElement(element)
 	})
+}
+
+function removeNewestDialog() {
+	var dialogs = document.getElementsByClassName('dialog')
+	if (dialogs.length) {
+		removeElement(dialogs[dialogs.length - 1])
+	}
 }
 
 document.addEventListener('keydown', function (event) {
 	if (event.which === Keys.esc) {
-		clearDialogs()
+		removeNewestDialog()
 	}
 })
 
@@ -150,10 +162,14 @@ function newDialog (parent, id) {
 function newMap (event) {
 	var new_id = 'dialog_new'
 	var existing = document.getElementById(new_id)
-
-	clearDialogs()
-
-	if (existing) return
+	if (existing) {
+		removeElement(existing)
+		return
+	}
+	var open = document.getElementById('dialog_open')
+	if (open) {
+		removeElement(open)
+	}
 
 	var dialog = newDialog(toolbar.container, new_id)
 	var content = createElement('div', {className: 'map_attributes'})
@@ -207,11 +223,12 @@ function editMapHeader (event) {
 	var edit_id = 'dialog_edit'
 	var existing = document.getElementById(edit_id)
 
-	clearDialogs()
+	if (existing) {
+		removeElement(existing)
+		return
+	}
 
-	if (existing) return
 	if (!view.current_map) return
-
 	var map = Data.maps[view.current_map]
 	if (!map) return
 	if (!map.loaded) return
@@ -347,10 +364,14 @@ function tilesetList () {
 function openMap (event) {
 	var open_id = 'dialog_open'
 	var existing = document.getElementById(open_id)
-
-	clearDialogs()
-
-	if (existing) { return }
+	if (existing) {
+		removeElement(existing)
+		return
+	}
+	var existing_new = document.getElementById('dialog_new')
+	if (existing_new) {
+		removeElement(existing_new)
+	}
 
 	var dialog = newDialog(toolbar.container, open_id)
 	dialog.style.width = '0px'
@@ -370,11 +391,11 @@ function openMap (event) {
 	var select = function (div) {
 		deselect()
 		selected = div
-		div.className += ' selected'
+		addClass(div, 'selected')
 	}
 	var deselect = function () {
 		if (selected) {
-			selected.className = selected.className.replace(/\bselected\b/g, '')
+			removeClass(selected, 'selected')
 		}
 		selected = undefined
 	}
@@ -489,17 +510,22 @@ function openMap (event) {
 		dialog.focus()
 	}
 
+	addClass(internal, 'active')
 	getMapGroups()
 	.then(createGroups)
 	.then(populate)
 
 	internal.onclick = function () {
+		addClass(internal, 'active')
+		removeClass(alpha, 'active')
 		getMapGroups()
 		.then(createGroups)
 		.then(populate)
 	}
 
 	alpha.onclick = function () {
+		addClass(alpha, 'active')
+		removeClass(internal, 'active')
 		getMapNames()
 		.then(function (names) {
 			names.sort()
@@ -703,17 +729,6 @@ function undo (event) {
 
 function redo (event) {
 	History.redo()
-}
-
-
-function createElement(type, properties) {
-	type = type || 'div'
-	properties = properties || {}
-	var div = document.createElement(type)
-	for (var k in properties) {
-		div[k] = properties[k]
-	}
-	return div
 }
 
 
@@ -1752,18 +1767,20 @@ var MapViewer = {
 				var left = (parseInt(npc.x) + 6) * 16 + 'px'
 				if (left !== npc.element.style.left) {
 					npc.element.style.left = left
+					npc.container.style.left = left
 				}
 				var ml = self.canvas.style.marginLeft
-				if (ml !== npc.element.style.marginLeft) {
-					npc.element.style.marginLeft = ml
+				if (ml !== npc.container.style.marginLeft) {
+					npc.container.style.marginLeft = ml
 				}
 				var top = (parseInt(npc.y) + 6) * 16 + 'px'
 				if (top !== npc.element.style.top) {
 					npc.element.style.top = top
+					npc.container.style.top = top
 				}
 				var mt = self.canvas.style.marginTop
-				if (mt !== npc.element.style.marginTop) {
-					npc.element.style.marginTop = mt
+				if (mt !== npc.container.style.marginTop) {
+					npc.container.style.marginTop = mt
 				}
 			}
 		})
@@ -1816,11 +1833,11 @@ var MapViewer = {
 
 		// Remove existing events from the list, and add events who don't exist yet.
 		all_events.forEach(function (npc) {
-			var index = remove.indexOf(npc.element)
+			var index = remove.indexOf(npc.container)
 			if (index !== -1) {
 				remove.splice(index, 1)
 			} else {
-				container.appendChild(npc.element)
+				container.appendChild(npc.container)
 			}
 		})
 

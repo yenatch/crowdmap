@@ -75,23 +75,29 @@ body {
 	content: "⌛"; // hourglass
 }
 
+.event_container {
+	position: absolute;
+	transition: left 0.1s, top 0.1s;
+}
+.event_dialog {
+	top: 0;
+	left: 0;
+}
 .event {
 	opacity: 0.7;
 	width: 16px;
 	height: 16px;
-	position: absolute;
-	transition: left 0.1s, top 0.1s;
 }
-.warp {
+.event.warp {
 	background-image: url('res/warp.png');
 }
-.sign {
+.event.sign {
 	background-image: url('res/sign.png');
 }
-.trap {
+.event.trap {
 	background-image: url('res/trap.png');
 }
-.npc {
+.event.npc {
 	background-image: url('res/npc.png');
 	background-size: cover;
 	opacity: 0.5;
@@ -108,11 +114,12 @@ body {
 }
 .tooltip {
 	color: white;
-	background: rgba(100, 100, 100, 0.7);
+	font-size: 0.75em;
+	background: rgba(40, 40, 40, 0.7);
 	display: table;
-	padding: 0px 4px 2px 4px;
+	padding: 2px 6px 4px 6px;
 	margin-bottom: 1px;
-	border-radius: 2px;
+	border-radius: 1px;
 	pointer-events: none;
 }
 
@@ -226,8 +233,12 @@ body {
 .map_header_key {
 	display: inline-block;
 	padding: 2px 8px 2px 2px;
+	font-size: 10px;
+	line-height: 24px;
+	text-transform: uppercase;
 }
 .map_header_param {
+	padding: 2px 4px 2px 4px;
 	display: inline-block;
 	float: right;
 }
@@ -266,7 +277,8 @@ body {
 	display: inline-block;
 	width: 3em;
 	height: 2em;
-	background-color: #555;
+	background-color: #444;
+	color: #999;
 	border-radius: 2px;
 	margin: 2px;
 	text-align: center;
@@ -278,9 +290,15 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	cursor: default;
+	font-size: 0.7em;
+	//line-height: 24px;
+	text-transform: uppercase;
 }
 .map_list_button:hover {
-	background-color: #444;
+	background-color: #383838;
+}
+.map_list_button.active {
+	background-color: #333;
 }
 .map_list_button:active {
 	background-color: #333;
@@ -455,4 +473,32 @@ input#ptilei {
 	padding: 4px;
 	border: 0px;
 	border-radius: 6px;
+}
+
+.warp_dialog_content {
+	box-shadow: 2px 2px 5px #111;
+	background: rgba(40, 40, 40, 0.75);
+	padding: 10px;
+	display: table;
+}
+.event_dialog_row {
+	display: table-row;
+}
+.event_dialog_cell {
+	display: table-cell;
+	padding: 2px;
+}
+.event_dialog_title {
+	display: table-cell;
+	color: #eee;
+	font-size: 10px;
+	line-height: 24px;
+	text-transform: uppercase;
+	padding-left: 2px;
+}
+.event_dialog_value {
+	display: table-cell;
+	width: 130px;
+}
+input.event_dialog_value {
 }
