@@ -1359,7 +1359,9 @@ var Painter = {
 
 	onmousedown: function (event) {
 		if (isRightClick(event)) {
-			this.actions.picking = true
+			if (!this.inConnectionBoundary()) {
+				this.actions.picking = true
+			}
 		} else {
 			if (this.inMapBoundary()) {
 				this.actions.painting = true
@@ -1383,6 +1385,23 @@ var Painter = {
 		if (x >= 0 && x < map.width)
 		if (y >= 0 && y < map.height) {
 			return true
+		}
+		return false
+	},
+
+	inConnectionBoundary: function () {
+		var position = this.getPosition()
+		var x = position.x, y = position.y
+		var map = this.viewer.getCurrentMap()
+		var connections = map.attributes.connections
+		for (var direction in connections) {
+			var connection = connections[direction]
+			var info = getConnectionInfo(connection, map, Data.maps[connection.name])
+			if (info)
+			if (x+3 >= info.x1 && x+3 < info.x2)
+			if (y+3 >= info.y1 && y+3 < info.y2) {
+				return true
+			}
 		}
 		return false
 	},
