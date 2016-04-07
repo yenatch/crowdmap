@@ -37,7 +37,7 @@ function warpEventDialog (warp) {
 	}
 
 	warp.container.appendChild(dialog)
-	warp.container.style.zIndex = '1000000'
+	warp.container.style.zIndex = '98'
 
 	var content = createElement('div', { className: 'event_dialog_content' })
 	dialog.appendChild(content)
@@ -83,7 +83,7 @@ function npcEventDialog (npc) {
 	}
 
 	npc.container.appendChild(dialog)
-	npc.container.style.zIndex = '1000000'
+	npc.container.style.zIndex = '98'
 
 	var content = createElement('div', { className: 'event_dialog_content' })
 	dialog.appendChild(content)

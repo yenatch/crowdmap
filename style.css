@@ -110,7 +110,7 @@ body {
 .cursor_info {
 	position: absolute;
 	pointer-events: none;
-	z-index: 1000;
+	z-index: 99;
 }
 .tooltip {
 	color: white;
