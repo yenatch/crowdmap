@@ -1160,6 +1160,7 @@ var BlockViewer = {
 			)
 
 			this.drawSelection()
+			this.drawSelectedBlock()
 		}
 	},
 
@@ -1195,6 +1196,24 @@ var BlockViewer = {
 			i += 1
 		}
 		drawcontext.restore()
+	},
+
+	drawSelectedBlock: function () {
+		if (painter) {
+			var selected = painter.getPaintBlock()
+			if (selected >= 0 && selected < this.blockdata.length) {
+				var x = selected % this.width
+				var y = (selected - x) / this.width
+				var ctx = this.canvas.getContext('2d')
+				ctx.save()
+				ctx.strokeStyle = 'red'
+				ctx.lineWidth = 2
+				var rect = new Path2D()
+				rect.rect(x * 32, y * 32, 32, 32)
+				ctx.stroke(rect)
+				ctx.restore()
+			}
+		}
 	},
 
 	drawMetatile: function (x, y, block) {
@@ -1440,9 +1459,14 @@ var Painter = {
 		this.paint_block = block
 	},
 
-	paint: function (x, y, block) {
-		if (typeof block === 'undefined') block = this.paint_block
+	getPaintBlock: function () {
+		var block = this.paint_block
 		if (typeof block === 'undefined') block = this.viewer.getCurrentMap().attributes.border_block
+		return block
+	},
+
+	paint: function (x, y, block) {
+		if (typeof block === 'undefined') block = this.getPaintBlock()
 		setBlock(this.viewer.current_map, x, y, block)
 	},
 
