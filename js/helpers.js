@@ -96,7 +96,7 @@ function ajax(url, resolve, reject, options) {
 	if (options.cache === false && options.method !== 'POST') {
 		// Firefox is evil and ignores spec. It listens to nothing.
 		if (navigator.userAgent.toLowerCase().contains('firefox')) {
-			//xhr.setRequestHeader('Cache-Control', 'no-cache no-store')
+			xhr.setRequestHeader('Cache-Control', 'no-cache no-store')
 			url = addQuery(url, Date.now())
 		} else {
 			xhr.setRequestHeader('Cache-Control', 'max-age=0, must-revalidate')
