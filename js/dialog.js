@@ -1,7 +1,64 @@
+function warpEventDialog (warp) {
+	eventDialog(warp, [
+		['x', 'y', 'map_warp'],
+		['map'],
+	])
+	warp.dialog.x.input.style.width = '20px'
+	warp.dialog.y.input.style.width = '20px'
+	warp.dialog.map_warp.input.style.width = '28px'
+	warp.dialog.map_warp.title.innerHTML = 'warp'
+}
+
+function npcEventDialog (npc) {
+	eventDialog(npc, [
+		['x', 'y', 'sprite'],
+		['movement', 'radius_x', 'radius_y'],
+		['clock_hour', 'clock_daytime', 'color'],
+		['function', 'sight_range'],
+		['script'],
+		['event_flag'],
+	])
+	npc.dialog.x.input.style.width = '20px'
+	npc.dialog.y.input.style.width = '20px'
+	npc.dialog.sprite.input.style.width = '244px'
+	npc.dialog.movement.input.style.width = '200px'
+	npc.dialog.radius_x.input.style.width = '20px'
+	npc.dialog.radius_y.input.style.width = '20px'
+	npc.dialog.clock_hour.input.style.width = '20px'
+	npc.dialog.clock_hour.title.innerHTML = 'hour'
+	npc.dialog.clock_daytime.input.style.width = '40px'
+	npc.dialog.clock_daytime.title.innerHTML = 'period'
+	npc.dialog.color.input.style.width = '218px'
+	npc.dialog.function.input.style.width = '228px'
+	npc.dialog.sight_range.input.style.width = '20px'
+	npc.dialog.script.input.style.width = '300px'
+	npc.dialog.event_flag.input.style.width = '300px'
+}
+
+function signEventDialog (sign) {
+	eventDialog(sign, [
+		['x', 'y'],
+		['function'],
+		['script'],
+	])
+	sign.dialog.x.input.style.width = '20px'
+	sign.dialog.y.input.style.width = '20px'
+}
+
+function trapEventDialog (trap) {
+	eventDialog(trap, [
+		['x', 'y'],
+		['trigger'],
+		['script'],
+	])
+	trap.dialog.x.input.style.width = '20px'
+	trap.dialog.y.input.style.width = '20px'
+}
+
 function titledElement (object, name) {
 	var container = createElement('div', { className: 'event_dialog_cell' })
 	var title = createElement('div', { className: 'event_dialog_title' })
-	title.innerHTML = name
+	title.innerHTML = name.replace('_', ' ')
 	var input = createElement('input', { name: name, value: object[name], className: 'event_dialog_value' })
 	input.oninput = function (event) {
 		object[name] = input.value
@@ -18,55 +75,8 @@ function titledElement (object, name) {
 	}
 }
 
-function warpEventDialog (warp) {
+function eventDialog (npc, rows) {
 
-	if (warp.dialog) {
-		removeElement(warp.dialog)
-		warp.dialog = undefined
-		warp.container.style.zIndex = ''
-		return
-	}
-
-	var dialog = createElement('div', { className: 'event_dialog' })
-	warp.dialog = dialog
-	warp.dialog.update = function () {
-		x.input.value = warp.x
-		y.input.value = warp.y
-		map_warp.input.value = warp.map_warp
-		map.input.value = warp.map
-	}
-
-	warp.container.appendChild(dialog)
-	warp.container.style.zIndex = '98'
-
-	var content = createElement('div', { className: 'event_dialog_content' })
-	dialog.appendChild(content)
-
-	var x = titledElement(warp, 'x')
-	var y = titledElement(warp, 'y')
-	var map_warp = titledElement(warp, 'map_warp')
-	map_warp.title.innerHTML = 'warp'
-	var map = titledElement(warp, 'map')
-
-	var new_container = createElement('div', { className: 'event_dialog_cell' })
-	x.input.style.width = '20px'
-	y.input.style.width = '20px'
-	map_warp.input.style.width = '28px'
-	new_container.appendChild(x.container)
-	new_container.appendChild(y.container)
-	new_container.appendChild(map_warp.container)
-
-	var map_container = createElement('div', { className: 'event_dialog_row' })
-	map_container.style.display = 'table-row'
-	map_container.appendChild(map.container)
-
-	content.appendChild(new_container)
-	content.appendChild(map_container)
-
-	dialog.focus()
-}
-
-function npcEventDialog (npc) {
 	if (npc.dialog) {
 		removeElement(npc.dialog)
 		npc.dialog = undefined
@@ -90,25 +100,26 @@ function npcEventDialog (npc) {
 
 	function addRow() {
 		var row = createElement('div', { className: 'event_dialog_row' })
+		var inner = createElement('div', { className: 'event_dialog_cell' })
 		var args = arguments
 		for (var i = 0; i < args.length; i++) {
 			(function () {
 			var arg = args[i]
 			var prop = titledElement(npc, arg)
-			row.appendChild(prop.container)
+			inner.appendChild(prop.container)
 			updaters.push(function () { prop.input.value = npc[arg] })
+			dialog[arg] = prop
 			})()
 		}
+		row.appendChild(inner)
 		content.appendChild(row)
 	}
 
-	addRow('x', 'y')
-	addRow('sprite', 'movement')
-	addRow('radius_y', 'radius_x')
-	addRow('clock_hour', 'clock_daytime')
-	addRow('color', 'function')
-	addRow('sight_range', 'script')
-	addRow('event_flag')
+	rows.forEach(function (row) {
+		addRow.apply(this, row)
+	})
 
 	npc.container.appendChild(dialog)
+
+	dialog.focus()
 }

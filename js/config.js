@@ -284,7 +284,9 @@ function readEventText (text) {
 			objects[name] = []
 		}
 		r.macros[macro_name] = function (values) {
-			objects[name].push(named_args(arg_names, values))
+			var npc = named_args(arg_names, values)
+			npc.__type__ = name
+			objects[name].push(npc)
 		}
 	}
 	add_macro('warp')
@@ -313,15 +315,16 @@ function parseEvents (objects) {
 		all_obj = all_obj.concat(npcs)
 	})
 
-	objects.npcs.forEach(function (npc) {
-		addStationaryClickListener(npc.element, function (event) {
-			npcEventDialog(npc)
-		})
-	})
+	all_obj.forEach(function (npc) {
+		var callback = {
+			npc: npcEventDialog,
+			warp: warpEventDialog,
+			sign: signEventDialog,
+			trap: trapEventDialog,
+		}[npc.__type__] || function () {}
 
-	objects.warps.forEach(function (warp) {
-		addStationaryClickListener(warp.element, function (event) {
-			warpEventDialog(warp)
+		addStationaryClickListener(npc.element, function (event) {
+			callback(npc)
 		})
 	})
 
