@@ -401,15 +401,26 @@ function parseEvents (objects) {
 		// Right click on a warp to go to the destination map.
 		warp.element.addEventListener('contextmenu', function (event) {
 			event.preventDefault()
-			var map_name = mapConstantToLabel(warp.map)
-			console.log('warp to ' + map_name)
-			gotoMap(map_name)
+			mapConstantToLabel(warp.map)
+			.then(function (map_name) {
+				console.log('warp to ' + map_name)
+				gotoMap(map_name)
+			})
 		})
 
 		// Hover over a warp to show the destination map.
 		var info = createElement('div', { className: 'tooltip' })
+
+		var last_map
 		addHoverInfo(warp.element, info, function () {
-			info.innerHTML = mapConstantToLabel(warp.map)
+			if (last_map !== warp.map) {
+				last_map = warp.map
+				info.innerHTML = ''
+				mapConstantToLabel(warp.map)
+				.then(function (map_name) {
+					info.innerHTML = map_name
+				})
+			}
 		})
 	})
 
@@ -862,11 +873,26 @@ config.serializeMapDimensions = function (map) {
 	return '\t' + 'mapgroup' + ' ' + [map.attributes.map, map.height, map.width].join(', ') + '\n'
 }
 
-function mapConstantToLabel (map_name) {
-	// We're stuck with the map constant, so we can only approximate the corresponding label.
-	// This seems to work for the majority of maps.
-	map_name = map_name.title().replace(/_/g, '')
-	map_name = map_name.replace(/pokecenter/ig, 'PokeCenter')
-	map_name = map_name.replace(/[NS][ew]/g, function (match) { return match.toUpperCase() })
-	return map_name
+function readMapHeader2ByConstant(text, name) {
+	var r = rgbasm.instance()
+	r.macros.map_header_2 = function (values) {
+		var map_constant = values[1]
+		if (map_constant === name) {
+			return values
+		}
+	}
+	var values = r.read(text)
+	var names = ['label', 'map', 'border_block', 'which_connections']
+	var header = dictzip(names, values)
+	return header
+}
+
+function mapConstantToLabel (constant) {
+	return request(config.map_header_2_path)
+	.then(function (text) {
+		return readMapHeader2ByConstant(text, constant)
+	})
+	.then(function (header) {
+		return header.label
+	})
 }
