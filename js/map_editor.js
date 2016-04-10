@@ -578,7 +578,7 @@ function saveBlockdata(map_name) {
 
 function saveMapEvents(map_name) {
 	var filename = config.getMapEventPath(map_name)
-	return request(filename)
+	return Data.loadFile(filename, { dont_prompt: true })
 	.then(function (text) {
 		var r = rgbasm.instance()
 		var seen = false
@@ -605,7 +605,7 @@ function saveMapHeader(map_name) {
 	var header = Data.maps[map_name].header
 	header = config.serializeMapHeader(header)
 	var filename = config.map_header_path
-	return request(filename)
+	return Data.loadFile(filename, { dont_prompt: true })
 	.then(function (text) {
 		var r = rgbasm.instance()
 		var start = text.length, end = text.length
@@ -626,7 +626,7 @@ function saveMapHeader2(map_name) {
 	var header = Data.maps[map_name].attributes
 	header = config.serializeMapHeader2(header)
 	var filename = config.map_header_2_path
-	return request(filename)
+	return Data.loadFile(filename, { dont_prompt: true })
 	.then(function (text) {
 		var r = rgbasm.instance()
 		var start = text.length, end = text.length
@@ -655,7 +655,7 @@ function saveMapHeader2(map_name) {
 function saveMapDimensions(map_name) {
 	var filename = config.map_constants_path
 	var map = Data.maps[map_name]
-	return request(filename)
+	return Data.loadFile(filename, { dont_prompt: true })
 	.then(function (text) {
 		var r = rgbasm.instance()
 		var start = text.length, end = text.length
@@ -940,7 +940,9 @@ var Data = {
 			var ok = true
 			if (!equals(data, last_data)) {
 				if (typeof last_data !== 'undefined') {
-					ok = confirm(uri + " has changed! Are you sure you want to reload it?")
+					if (!options.dont_prompt) {
+						ok = confirm(uri + " has changed! Are you sure you want to reload it?")
+					}
 					if (ok) {
 						if (!self.changed_files.contains(uri)) {
 							self.changed_files.push(uri)
