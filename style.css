@@ -78,6 +78,8 @@ body {
 .event_container {
 	position: absolute;
 	transition: left 0.1s, top 0.1s;
+	width: 0;
+	height: 0;
 }
 .event_dialog {
 	top: 0;
