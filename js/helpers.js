@@ -74,6 +74,9 @@ function subdivide(list, length) {
 
 
 function request(url, options) {
+	if (typeof url === 'undefined') {
+		throw new Exception()
+	}
 	return new Promise( function (resolve, reject) {
 		ajax(url, resolve, reject, options)
 	})
