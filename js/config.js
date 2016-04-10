@@ -101,6 +101,7 @@ var config = {
 			'maps/blockdata_1.asm',
 			'maps/blockdata_2.asm',
 			'maps/blockdata_3.asm',
+			'maps.asm', // newMap() dumps blockdata here
 		]
 		return Promise.all(filenames.map(function (filename) {
 			return request(root + filename)

@@ -1,8 +1,11 @@
 import os
 
+def get_path(filename):
+	return os.path.join(os.path.dirname(__file__), filename)
+
 def save(data):
 	filename = data.get('filename')
-	filename = os.path.join(os.path.dirname(__file__), filename)
+	filename = get_path(filename)
 
 	extension = os.path.splitext(filename)[1]
 	content = data.get('data')
@@ -109,7 +112,7 @@ def add_map(data):
 
 	new_constants = '\n'.join(constants_lines)
 
-	script = open('map_event_template.asm').read()
+	script = open(get_path('map_event_template.asm')).read()
 	script = script.format(label=label)
 
 	include = open(include_path).read()
