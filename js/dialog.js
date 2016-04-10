@@ -3,10 +3,12 @@ function warpEventDialog (warp) {
 		['x', 'y', 'map_warp'],
 		['map'],
 	])
-	warp.dialog.x.input.style.width = '20px'
-	warp.dialog.y.input.style.width = '20px'
-	warp.dialog.map_warp.input.style.width = '28px'
-	warp.dialog.map_warp.title.innerHTML = 'warp'
+	if (warp.dialog) {
+		warp.dialog.x.input.style.width = '20px'
+		warp.dialog.y.input.style.width = '20px'
+		warp.dialog.map_warp.input.style.width = '28px'
+		warp.dialog.map_warp.title.innerHTML = 'warp'
+	}
 }
 
 function npcEventDialog (npc) {
@@ -18,21 +20,23 @@ function npcEventDialog (npc) {
 		['script'],
 		['event_flag'],
 	])
-	npc.dialog.x.input.style.width = '20px'
-	npc.dialog.y.input.style.width = '20px'
-	npc.dialog.sprite.input.style.width = '244px'
-	npc.dialog.movement.input.style.width = '200px'
-	npc.dialog.radius_x.input.style.width = '20px'
-	npc.dialog.radius_y.input.style.width = '20px'
-	npc.dialog.clock_hour.input.style.width = '20px'
-	npc.dialog.clock_hour.title.innerHTML = 'hour'
-	npc.dialog.clock_daytime.input.style.width = '40px'
-	npc.dialog.clock_daytime.title.innerHTML = 'period'
-	npc.dialog.color.input.style.width = '218px'
-	npc.dialog.function.input.style.width = '228px'
-	npc.dialog.sight_range.input.style.width = '20px'
-	npc.dialog.script.input.style.width = '300px'
-	npc.dialog.event_flag.input.style.width = '300px'
+	if (npc.dialog) {
+		npc.dialog.x.input.style.width = '20px'
+		npc.dialog.y.input.style.width = '20px'
+		npc.dialog.sprite.input.style.width = '244px'
+		npc.dialog.movement.input.style.width = '200px'
+		npc.dialog.radius_x.input.style.width = '20px'
+		npc.dialog.radius_y.input.style.width = '20px'
+		npc.dialog.clock_hour.input.style.width = '20px'
+		npc.dialog.clock_hour.title.innerHTML = 'hour'
+		npc.dialog.clock_daytime.input.style.width = '40px'
+		npc.dialog.clock_daytime.title.innerHTML = 'period'
+		npc.dialog.color.input.style.width = '218px'
+		npc.dialog.function.input.style.width = '228px'
+		npc.dialog.sight_range.input.style.width = '20px'
+		npc.dialog.script.input.style.width = '300px'
+		npc.dialog.event_flag.input.style.width = '300px'
+	}
 }
 
 function signEventDialog (sign) {
@@ -41,8 +45,10 @@ function signEventDialog (sign) {
 		['function'],
 		['script'],
 	])
-	sign.dialog.x.input.style.width = '20px'
-	sign.dialog.y.input.style.width = '20px'
+	if (sign.dialog) {
+		sign.dialog.x.input.style.width = '20px'
+		sign.dialog.y.input.style.width = '20px'
+	}
 }
 
 function trapEventDialog (trap) {
@@ -51,8 +57,10 @@ function trapEventDialog (trap) {
 		['trigger'],
 		['script'],
 	])
-	trap.dialog.x.input.style.width = '20px'
-	trap.dialog.y.input.style.width = '20px'
+	if (trap.dialog) {
+		trap.dialog.x.input.style.width = '20px'
+		trap.dialog.y.input.style.width = '20px'
+	}
 }
 
 function titledElement (object, name) {
