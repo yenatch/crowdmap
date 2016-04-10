@@ -570,7 +570,7 @@ function saveMap (event) {
 
 function saveBlockdata(map_name) {
 	var data = Data.maps[map_name].blockdata
-	return config.getBlockdataPath(name)
+	return config.getBlockdataPath(map_name)
 	.then(function (path) {
 		return Data.saveFile(path, data, { binary: true })
 	})
