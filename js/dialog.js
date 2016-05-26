@@ -1,4 +1,4 @@
-function warpEventDialog (warp) {
+function warpEventDialog (warp, events) {
 	eventDialog(warp, [
 		['x', 'y', 'map_warp'],
 		['map'],
@@ -8,6 +8,9 @@ function warpEventDialog (warp) {
 		warp.dialog.y.input.style.width = '20px'
 		warp.dialog.map_warp.input.style.width = '28px'
 		warp.dialog.map_warp.title.innerHTML = 'warp'
+
+		var warp_no = events.warps.indexOf(warp) + 1
+		warp.dialog.dialog_title.innerHTML = 'warp ' + warp_no || '?'
 	}
 }
 
@@ -105,6 +108,10 @@ function eventDialog (npc, rows) {
 
 	var content = createElement('div', { className: 'event_dialog_content' })
 	dialog.appendChild(content)
+
+	var title = createElement('div', { className: 'event_dialog_title' })
+	content.appendChild(title)
+	dialog.dialog_title = title
 
 	function addRow() {
 		var row = createElement('div', { className: 'event_dialog_row' })

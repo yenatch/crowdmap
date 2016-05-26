@@ -325,7 +325,7 @@ function parseEvents (objects) {
 		}[npc.__type__] || function () {}
 
 		addStationaryClickListener(npc.element, function (event) {
-			callback(npc)
+			callback(npc, objects)
 		})
 	})
 
