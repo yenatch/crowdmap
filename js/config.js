@@ -12,7 +12,7 @@ var config = {
 	map_header_path:    root + 'maps/map_headers.asm',
 	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
-	map_dimensions_path: root + 'constants/map_constants.asm',
+	map_dimensions_path: root + 'constants/map_dimension_constants.asm',
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	//roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ], // wrong, see roof_tilesets
@@ -54,9 +54,7 @@ var config = {
 
 	getBlockdataPath: function (name) {
 		var filenames = [
-			'maps/blockdata_1.asm',
-			'maps/blockdata_2.asm',
-			'maps/blockdata_3.asm',
+			'maps/blockdata.asm',
 			'maps.asm', // newMap() dumps blockdata here
 		]
 		return Promise.all(filenames.map(function (filename) {
