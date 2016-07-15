@@ -271,7 +271,10 @@ function editMapHeader (event) {
 	}
 
 	var tileset_preview_image = new Image()
-	tileset_preview_image.src = config.getTilesetImagePath(header.tileset)
+	config.getTilesetImagePath(header.tileset)
+	.then(function (path) {
+		tileset_preview_image.src = path
+	})
 	tileset_preview_image.setAttribute('validate', 'always')
 	var tileset_preview = createElement('div', {className: 'tileset-preview'})
 	tileset_preview.appendChild(tileset_preview_image)
@@ -291,7 +294,10 @@ function editMapHeader (event) {
 				})
 			})
 			elem.addEventListener('click', function (event) {
-				tileset_preview_image.src = config.getTilesetImagePath(i)
+				config.getTilesetImagePath(i)
+				.then(function (path) {
+					tileset_preview_image.src = path
+				})
 				if (selected === i) {
 					content.removeChild(tileset_list.element)
 					content.appendChild(tileset_preview)
@@ -331,7 +337,10 @@ function tilesetList () {
 		names.map(function (name, i) {
 			var container = createElement('div', {className: 'tileset-preview'})
 			var image = new Image()
-			image.src = config.getTilesetImagePath(i)
+			config.getTilesetImagePath(i)
+			.then(function (path) {
+				image.src = path
+			})
 			image.setAttribute('validate', 'always')
 			container.appendChild(image)
 			div.appendChild(container)
@@ -2364,7 +2373,10 @@ function loadTileset (id) {
 }
 
 function loadMetatiles(id) {
-	return request(config.getMetatilePath(id), { binary: true })
+	config.getMetatilePath(id)
+	.then(function (path) {
+		return request(path, { binary: true })
+	})
 	.then(function (data) {
 		return deserializeMetatiles(data)
 	})
@@ -2375,7 +2387,10 @@ function loadMetatiles(id) {
 }
 
 function loadPalmap(id) {
-	return request(config.getPalmapPath(id))
+	config.getPalmapPath(id)
+	.then(function (path) {
+		return request(path)
+	})
 	.then(function (data) {
 		return deserializePalmap(data)
 	}, function () {
@@ -2408,18 +2423,24 @@ function loadPalette(id) {
 
 function loadTilesetImage(id) {
 	var image = new Image()
-	var path = config.getTilesetImagePath(id)
-	image.src = path
 	image.setAttribute('validate', 'always')
-	return imagePromise(image)
-	.then(function () {
-		Data.tilesets[id].image = image
-	}, function (event) {
-		error(
-			'Tileset image "' + path + '" doesn\'t exist.\n'
-			+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp.lz') + '</div>'
-		)
+
+	return config.getTilesetImagePath(id)
+	.then(function (path) {
+		image.src = path
+
+		return imagePromise(image)
+		.then(function () {
+			Data.tilesets[id].image = image
+		}, function (event) {
+			error(
+				'Tileset image "' + path + '" doesn\'t exist.\n'
+				+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp.lz') + '</div>'
+			)
+		})
+
 	})
+
 }
 
 function readTiles(id) {
