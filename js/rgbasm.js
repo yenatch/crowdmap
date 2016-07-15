@@ -64,6 +64,13 @@ var rgbasm = {
 			}
 		}
 		if (!macro) {
+			macro = this.infix[line.macro]
+			if (macro) {
+				line.values.unshift(line.label)
+				line.label = ''
+			}
+		}
+		if (!macro) {
 			macro = this.macros[line.label]
 			if (macro) {
 				line.values.unshift(line.macro)
