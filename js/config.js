@@ -17,9 +17,8 @@ var config = {
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	//roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ], // wrong, see roof_tilesets
 	roof_tilesets: [
-		1, 'TILESET_JOHTO_1',
-		2, 'TILESET_JOHTO_2',
-		4, 'TILESET_BATTLE_TOWER_OUTSIDE',
+		'TILESET_NALJO_1',
+		'TILESET_NALJO_2',
 	],
 	roof_start: 0xa,
 
