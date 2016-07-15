@@ -12,6 +12,7 @@ var config = {
 	map_header_path:    root + 'maps/map_headers.asm',
 	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
+	map_dimensions_path: root + 'constants/map_constants.asm',
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	//roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ], // wrong, see roof_tilesets
@@ -24,62 +25,13 @@ var config = {
 
 	max_blocks: 1300,
 
-	tilesets: [
-		undefined,
-		'TILESET_JOHTO_1',
-		'TILESET_JOHTO_2',
-		'TILESET_KANTO',
-		'TILESET_BATTLE_TOWER_OUTSIDE',
-		'TILESET_HOUSE_1',
-		'TILESET_KRISS_HOUSE',
-		'TILESET_POKECENTER',
-		'TILESET_GATE',
-		'TILESET_PORT',
-		'TILESET_LAB',
-		'TILESET_POWER_PLANT',
-		'TILESET_MART',
-		'TILESET_CELADON_MANSION',
-		'TILESET_GAME_CORNER',
-		'TILESET_GYM_1',
-		'TILESET_KURT_HOUSE',
-		'TILESET_TRAIN_STATION',
-		'TILESET_OLIVINE_GYM',
-		'TILESET_LIGHTHOUSE',
-		'TILESET_KRISS_HOUSE_2F',
-		'TILESET_POKECOM_CENTER',
-		'TILESET_BATTLE_TOWER',
-		'TILESET_SPROUT_TOWER',
-		'TILESET_CAVE',
-		'TILESET_PARK',
-		'TILESET_RUINS_OF_ALPH',
-		'TILESET_RADIO_TOWER',
-		'TILESET_UNDERGROUND',
-		'TILESET_ICE_PATH',
-		'TILESET_WHIRL_ISLANDS',
-		'TILESET_ILEX_FOREST',
-		'TILESET_32',
-		'TILESET_HO_OH_WORD_ROOM',
-		'TILESET_KABUTO_WORD_ROOM',
-		'TILESET_OMANYTE_WORD_ROOM',
-		'TILESET_AERODACTYL_WORD_ROOM',
-	],
-	getTilesetId: function (name) {
-		var index = config.tilesets.indexOf(name)
-		if (index != -1) {
-			return index
-		}
-		return name
-	},
-
-	// not used, but probably should be instead of hardcoding tilesets above
-	/*
 	getTilesetConstants: function () {
-		return request('constants/tilemap_constants.asm')
+		return request(root + 'constants/tilemap_constants.asm')
 		.then(read_constants)
 		.then(function (constants) {
 			var filtered = {}
 			for (constant in constants) {
-				if (constant.search(/^TILESET_/) !== -1) {
+				if (constant.search(/^TILESET_/) >= 0) {
 					filtered[constant] = constants[constant]
 				}
 			}
@@ -87,14 +39,18 @@ var config = {
 		})
 	},
 	getTilesetId: function (name) {
-		return getTilesetConstants()
+		return this.getTilesetConstants()
 		.then(function (constants) {
 			return constants[name]
 		})
 	},
-	*/
 
-	getTilesetImagePath: function (id) { return root + 'gfx/tilesets/' + zfill(this.getTilesetId(id), 2) + '.png' },
+	getTilesetImagePath: function (id) {
+		return this.getTilesetId(id)
+		.then(function (i) {
+			return root + 'gfx/tilesets/' + zfill(i, 2) + '.png'
+		})
+	},
 
 	getBlockdataPath: function (name) {
 		var filenames = [
@@ -128,8 +84,18 @@ var config = {
 		})
 	},
 
-	getMetatilePath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_metatiles.bin' },
-	getPalmapPath: function (id) { return root + 'tilesets/' + zfill(this.getTilesetId(id), 2) + '_palette_map.asm' },
+	getMetatilePath: function (id) {
+		return this.getTilesetId(id)
+		.then(function (i) {
+			return root + 'tilesets/' + zfill(i, 2) + '_metatiles.bin'
+		})
+	},
+	getPalmapPath: function (id) {
+		return this.getTilesetId(id)
+		.then(function (i) {
+			return root + 'tilesets/' + zfill(i, 2) + '_palette_map.asm'
+		})
+	},
 	getPalettePath: function () { return root + 'tilesets/bg.pal' },
 	getObjectPalettePath: function () { return root + 'tilesets/ob.pal' },
 	getRoofPalettePath: function () { return root + 'tilesets/roof.pal' },
@@ -569,6 +535,10 @@ function getMapConstants() {
 
 function getMapConstantsText() {
 	return request(config.map_constants_path)
+}
+
+function getMapDimensionsText() {
+	return request(config.map_dimensions_path)
 }
 
 function read_constants(text) {
