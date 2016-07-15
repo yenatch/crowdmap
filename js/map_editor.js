@@ -662,7 +662,7 @@ function saveMapHeader2(map_name) {
 }
 
 function saveMapDimensions(map_name) {
-	var filename = config.map_constants_path
+	var filename = config.map_dimensions_path
 	var map = Data.maps[map_name]
 	return Data.loadFile(filename, { dont_prompt: true })
 	.then(function (text) {
@@ -2209,7 +2209,7 @@ function getMapDimensions (name) {
 
 	var map_constant = Data.maps[name].attributes.map
 
-	return getMapConstantsText().then(function (text) {
+	return getMapDimensionsText().then(function (text) {
 		var group = 0
 		var num = 0
 		var r = rgbasm.instance()

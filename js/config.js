@@ -12,6 +12,7 @@ var config = {
 	map_header_path:    root + 'maps/map_headers.asm',
 	map_header_2_path:  root + 'maps/second_map_headers.asm',
 	map_constants_path: root + 'constants/map_constants.asm',
+	map_dimensions_path: root + 'constants/map_constants.asm',
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	//roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ], // wrong, see roof_tilesets
@@ -534,6 +535,10 @@ function getMapConstants() {
 
 function getMapConstantsText() {
 	return request(config.map_constants_path)
+}
+
+function getMapDimensionsText() {
+	return request(config.map_dimensions_path)
 }
 
 function read_constants(text) {
