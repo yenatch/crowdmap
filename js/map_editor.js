@@ -591,21 +591,25 @@ function saveMapEvents(map_name) {
 	.then(function (text) {
 		var r = rgbasm.instance()
 		var seen = false
+		var dbs = 0
 		var start = text.length, end = text.length
+		r.macros.db = function (values) {
+			if (seen) {
+				dbs += values.length
+			}
+		}
 		r.callbacks.label = function (line) {
 			if (line.label.contains(map_name + '_MapEventHeader')) {
 				start = text.indexOf(line.original_line)
 				seen = true
-			} else if (line.label.search(/\./) !== 0) {
-				if (seen) {
-					end = text.indexOf(line.original_line)
-					return true
-				}
+			} else if (seen && dbs >= 6) {
+				end = text.indexOf(line.original_line)
+				return true
 			}
 		}
 		r.read(text)
 
-		text = text.substring(0, start) + map_name + serializeMapEvents(Data.maps[map_name].events) + (end !== -1 ? text.substring(end) : '')
+		text = text.substring(0, start) + map_name + serializeMapEvents(Data.maps[map_name].events) + (end !== -1 ? '\n' + text.substring(end) : '')
 		return Data.saveFile(filename, text)
 	})
 }
