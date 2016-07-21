@@ -49,7 +49,10 @@ var rgbasm = {
 		if (line.label) {
 			var callback = this.callbacks.label
 			if (callback) {
-				callback(line)
+				result = callback(line)
+				if (result) {
+					return result
+				}
 			}
 		}
 		var macro = this.macros[line.macro]
