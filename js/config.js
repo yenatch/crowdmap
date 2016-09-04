@@ -76,7 +76,10 @@ var config = {
 			for (var i = 0; i < texts.length; i++) {
 				var text = texts[i]
 				var result = r.read(text)
-				if (result) return root + result
+				if (result) {
+					result = result.replace(/.lz$/, '')
+					return root + result
+				}
 			}
 		})
 	},
