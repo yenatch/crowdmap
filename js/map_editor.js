@@ -2649,7 +2649,7 @@ function colorize(image, palette, x1, y1, x2, y2) {
 		var tx = ((x - x1) + (y - y1) * (x2 - x1)) * 4
 		var pi = 3 - data[px+0] / 85
 		var color = palette[pi]
-		var alpha = color[3]
+		var alpha = 255 // color[3]
 		if (typeof alpha === 'undefined') {
 			alpha = data[px+3]
 		}
