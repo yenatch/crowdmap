@@ -45,7 +45,7 @@ def main():
 	port = int(args.port)
 	try:
 		httpd = SocketServer.TCPServer(("", port), Handler)
-		print "serving at port", port
+		print "Open this url in your browser: http://127.0.0.1:{}/crowdmap".format(port)
 		httpd.serve_forever()
 	except KeyboardInterrupt:
 		print 'port', port, 'closed'
