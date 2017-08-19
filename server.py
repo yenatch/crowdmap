@@ -1,7 +1,12 @@
 """Run from the parent directory."""
 
-import SimpleHTTPServer
-import SocketServer
+try:
+	from http.server import SimpleHTTPRequestHandler
+	from socketserver import TCPServer
+except:
+	from SimpleHTTPServer import SimpleHTTPRequestHandler
+	from SocketServer import TCPServer
+
 import json
 import os
 import imp
@@ -11,7 +16,7 @@ def import_module(module_name):
 	path = os.path.join(os.path.dirname(__file__), module_name + '.py')
 	return imp.load_source(module_name, path)
 
-class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class Handler(SimpleHTTPRequestHandler):
 
 	# yuge speedup
 	def address_string(self):
@@ -44,7 +49,7 @@ def main():
 	args = ap.parse_args()
 	port = int(args.port)
 	try:
-		httpd = SocketServer.TCPServer(("", port), Handler)
+		httpd = TCPServer(("", port), Handler)
 		print ("Open this url in your browser: http://127.0.0.1:{}/crowdmap".format(port))
 		httpd.serve_forever()
 	except KeyboardInterrupt:
