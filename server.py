@@ -11,6 +11,11 @@ import json
 import os
 import imp
 import argparse
+import sys
+
+if sys.platform == 'cygwin':
+	os.environ.setdefault('BROWSER', 'cygstart')
+import webbrowser
 
 def import_module(module_name):
 	path = os.path.join(os.path.dirname(__file__), module_name + '.py')
@@ -50,10 +55,12 @@ def main():
 	port = int(args.port)
 	try:
 		httpd = TCPServer(("", port), Handler)
-		print ("Open this url in your browser: http://127.0.0.1:{}/crowdmap".format(port))
+		url = 'http://127.0.0.1:{}/crowdmap'.format(port)
+		webbrowser.open_new(url)
+		print ("Open this url in your browser: {}".format(url))
 		httpd.serve_forever()
 	except KeyboardInterrupt:
-		print ('port', port, 'closed')
+		print ('port {} closed'.format(port))
 
 if __name__ == '__main__':
 	main()
