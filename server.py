@@ -36,7 +36,7 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 		commands.main(parsed_data)
 
 		self.wfile.write('ok')
-		print '"POST {}"'.format(self.path)
+		print ('"POST {}"'.format(self.path))
 
 def main():
 	ap = argparse.ArgumentParser()
@@ -45,10 +45,10 @@ def main():
 	port = int(args.port)
 	try:
 		httpd = SocketServer.TCPServer(("", port), Handler)
-		print "Open this url in your browser: http://127.0.0.1:{}/crowdmap".format(port)
+		print ("Open this url in your browser: http://127.0.0.1:{}/crowdmap".format(port))
 		httpd.serve_forever()
 	except KeyboardInterrupt:
-		print 'port', port, 'closed'
+		print ('port', port, 'closed')
 
 if __name__ == '__main__':
 	main()
