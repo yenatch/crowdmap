@@ -91,7 +91,7 @@ var rgbasm = {
 		if (value) {
 			value = value.toString()
 			value = value.trim()
-			var int_value = parseInt(value.replace('$', '0x'))
+			var int_value = Number(value.replace('$', '0x').replace('%', '0b'))
 			if (!isNaN(int_value)) {
 				value = int_value
 			}
@@ -99,7 +99,7 @@ var rgbasm = {
 		return value
 	},
 
-	read_macro: function (line) {
+	read_macro: function (line, line_num) {
 		var original_line = line.replace(/\n$/, '') + '\n'
 
 		line = this.separate_comment(line)
@@ -123,11 +123,15 @@ var rgbasm = {
 			line: line,
 			comment: comment,
 			original_line: original_line,
+			line_num: line_num,
 		}
 	},
 
 	read_macros: function (lines) {
-		return lines.map(this.read_macro.bind(this))
+		var self = this
+		return lines.map(function (line, i) {
+			return self.read_macro(line, i)
+		})
 	},
 
 	separate_comment: function (line) {

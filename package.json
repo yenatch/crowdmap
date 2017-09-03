@@ -1,0 +1,12 @@
+{
+	"name": "crowdmap",
+	"version": "1.0.0",
+	"description": "pokecrystal map editor",
+	"main": "main.js",
+	"scripts": {
+		"start": "electron ."
+	},
+	"devDependencies": {
+		"electron": "~1.6.2"
+	}
+}

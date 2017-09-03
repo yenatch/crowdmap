@@ -20,7 +20,7 @@ body {
 	position: fixed;
 	bottom: 0px;
 	left: 0px;
-	z-index: 100;
+	z-index: 201;
 }
 .error {
 	display: table;
