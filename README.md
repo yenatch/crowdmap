@@ -1,13 +1,27 @@
 # crowdmap
 
-A map editor for [pokecrystal].
+A map editor for [pokecrystal] using [Electron].
 
-Clone inside your pokecrystal repo. 
+# Download
 
-To start the editor, run `python crowdmap/server.py`. It will give you a link to open in your browser (usually [http://127.0.0.1:8000/crowdmap](http://127.0.0.1:8000/crowdmap)).
+https://github.com/yenatch/crowdmap/releases
+
+# Clone
+
+The release is just the regular Electron executable. You can download Electron yourself, and then in the Electron folder:
+
+```bash
+# Windows/Linux
+git clone https://github.com/yenatch/crowdmap resources/app
+```
+```bash
+# Mac
+git clone https://github.com/yenatch/crowdmap Contents/Resources/app
+```
 
 ## Browser
 
 Use Chrome. Firefox has caching issues.
 
 [pokecrystal]: https://github.com/pret/pokecrystal
+[Electron]: https://electron.atom.io
