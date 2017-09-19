@@ -286,3 +286,9 @@ HTMLCollection.prototype.indexOf = HTMLCollection.prototype.indexOf || function 
 	}
 	return -1
 }
+
+Promise.reject = Promise.reject || function () {
+	return new Promise(function (resolve, reject) {
+		reject()
+	})
+}

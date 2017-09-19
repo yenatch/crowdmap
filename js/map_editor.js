@@ -18,9 +18,23 @@ function scrollToMiddle(div) {
 
 var loading_div = createElement('div', { className: 'loading-splash', })
 
+var no_map_div = createElement('div', { id: 'no_map', className: 'no_map', innerHTML: "No map loaded.", })
+
+function add_no_map_div() {
+	view.wrapper.appendChild(no_map_div)
+	view.container.style.display = 'none';
+}
+function remove_no_map_div() {
+	if (document.getElementById('no_map')) {
+		view.wrapper.removeChild(no_map_div)
+	}
+	view.container.style.display = '';
+}
+
 function _gotoMap(name) {
 
 	if (!name) {
+		add_no_map_div()
 		return Promise.reject()
 	}
 
@@ -44,6 +58,7 @@ function _gotoMap(name) {
 
 	var promise = loadMap(name)
 
+	promise.then(remove_no_map_div, add_no_map_div)
 	//promise.then(remove_loading_div, remove_loading_div)
 
 	promise.then(function () {
