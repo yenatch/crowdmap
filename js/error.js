@@ -39,10 +39,3 @@ function error(message, expire) {
 function clear_errors() {
 	document.getElementById('errors').innerHTML = ''
 }
-
-function clear_nojs() {
-	var nojs = document.getElementById('nojs')
-	if (nojs) {
-		document.body.removeChild(nojs)
-	}
-}
