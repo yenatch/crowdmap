@@ -19,9 +19,5 @@ git clone https://github.com/yenatch/crowdmap resources/app
 git clone https://github.com/yenatch/crowdmap Contents/Resources/app
 ```
 
-## Browser
-
-Use Chrome. Firefox has caching issues.
-
 [pokecrystal]: https://github.com/pret/pokecrystal
 [Electron]: https://electron.atom.io
