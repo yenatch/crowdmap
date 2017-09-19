@@ -16,7 +16,31 @@ function scrollToMiddle(div) {
 	div.parentNode.scrollTop = div.offsetTop - height * 0.5
 }
 
+var loading_div = createElement('div', { className: 'loading-splash', })
+
+var no_map_div = createElement('div', { id: 'no_map', className: 'no_map', innerHTML: "No map loaded.", })
+
+function add_no_map_div() {
+	view.wrapper.appendChild(no_map_div)
+	view.container.style.display = 'none';
+}
+function remove_no_map_div() {
+	if (document.getElementById('no_map')) {
+		view.wrapper.removeChild(no_map_div)
+	}
+	view.container.style.display = '';
+}
+
 function _gotoMap(name) {
+
+	if (!name) {
+		add_no_map_div()
+		return Promise.reject()
+	}
+
+	//view.container.appendChild(loading_div)
+	//var remove_loading_div = function () {view.container.removeChild(loading_div)}
+
 	var loaded = false
 	if (Data.maps[name]) {
 		if (Data.maps[name].loaded) {
@@ -31,18 +55,16 @@ function _gotoMap(name) {
 		}
 	}
 
-	var loading_div = createElement('div', { className: 'loading-splash', })
-	view.container.appendChild(loading_div)
-	var remove_loading_div = function () {view.container.removeChild(loading_div)}
 
 	var promise = loadMap(name)
-	promise.then(remove_loading_div, remove_loading_div)
+
+	promise.then(remove_no_map_div, add_no_map_div)
+	//promise.then(remove_loading_div, remove_loading_div)
+
 	promise.then(function () {
-		view.current_map = name
-		picker_view.map = name
-		view.run()
-		picker_view.run()
+		setDefaultMap(name)
 	})
+
 	promise.then(function () {
 		return loadMapConnections(name)
 	})
@@ -50,8 +72,12 @@ function _gotoMap(name) {
 		view.run()
 	})
 
-
-	return promise
+	return promise.then(function () {
+		view.current_map = name
+		picker_view.map = name
+		view.run()
+		picker_view.run()
+	})
 }
 
 function loadMapAndConnections(name) {
@@ -77,7 +103,6 @@ function main() {
 }
 
 function init() {
-	clear_nojs()
 	clear_errors()
 
 	toolbar = Object.create(Toolbar)
@@ -96,8 +121,10 @@ function init() {
 	painter.init(view)
 
 	view.attach(document.body)
-	var map_name = document.location.hash.substr(1) || config.default_map
-	_gotoMap(map_name)
+
+	openDefaultProject()
+
+	_gotoMap(getDefaultMap())
 	.then(function () {
 		picker_view.attach(document.body)
 		painter.run()
@@ -147,11 +174,9 @@ function removeNewestDialog() {
 	}
 }
 
-document.addEventListener('keydown', function (event) {
-	if (event.which === Keys.esc) {
-		removeNewestDialog()
-	}
-})
+Shortcuts.escape = function (event) {
+	removeNewestDialog()
+}
 
 function newDialog (parent, id) {
 	var div = createElement('div', {id: id, className: 'dialog', tabIndex: '1',})
@@ -198,8 +223,10 @@ function newMap (event) {
 		var label = label_input.value
 		if (!label) return
 		var group = group_list.value
-		send_command({
-			command: 'add_map',
+
+		label = label.replace(/[^A-Za-z0-9_#]+/g, '_')
+
+		add_map({
 			label: label,
 			group: group,
 			width: 20,
@@ -208,7 +235,7 @@ function newMap (event) {
 			header_2: config.default_map_header_2,
 		})
 		.then(function () {
-			console.log('added ' + label + ' in group ' + group)
+			console.log('Added map ' + label + ' to group ' + group)
 			clearDialogs()
 			gotoMap(label)
 		})
@@ -273,7 +300,7 @@ function editMapHeader (event) {
 	var tileset_preview_image = new Image()
 	config.getTilesetImagePath(header.tileset)
 	.then(function (path) {
-		tileset_preview_image.src = path
+		tileset_preview_image.src = Path.resolve(path)
 	})
 	tileset_preview_image.setAttribute('validate', 'always')
 	var tileset_preview = createElement('div', {className: 'tileset-preview'})
@@ -296,7 +323,7 @@ function editMapHeader (event) {
 			elem.addEventListener('click', function (event) {
 				config.getTilesetImagePath(i)
 				.then(function (path) {
-					tileset_preview_image.src = path
+					tileset_preview_image.src = Path.resolve(path)
 				})
 				if (selected === i) {
 					content.removeChild(tileset_list.element)
@@ -337,9 +364,9 @@ function tilesetList () {
 		names.map(function (name, i) {
 			var container = createElement('div', {className: 'tileset-preview'})
 			var image = new Image()
-			config.getTilesetImagePath(i)
+			config.getTilesetImagePath(name)
 			.then(function (path) {
-				image.src = path
+				image.src = Path.resolve(path)
 			})
 			image.setAttribute('validate', 'always')
 			container.appendChild(image)
@@ -410,18 +437,13 @@ function openMap (event) {
 	}
 
 	dialog.addEventListener('keydown', function (event) {
-		var key = event.which
+		var key = event.key
 		var indexOf = function (div) {
-			for (var i = 0; i < map_list.children.length; i++) {
-				if (div === map_list.children[i]) {
-					return i
-				}
-			}
-			return -1
+			return map_list.children.indexOf(div)
 		}
-		if (key === Keys.enter) {
+		if (key === 'Enter') {
 			selected.onclick()
-		} else if (key === Keys.down) {
+		} else if (key === 'ArrowDown') {
 			var div = map_list.children[indexOf(selected) + 1]
 			if (div && !div.className.contains('map_group_item')) {
 				div = map_list.children[indexOf(div) + 1]
@@ -431,7 +453,7 @@ function openMap (event) {
 				scrollToMiddle(div)
 				event.preventDefault()
 			}
-		} else if (key === Keys.up) {
+		} else if (key === 'ArrowUp') {
 			var div = map_list.children[indexOf(selected) - 1]
 			if (div && !div.className.contains('map_group_item')) {
 				div = map_list.children[indexOf(div) - 1]
@@ -546,23 +568,12 @@ function openMap (event) {
 
 }
 
-function send_command(content) {
-	var data = new FormData()
-	data.append('json', JSON.stringify(content))
-
-	return request('', {
-		method: 'POST',
-		data: data,
-	})
+function add_map(properties) {
+	return Versions[Settings.value('version')].add_map(properties)
 }
 
-function save(filename, data) {
-	return send_command({
-		command: 'save',
-		filename: filename,
-		data: data,
-	})
-}
+
+// TODO pokecrystal.js
 
 function saveMap (event) {
 	var map_name = view.current_map
@@ -573,7 +584,7 @@ function saveMap (event) {
 		saveMapHeader2(map_name),
 		saveMapDimensions(map_name),
 	]).then(function () {
-		error('saved ' + map_name)
+		notice('saved ' + map_name)
 	})
 }
 
@@ -686,12 +697,19 @@ function saveMapDimensions(map_name) {
 	})
 }
 
+
 function reloadMap (event) {
+	var commit = ReloadCommit(view.current_map)
+
 	return loadMap(view.current_map)
 	.then(function () {
 		view.run()
 		picker_view.run()
-		//view.commit()
+
+		commit.data.after = Data.maps[view.current_map].blockdata.slice()
+		if (!commit.data.before.equals(commit.data.after)) {
+			History.commit(commit)
+		}
 	})
 }
 
@@ -739,11 +757,96 @@ function setBrightness (time, element) {
 }
 
 function undo (event) {
-	History.undo()
+	var commit = History.undo()
+	if (commit) {
+		if (!commit.revert()) {
+			History.move_forward()
+		}
+	}
 }
 
 function redo (event) {
-	History.redo()
+	var commit = History.redo()
+	if (commit) {
+		if (!commit.apply()) {
+			History.move_back()
+		}
+	}
+}
+
+function openProjectDialog (event) {
+	var paths = File.pathDialog()
+	if (paths) {
+		openProject(paths[0])
+	}
+}
+
+function openProject (path) {
+	if (path) {
+		setProjectPath(path)
+		addRecentProject(path)
+		_gotoMap(getDefaultMap())
+	}
+}
+
+function addRecentProject (path) {
+	if (path) {
+		var project = Settings.value('project') || {}
+		var recent = project.recent || []
+		recent = recent.removeAll(path)
+		recent.unshift(path)
+		project.recent = recent.slice(0, 10)
+		Settings.put('project', project)
+	}
+}
+
+function getRecentProject () {
+	var project = Settings.value('project') || {}
+	var recent = project.recent || []
+	return recent[0]
+}
+
+function openDefaultProject() {
+	var path = getRecentProject()
+	if (path) {
+		openProject(path)
+	} else {
+		openProjectDialog()
+	}
+}
+
+function getProjectPath() {
+	return config.root_path
+}
+
+function setProjectPath(path) {
+	config.root_path = path + '/'
+}
+
+function getDefaultMap() {
+	var map_name = document.location.hash.substr(1)
+	if (!map_name) {
+		var projects = Settings.value('projects') || {}
+		var path = getProjectPath() || 'default'
+		var project = projects[path] || {}
+		map_name = project.default_map
+	}
+	if (!map_name) {
+		map_name = config.default_map
+	}
+	return map_name
+}
+
+function setDefaultMap(map_name) {
+	var projects = Settings.value('projects') || {}
+	var path = getProjectPath() || 'default'
+	if (!projects[path]) {
+		projects[path] = {}
+	}
+	var project = projects[path] || {}
+	project.default_map = map_name
+	projects[path] = project
+	Settings.put('projects', projects)
 }
 
 
@@ -820,6 +923,15 @@ var Toolbar = {
 	createElement: createElement,
 
 	button_defs: {
+
+		project: {
+			icon: '📂',
+			text: 'Open project',
+			listeners: [
+				['click', openProjectDialog],
+			],
+		},
+
 		new: {
 			icon: '+',
 			text: 'New map',
@@ -884,6 +996,14 @@ var Toolbar = {
 			],
 		},
 
+		dev_tools: {
+			icon: '🔩',
+			text: 'Dev tools',
+			listeners: [
+				['click', function (event) { openDevTools(event) }],
+			],
+		},
+
 	},
 
 }
@@ -938,18 +1058,31 @@ var Data = {
 	sprites: {},
 	facings: [],
 	constants: {},
+
 	files: {},
 	changed_files: [],
+
+	getMostRecent: function (url) {
+		if (typeof this.files[url] === 'undefined') {
+			return undefined
+		}
+		return this.files[url].last()
+	},
+
+	addMostRecent: function (url, data) {
+		if (typeof this.files[uri] === 'undefined') {
+			this.files[uri] = []
+		}
+		this.files[uri].push(data.slice())
+	},
 
 	loadFile: function (uri, options) {
 		// todo complain when the client has changed the file, not the server
 		var self = this
-		return request(uri, options)
+		options = options || {}
+		return File.readAsync(uri, options)
 		.then(function (data) {
-			if (typeof self.files[uri] === 'undefined') {
-				self.files[uri] = []
-			}
-			var last_data = self.files[uri][self.files[uri].length - 1]
+			var last_data = self.getMostRecent(uri)
 			var ok = true
 			if (!equals(data, last_data)) {
 				if (typeof last_data !== 'undefined') {
@@ -965,6 +1098,9 @@ var Data = {
 					}
 				}
 				if (ok) {
+					if (!defined(self.files[uri])) {
+						self.files[uri] = []
+					}
 					self.files[uri].push(data.slice())
 				}
 			}
@@ -973,12 +1109,9 @@ var Data = {
 	},
 	saveFile: function (uri, data, options) {
 		var self = this
-		return request(uri, options)
+		return File.readAsync(uri, options)
 		.then(function (other_data) {
-			if (typeof self.files[uri] === 'undefined') {
-				self.files[uri] = []
-			}
-			var last_data = self.files[uri][self.files[uri].length - 1]
+			var last_data = self.getMostRecent(uri)
 			var ok = true
 			if (typeof last_data !== 'undefined') {
 				if (!equals(other_data, last_data)) {
@@ -987,35 +1120,94 @@ var Data = {
 			}
 			if (ok) {
 				self.files[uri].push(data.slice())
-				save(uri, data.slice())
+				return File.writeAsync(uri, data.slice(), options)
 			}
 		})
 	},
 }
 
-var History = Object.update([], {
+var History = Object.update([{ description: 'beginning' }], {
+	head: 0,
+
 	get: function () {
 		return this[this.head]
 	},
 
 	redo: function () {
-		var min = Math.min
-		this.head = min(this.head + 1, this.length - 1)
+		var previous = this.head
+		this.move_forward()
+		if (previous < this.head) {
+			var commit = this[this.head]
+			return commit
+		}
 	},
 
 	undo: function () {
-		var max = Math.max
-		this.head = max(this.head - 1, 0)
+		var previous = this.head
+		this.move_back()
+		if (previous > this.head) {
+			var commit = this[previous]
+			return commit
+		}
 	},
 
-	commit: function (changes) {
+	move_back: function () {
+		this.head = Math.max(this.head - 1, 0)
+	},
+
+	move_forward: function () {
+		this.head = Math.min(this.head + 1, Math.max(0, this.length - 1))
+	},
+
+	commit: function (commit) {
 		// Cut off alternate futures.
-		var min = Math.min
-		this.length = min(this.length, this.head + 1)
-		this.push(changes)
+		this.length = Math.min(this.length, this.head + 1)
+		this.push(commit)
 		this.head += 1
 	},
 })
+
+var Commit = {
+	apply: function () {},
+	revert: function () {},
+	data: {},
+	description: '',
+	time: new Date(),
+}
+
+var PaintCommit = function (map_name, before, after) {
+	if (!before) before = Data.maps[map_name].blockdata.slice()
+	if (!after) after = before.slice()
+	return {
+		apply: function () {
+			var map = Data.maps[this.data.map_name]
+			if (map) {
+				map.blockdata = this.data.after.slice()
+				return true
+			}
+		},
+		revert: function () {
+			var map = Data.maps[this.data.map_name]
+			if (map) {
+				map.blockdata = this.data.before.slice()
+				return true
+			}
+		},
+		data: {
+			before: before,
+			after: after,
+			map_name: map_name,
+		},
+		description: 'paint',
+		time: new Date(),
+	}
+}
+
+var ReloadCommit = function (map_name) {
+	var commit = PaintCommit(map_name)
+	commit.description = 'reload'
+	return commit
+}
 
 
 var getEventCoord = function (event) {
@@ -1084,7 +1276,10 @@ var BlockPicker = {
 var BlockViewer = {
 
 	get size () {
-		return this.blockdata.length
+		if (this.blockdata) {
+			return this.blockdata.length
+		}
+		return 0
 	},
 	get blockdata () {
 		return this.tileset.blockdata
@@ -1218,7 +1413,7 @@ var BlockViewer = {
 	drawSelectedBlock: function () {
 		if (painter) {
 			var selected = painter.getPaintBlock()
-			if (selected >= 0 && selected < this.blockdata.length) {
+			if (selected >= 0 && this.blockdata && selected < this.blockdata.length) {
 				var x = selected % this.width
 				var y = (selected - x) / this.width
 				var ctx = this.canvas.getContext('2d')
@@ -1374,6 +1569,8 @@ var Painter = {
 		this.attachResize()
 	},
 
+	commits: {},
+
 	onmousedown: function (event) {
 		if (isRightClick(event)) {
 			if (!this.inConnectionBoundary()) {
@@ -1382,6 +1579,7 @@ var Painter = {
 		} else {
 			if (this.inMapBoundary()) {
 				this.actions.painting = true
+				this.commits.paint = PaintCommit(this.viewer.current_map)
 			}
 		}
 		this.update(event)
@@ -1392,6 +1590,14 @@ var Painter = {
 	},
 
 	onmouseup: function (event) {
+		if (this.actions.painting) {
+			if (this.commits.paint) {
+				this.commits.paint.data.after = this.viewer.getCurrentMap().blockdata.slice()
+				History.commit(this.commits.paint)
+				this.commits.paint = undefined
+			}
+
+		}
 		this.actions = {}
 	},
 
@@ -2164,6 +2370,9 @@ var drawMetatile = function (props) {
 	/*
 	props: {x, y, block, tileset, context, tile_w, tile_h, meta_w, meta_h[, roof, permission]}
 	*/
+	if (!props.tileset.metatiles) {
+		return false
+	}
 
 	var tiles = getTilesetTiles(props.tileset, props.roof)
 	if (!tiles) {
@@ -2269,10 +2478,22 @@ function loadMap(name) {
 function loadBlockdata (name) {
 	return config.getBlockdataPath(name)
 	.then(function (path) {
-		return Data.loadFile(path, { binary: true })
+		var last = Data.getMostRecent(path)
+		var map = Data.maps[name]
+		var ok = true
+		if (defined(last)) {
+			if (!equals(last, map.blockdata)) {
+				ok = confirm('Overwrite unsaved changes to ' + path + '?')
+			}
+		}
+		if (ok) {
+			return Data.loadFile(path, { binary: true })
+		}
 	})
 	.then(function (blockdata) {
-		Data.maps[name].blockdata = blockdata
+		if (blockdata) {
+			Data.maps[name].blockdata = blockdata
+		}
 	})
 }
 
@@ -2366,9 +2587,9 @@ function loadTileset (id) {
 		Data.tilesets[id] = { id: id, }
 	}
 	return Promise.all([
-		loadMetatiles(id),
-		loadPalmap(id),
-		loadPalette(id),
+		loadTilesetMetatiles(id),
+		loadTilesetPalmap(id),
+		loadTilesetPalette(id),
 		loadTilesetImage(id)
 	])
 	.then(function () {
@@ -2376,10 +2597,10 @@ function loadTileset (id) {
 	})
 }
 
-function loadMetatiles(id) {
+function loadTilesetMetatiles(id) {
 	config.getMetatilePath(id)
 	.then(function (path) {
-		return request(path, { binary: true })
+		return File.readAsync(path, { binary: true })
 	})
 	.then(function (data) {
 		return deserializeMetatiles(data)
@@ -2390,10 +2611,10 @@ function loadMetatiles(id) {
 	})
 }
 
-function loadPalmap(id) {
+function loadTilesetPalmap(id) {
 	config.getPalmapPath(id)
 	.then(function (path) {
-		return request(path)
+		return File.readAsync(path)
 	})
 	.then(function (data) {
 		return deserializePalmap(data)
@@ -2408,8 +2629,8 @@ function loadPalmap(id) {
 	})
 }
 
-function loadPalette(id) {
-	return request(config.getPalettePath(id))
+function loadTilesetPalette(id) {
+	return File.readAsync(config.getPalettePath(id))
 	.then(function (text) {
 		var all_palettes = readPalette(text)
 		var palettes = {}
@@ -2431,7 +2652,7 @@ function loadTilesetImage(id) {
 
 	return config.getTilesetImagePath(id)
 	.then(function (path) {
-		image.src = path
+		image.src = Path.resolve(path)
 
 		return imagePromise(image)
 		.then(function () {
@@ -2439,7 +2660,7 @@ function loadTilesetImage(id) {
 		}, function (event) {
 			error(
 				'Tileset image "' + path + '" doesn\'t exist.\n'
-				+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp.lz') + '</div>'
+				//+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp.lz') + '</div>'
 			)
 		})
 
@@ -2511,7 +2732,7 @@ function loadRoof (roof) {
 }
 
 function loadRoofPalette (roof) {
-	return request(config.getRoofPalettePath(roof))
+	return File.readAsync(config.getRoofPalettePath(roof))
 	.then(function (text) {
 		var all_palettes = readPalette(text, 2)
 		var palettes = {}
@@ -2530,7 +2751,7 @@ function loadRoofPalette (roof) {
 function loadRoofImage(roof) {
 	var image = new Image()
 	var path = config.getRoofImagePath(roof)
-	image.src = path
+	image.src = Path.resolve(path)
 	image.setAttribute('validate', 'always')
 	return imagePromise(image)
 	.then(function () {
@@ -2538,7 +2759,7 @@ function loadRoofImage(roof) {
 	}, function (event) {
 		error(
 			'Roof image "' + path + '" doesn\'t exist.\n'
-			+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp') + '</div>'
+			//+ 'Run: <div class="code">python gfx.py png ' + path.replace('../', '').replace('.png', '.2bpp') + '</div>'
 		)
 	})
 }
@@ -2649,14 +2870,21 @@ function colorize(image, palette, x1, y1, x2, y2) {
 		var tx = ((x - x1) + (y - y1) * (x2 - x1)) * 4
 		var pi = 3 - data[px+0] / 85
 		var color = palette[pi]
-		var alpha = color[3]
-		if (typeof alpha === 'undefined') {
+		var alpha = color ? color[3] : undefined
+		if (!defined(alpha)) {
 			alpha = data[px+3]
 		}
-		template.data[tx+0] = color[0]|0
-		template.data[tx+1] = color[1]|0
-		template.data[tx+2] = color[2]|0
-		template.data[tx+3] = alpha
+		if (color) {
+			template.data[tx+0] = color[0]|0
+			template.data[tx+1] = color[1]|0
+			template.data[tx+2] = color[2]|0
+			template.data[tx+3] = alpha|0
+		} else {
+			template.data[tx+0] = data[px+0]|0
+			template.data[tx+1] = data[px+1]|0
+			template.data[tx+2] = data[px+2]|0
+			template.data[tx+3] = alpha|0
+		}
 	}
 	return template
 }

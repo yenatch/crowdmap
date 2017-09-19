@@ -16,11 +16,23 @@ body {
 	font-family: Segoe UI Symbol;
 }
 
+.no_map {
+	font-size: 2em;
+	background-color: #333;
+	padding: 30px;
+	overflow: hidden;
+	white-space: nowrap;
+	top: 0%;
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
 .errors {
 	position: fixed;
 	bottom: 0px;
 	left: 0px;
-	z-index: 100;
+	z-index: 201;
 }
 .error {
 	display: table;

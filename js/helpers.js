@@ -138,6 +138,7 @@ function imagePromise(image) {
 		image.onerror = reject
 		// image.onerror doesn't catch 404 in most browsers
 		request(image.src).catch(reject)
+		// TODO just check exists
 	})
 }
 
@@ -180,7 +181,7 @@ function dictzip (keys, values) {
 	var object = {}
 	for (var i = 0; i < keys.length; i++) {
 		var key = keys[i]
-		var value = values[i]
+		var value = values ? values[i] : undefined
 		object[key] = value
 	}
 	return object
@@ -231,4 +232,63 @@ function createElement(type, properties) {
 		div[k] = properties[k]
 	}
 	return div
+}
+
+Array.prototype.last = Array.prototype.last || function () {
+	return this[this.length - 1]
+}
+
+Array.prototype.insert = Array.prototype.insert || function (index, value) {
+	return this.splice(index, 0, value)
+}
+
+function defined(value) {
+	return typeof value !== 'undefined'
+}
+
+// Like Promise.all but ignore failures.
+Promise.some = Promise.some || function (promises) {
+	var results = []
+	function finished() {
+		return promises.filter(function (promise) {
+			return promise.finished
+		}).length === promises.length
+	}
+	return new Promise(function (resolve, reject) {
+		promises.forEach(function (promise, i) {
+			promise.then(function (result) {
+				results[i] = result
+				promise.finished = true
+				if (finished()) {
+					resolve(results)
+				}
+			}, function () {
+				promise.finished = true
+				if (finished()) {
+					resolve(results)
+				}
+			})
+		})
+	})
+}
+
+Array.prototype.removeAll = Array.prototype.removeAll || function (remove) {
+	return this.filter(function (value) {
+		return value !== remove
+	})
+}
+
+HTMLCollection.prototype.indexOf = HTMLCollection.prototype.indexOf || function (node) {
+	for (var i = 0; i < this.length; i++) {
+		if (node === this[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+Promise.reject = Promise.reject || function () {
+	return new Promise(function (resolve, reject) {
+		reject()
+	})
 }

@@ -1,18 +1,49 @@
-var root = '../'
+var Config = {
+	default: {
+		version: 'pokecrystal',
+		time: 'day',
+		default_map: 'OlivineCity',
+		paths: {
+			map_data: 'maps',
+			sprites: {
+				npc: 'gfx/overworld',
+			},
+
+			map_header: 'maps/map_headers.asm',
+			map_header_2: 'maps/second_map_headers.asm',
+			map_constants: 'constants/map_constants.asm',
+			map_dimensions: 'constants/map_constants.asm',
+			map_includes: 'maps.asm',
+		},
+
+		tilesets: {
+			roof_start: 0xa,
+		},
+
+		misc: {
+			max_blocks: 1300,
+		},
+	},
+}
+
+
+// TODO basically everything below this point needs to go into Config.default or pokecrystal.js
+
 
 var config = {
-	root: root,
+	root_path: '../',
 
 	time: 'day',
-	default_map: 'OlivineCity',
+	default_map: undefined,
 
-	asm_dir:            root + 'maps/',
-	ow_dir:             root + 'gfx/overworld/',
+	get asm_dir () { return this.root_path + 'maps/' },
+	get ow_dir () { return this.root_path + 'gfx/overworld/' },
 
-	map_header_path:    root + 'maps/map_headers.asm',
-	map_header_2_path:  root + 'maps/second_map_headers.asm',
-	map_constants_path: root + 'constants/map_constants.asm',
-	map_dimensions_path: root + 'constants/map_constants.asm',
+	get map_header_path () { return this.root_path + 'maps/map_headers.asm' },
+	get map_header_2_path() { return this.root_path + 'maps/second_map_headers.asm' },
+	get map_constants_path() { return this.root_path + 'constants/map_constants.asm' },
+	get map_dimensions_path() { return this.root_path + 'constants/map_constants.asm' },
+	get map_dimensions_path_prism() { return this.root_path + 'constants/map_dimension_constants.asm' },
 
 	roofs: [ -1, 3, 2, -1, 1, 2, -1, -1, 2, 2, 1, 4, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, 3, -1, 0, -1, 0 ],
 	//roof_permissions: [ 1, 'TOWN', 2, 'ROUTE', 4, 'CAVE' ], // wrong, see roof_tilesets
@@ -20,13 +51,20 @@ var config = {
 		1, 'TILESET_JOHTO_1',
 		2, 'TILESET_JOHTO_2',
 		4, 'TILESET_BATTLE_TOWER_OUTSIDE',
+
+		// prism
+		'TILESET_NALJO_1',
+		'TILESET_NALJO_2',
 	],
 	roof_start: 0xa,
 
 	max_blocks: 1300,
 
+	read: function (path) {
+		return File.readAsync(path)
+	},
 	getTilesetConstants: function () {
-		return request(root + 'constants/tilemap_constants.asm')
+		return this.read(this.root_path + 'constants/tilemap_constants.asm')
 		.then(read_constants)
 		.then(function (constants) {
 			var filtered = {}
@@ -41,26 +79,29 @@ var config = {
 	getTilesetId: function (name) {
 		return this.getTilesetConstants()
 		.then(function (constants) {
-			return constants[name]
+			return constants[name] || name
 		})
 	},
 
 	getTilesetImagePath: function (id) {
-		return this.getTilesetId(id)
+		var self = this
+		return self.getTilesetId(id)
 		.then(function (i) {
-			return root + 'gfx/tilesets/' + zfill(i, 2) + '.png'
+			return Path.resolve(self.root_path + 'gfx/tilesets/' + zfill(i, 2) + '.png')
 		})
 	},
 
 	getBlockdataPath: function (name) {
+		var self = this
 		var filenames = [
 			'maps/blockdata_1.asm',
 			'maps/blockdata_2.asm',
 			'maps/blockdata_3.asm',
 			'maps.asm', // newMap() dumps blockdata here
+			'maps/blockdata.asm', // prism
 		]
-		return Promise.all(filenames.map(function (filename) {
-			return request(root + filename)
+		return Promise.some(filenames.map(function (filename) {
+			return File.readAsync(self.root_path + filename)
 		}))
 		.then(function (texts) {
 			var r = rgbasm.instance()
@@ -78,34 +119,42 @@ var config = {
 			}
 			for (var i = 0; i < texts.length; i++) {
 				var text = texts[i]
-				var result = r.read(text)
-				if (result) return root + result
+				if (text) {
+					var result = r.read(text)
+					if (result) {
+						return self.root_path + result.replace(/\.lz$/, '')
+					}
+				}
 			}
+
+			return Path.resolve(self.root_path + 'maps/' + name + '.blk')
 		})
 	},
 
 	getMetatilePath: function (id) {
-		return this.getTilesetId(id)
+		var self = this
+		return self.getTilesetId(id)
 		.then(function (i) {
-			return root + 'tilesets/' + zfill(i, 2) + '_metatiles.bin'
+			return self.root_path + 'tilesets/' + zfill(i, 2) + '_metatiles.bin'
 		})
 	},
 	getPalmapPath: function (id) {
-		return this.getTilesetId(id)
+		var self = this
+		return self.getTilesetId(id)
 		.then(function (i) {
-			return root + 'tilesets/' + zfill(i, 2) + '_palette_map.asm'
+			return self.root_path + 'tilesets/' + zfill(i, 2) + '_palette_map.asm'
 		})
 	},
-	getPalettePath: function () { return root + 'tilesets/bg.pal' },
-	getObjectPalettePath: function () { return root + 'tilesets/ob.pal' },
-	getRoofPalettePath: function () { return root + 'tilesets/roof.pal' },
+	getPalettePath: function () { return this.root_path + 'tilesets/bg.pal' },
+	getObjectPalettePath: function () { return this.root_path + 'tilesets/ob.pal' },
+	getRoofPalettePath: function () { return this.root_path + 'tilesets/roof.pal' },
 
 	getRoofImagePath: function (group) {
 		var roof = this.roofs[group]
 		if (roof === -1 || typeof roof === 'undefined') {
 			roof = 0
 		}
-		return root + 'gfx/tilesets/roofs/' + roof + '.png'
+		return this.root_path + 'gfx/tilesets/roofs/' + roof + '.png'
 	},
 
 	default_map_header: {
@@ -192,7 +241,7 @@ config.getNpcTiles = function (npc) {
 }
 
 config.loadNpcGraphics = function (npc) {
-	var pal_promise = request(config.getObjectPalettePath())
+	var pal_promise = File.readAsync(config.getObjectPalettePath())
 	.then(function (text) {
 		var palettes = readPalette(text)
 		var color = npc.color
@@ -212,7 +261,7 @@ config.loadNpcGraphics = function (npc) {
 
 	var image_promise = config.getSpritePath(npc.sprite)
 	.then(function(path) {
-		var image = newImage(path)
+		var image = newImage(Path.resolve(path))
 		return imagePromise(image)
 		.then(function () { return image })
 	})
@@ -419,11 +468,11 @@ function newImage (path) {
 }
 
 function loadFacings() {
-	return request(root + 'engine/facings.asm')
+	return File.readAsync(config.root_path + 'engine/facings.asm')
 	.then(parseFacings)
 	.then(function (facings) {
 		Object.update(Data.facings, facings)
-		return request(root + 'constants/sprite_constants.asm')
+		return File.readAsync(config.root_path + 'constants/sprite_constants.asm')
 		.then(read_constants)
 	})
 	.then(function (constants) {
@@ -497,6 +546,7 @@ function parseFacings(text) {
 }
 
 config.getSpritePath = function (constant) {
+	var self = this
 	return getSpriteConstants()
 	.then(function (constants) {
 		var sprite_id = constants[constant] - 1
@@ -506,12 +556,12 @@ config.getSpritePath = function (constant) {
 		if (sprite_id > 102) {
 			sprite_id = 0
 		}
-		return root + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
+		return self.root_path + 'gfx/overworld/' + sprite_id.toString().zfill(3) + '.png'
 	})
 }
 
 config.getMapEventPath = function (map_name) {
-	return root + 'maps/' + map_name + '.asm'
+	return this.root_path + 'maps/' + map_name + '.asm'
 }
 
 config.readEvents = function (map_name) {
@@ -526,7 +576,7 @@ function getSpriteConstants() {
 }
 
 function getSpriteConstantsText() {
-	return request(root + 'constants/sprite_constants.asm')
+	return File.readAsync(config.root_path + 'constants/sprite_constants.asm')
 }
 
 function getMapConstants() {
@@ -534,11 +584,14 @@ function getMapConstants() {
 }
 
 function getMapConstantsText() {
-	return request(config.map_constants_path)
+	return File.readAsync(config.map_constants_path)
 }
 
 function getMapDimensionsText() {
-	return request(config.map_dimensions_path)
+	return File.readAsync(config.map_dimensions_path_prism)
+	.catch(function () {
+		return File.readAsync(config.map_dimensions_path)
+	})
 }
 
 function read_constants(text) {
@@ -646,7 +699,7 @@ function addStationaryClickListener(target, callback) {
 
 
 function getMapGroups () {
-	return request(config.map_header_path)
+	return File.readAsync(config.map_header_path)
 	.then(readMapGroups)
 }
 
@@ -680,7 +733,7 @@ function readMapGroups (text) {
 }
 
 function getMapGroupNames () {
-	return request(config.map_header_path)
+	return File.readAsync(config.map_header_path)
 	.then(readMapGroupNames)
 }
 
@@ -695,7 +748,7 @@ function readMapGroupNames (text) {
 }
 
 function getMapNames () {
-	return request(config.map_header_path)
+	return File.readAsync(config.map_header_path)
 	.then(readMapNames)
 }
 
@@ -710,7 +763,7 @@ function readMapNames (text) {
 }
 
 function getMapHeader(name) {
-	return request(config.map_header_path)
+	return File.readAsync(config.map_header_path)
 	.then( function (text) { return readMapHeader(text, name) } )
 }
 
@@ -750,7 +803,7 @@ function readMapHeader(text, name) {
 
 
 function getMapHeader2(name) {
-	return request(config.map_header_2_path)
+	return File.readAsync(config.map_header_2_path)
 	.then( function (text) { return readMapHeader2(text, name) } )
 }
 
@@ -859,7 +912,7 @@ function readMapHeader2ByConstant(text, name) {
 }
 
 function mapConstantToLabel (constant) {
-	return request(config.map_header_2_path)
+	return File.readAsync(config.map_header_2_path)
 	.then(function (text) {
 		return readMapHeader2ByConstant(text, constant)
 	})

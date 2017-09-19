@@ -2,7 +2,11 @@ function create_div (className) {
 	return createElement('div', { className: className })
 }
 
-function error(message) {
+function notice(message) {
+	error(message, 5000)
+}
+
+function error(message, expire) {
 	// A user-facing error.
 
 	var errors = document.getElementById('errors')
@@ -24,12 +28,14 @@ function error(message) {
 	while (errors.children.length > 10) {
 		errors.removeChild(errors.children[0])
 	}
+
+	if (expire) {
+		window.setTimeout(function () {
+			errors.removeChild(error)
+		}, expire)
+	}
 }
 
 function clear_errors() {
 	document.getElementById('errors').innerHTML = ''
-}
-
-function clear_nojs() {
-	document.body.removeChild(document.getElementById('nojs'))
 }
