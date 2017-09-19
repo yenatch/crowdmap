@@ -982,6 +982,14 @@ var Toolbar = {
 			],
 		},
 
+		dev_tools: {
+			icon: '🔩',
+			text: 'Dev tools',
+			listeners: [
+				['click', function (event) { openDevTools(event) }],
+			],
+		},
+
 	},
 
 }

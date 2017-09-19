@@ -3,8 +3,12 @@
 
 const _electron = require('electron')
 
-Shortcuts.f12 = function (event) {
+function openDevTools(event) {
 	_electron.remote.getCurrentWindow().toggleDevTools()
+}
+
+Shortcuts.f12 = function (event) {
+	openDevTools(event)
 }
 
 Shortcuts.f5 = function (event) {
