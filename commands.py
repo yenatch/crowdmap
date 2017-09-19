@@ -18,7 +18,7 @@ def save(data):
 		else:
 			with open(filename, 'w') as out:
 				out.write(content.encode('utf-8'))
-		print 'save {}'.format(filename)
+		print ('save {}'.format(filename))
 	else:
 		raise Exception("Unable to save '{}'".format(filename))
 
@@ -137,7 +137,7 @@ def add_map(data):
 	with open(include_path, 'w') as out:
 		out.write(include)
 
-	print 'Added map {} to group {}'.format(data['label'], data['group'])
+	print ('Added map {} to group {}'.format(data['label'], data['group']))
 
 commands = {
 	'save': save,

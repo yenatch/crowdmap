@@ -1,17 +1,27 @@
 """Run from the parent directory."""
 
-import SimpleHTTPServer
-import SocketServer
+try:
+	from http.server import SimpleHTTPRequestHandler
+	from socketserver import TCPServer
+except:
+	from SimpleHTTPServer import SimpleHTTPRequestHandler
+	from SocketServer import TCPServer
+
 import json
 import os
 import imp
 import argparse
+import sys
+
+if sys.platform == 'cygwin':
+	os.environ.setdefault('BROWSER', 'cygstart')
+import webbrowser
 
 def import_module(module_name):
 	path = os.path.join(os.path.dirname(__file__), module_name + '.py')
 	return imp.load_source(module_name, path)
 
-class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class Handler(SimpleHTTPRequestHandler):
 
 	# yuge speedup
 	def address_string(self):
@@ -36,7 +46,7 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 		commands.main(parsed_data)
 
 		self.wfile.write('ok')
-		print '"POST {}"'.format(self.path)
+		print ('"POST {}"'.format(self.path))
 
 def main():
 	ap = argparse.ArgumentParser()
@@ -44,11 +54,13 @@ def main():
 	args = ap.parse_args()
 	port = int(args.port)
 	try:
-		httpd = SocketServer.TCPServer(("", port), Handler)
-		print "Open this url in your browser: http://127.0.0.1:{}/crowdmap".format(port)
+		httpd = TCPServer(("", port), Handler)
+		url = 'http://127.0.0.1:{}/crowdmap'.format(port)
+		webbrowser.open_new(url)
+		print ("Open this url in your browser: {}".format(url))
 		httpd.serve_forever()
 	except KeyboardInterrupt:
-		print 'port', port, 'closed'
+		print ('port {} closed'.format(port))
 
 if __name__ == '__main__':
 	main()
