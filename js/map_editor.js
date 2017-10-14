@@ -870,6 +870,11 @@ var Toolbar = {
 		this.buttons = {}
 		for (var k in this.button_defs) {
 			var def = this.button_defs[k]
+
+			if (defined(def.enabled) && !def.enabled) {
+				continue
+			}
+
 			var button = this.createElement('div')
 			button.id = k
 			button.className = 'tool'
@@ -930,6 +935,7 @@ var Toolbar = {
 			listeners: [
 				['click', openProjectDialog],
 			],
+			enabled: !!__electron__,
 		},
 
 		new: {
@@ -1002,6 +1008,7 @@ var Toolbar = {
 			listeners: [
 				['click', function (event) { openDevTools(event) }],
 			],
+			enabled: !!__electron__,
 		},
 
 	},

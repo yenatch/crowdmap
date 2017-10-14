@@ -1,3 +1,6 @@
+if (__electron__) {
+
+
 const ipc = require('electron').ipcRenderer
 
 var Task = {
@@ -12,4 +15,7 @@ var Task = {
 			ipc.send(tag, ...args)
 		})
 	},
+}
+
+
 }

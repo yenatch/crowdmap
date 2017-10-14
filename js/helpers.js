@@ -1,5 +1,7 @@
 // js helper functions
 
+var __electron__ = window && window.process && window.process.type && window.process.versions['electron']
+
 var Promise = Promise || ES6Promise.Promise
 
 var addQuery = function (url, query) {
