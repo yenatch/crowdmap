@@ -744,7 +744,6 @@ function setBrightness (time, element) {
 
 	var map = Data.maps[view.current_map]
 	getTilesetWithRoof(map.header.tileset, map.header.group)
-	readTiles(map.header.tileset, map.header.group)
 	var connections = map.attributes.connections
 	for (var direction in connections) {
 		var connection = connections[direction]
@@ -2632,13 +2631,10 @@ function loadTileset (id) {
 		loadTilesetPalette(id),
 		loadTilesetImage(id)
 	])
-	.then(function () {
-		readTiles(id)
-	})
 }
 
 function loadTilesetMetatiles(id) {
-	config.getMetatilePath(id)
+	return config.getMetatilePath(id)
 	.then(function (path) {
 		return File.readAsync(path, { binary: true })
 	})
@@ -2652,7 +2648,7 @@ function loadTilesetMetatiles(id) {
 }
 
 function loadTilesetPalmap(id) {
-	config.getPalmapPath(id)
+	return config.getPalmapPath(id)
 	.then(function (path) {
 		return File.readAsync(path)
 	})
@@ -2706,13 +2702,6 @@ function loadTilesetImage(id) {
 
 	})
 
-}
-
-function readTiles(id) {
-	var tileset = Data.tilesets[id]
-	var palette = tileset.palettes[config.time]
-	var tiles = colorizeTiles(tileset.image, palette, tileset.palmap)
-	Data.tilesets[id].tiles = tiles
 }
 
 function deserializeMetatiles (data) {
