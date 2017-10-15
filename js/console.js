@@ -20,6 +20,67 @@ function tileset(id, map) {
 	})
 }
 
+var CropCommit = function (map_name, before, after) {
+	if (!before) before = CropCommit.get_state(map_name)
+	if (!after) after = CropCommit.get_state(map_name)
+	var commit = Commit(map_name, before, after)
+	commit.description = 'crop'
+	commit.set_state = CropCommit.set_state
+	return commit
+}
+
+CropCommit.get_state = function (map_name) {
+	var map = Data.maps[map_name]
+	var state = {
+		width: map.width,
+		height: map.height,
+		blockdata: map.blockdata.slice(),
+		connections: {},
+		events: {},
+	}
+	var connections = Data.maps[map_name].attributes.connections
+	for (var direction in connections) {
+		state.connections[direction] = {
+			align: connections[direction].align
+		}
+	}
+	for (var type in map.events) {
+		state.events[type] = []
+		var events = map.events[type]
+		for (var i = 0; i < events.length; i++) {
+			var event = events[i]
+			state.events[type].push({
+				x: event.x,
+				y: event.y,
+			})
+		}
+	}
+	return state
+}
+
+CropCommit.set_state = function (map_name, state) {
+	var map = Data.maps[map_name]
+	if (map) {
+		map.width = state.width
+		map.height = state.height
+		map.blockdata = state.blockdata.slice()
+		if (state.connections) {
+			for (var direction in state.connections) {
+				map.attributes.connections[direction].align = state.connections[direction].align
+			}
+		}
+		if (state.events) {
+			for (var type in state.events) {
+				for (var i = 0; i < state.events[type].length; i++) {
+					map.events[type][i].x = state.events[type][i].x
+					map.events[type][i].y = state.events[type][i].y
+				}
+			}
+		}
+		return true
+	}
+}
+
 function crop(x1, y1, x2, y2, etc) {
 	etc = etc || {}
 
@@ -57,6 +118,8 @@ function crop(x1, y1, x2, y2, etc) {
 		}
 	}
 
+	var before = CropCommit.get_state(map_name)
+
 	map.blockdata = blk
 	map.width = width
 	map.height = height
@@ -78,6 +141,8 @@ function crop(x1, y1, x2, y2, etc) {
 			connection.align -= y1
 		}
 	}
+
+	History.commit(CropCommit(map_name, before))
 
 }
 

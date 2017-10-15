@@ -1174,12 +1174,33 @@ var History = Object.update([{ description: 'beginning' }], {
 	},
 })
 
-var Commit = {
-	apply: function () {},
-	revert: function () {},
-	data: {},
-	description: '',
-	time: new Date(),
+var Commit = function (map_name, before, after) {
+	if (!before) before = Commit.get_state(map_name)
+	if (!after) after = Commit.get_state(map_name)
+	return {
+		apply: function () {
+			return this.set_state(this.data.map_name, this.data.after)
+		},
+		revert: function () {
+			return this.set_state(this.data.map_name, this.data.before)
+		},
+		data: {
+			map_name: map_name,
+			before: before,
+			after: after,
+		},
+		set_state: Commit.set_state,
+		description: 'change',
+		time: new Date(),
+	}
+}
+
+Commit.get_state = function (map_name) {
+	return {}
+}
+
+Commit.set_state = function (map_name, state) {
+	return true
 }
 
 var PaintCommit = function (map_name, before, after) {
@@ -1949,8 +1970,20 @@ var MapViewer = {
 		}
 	},
 
+	blockdata: [],
+	width: 0,
+	height: 0,
+
 	draw: function () {
 		if (this.current_map && Data.maps[this.current_map]) {
+			if (this.width !== Data.maps[this.current_map].width) {
+				this.width = Data.maps[this.current_map].width
+				this.redraw = true
+			}
+			if (this.height !== Data.maps[this.current_map].height) {
+				this.height = Data.maps[this.current_map].height
+				this.redraw = true
+			}
 			if (this.redraw) {
 				this.blockdata = []
 				this.redraw = false
