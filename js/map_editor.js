@@ -2839,7 +2839,9 @@ function deserializeRGB(text) {
 	var colors = []
 	var r = rgbasm.instance()
 	r.macros.RGB = function (values) {
-		colors.push(values.map(function (x) { return x * 8.25 }))
+		for (var i = 0; i < values.length; i += 3) {
+			colors.push(values.slice(i, i + 3).map(function (x) { return x * 8.25 }))
+		}
 	}
 	r.read(text)
 	return colors
